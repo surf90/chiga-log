@@ -1,8 +1,25 @@
 ---
-updated: 2026-04-21
+updated: 2026-04-30
 ---
 
 # ちがログ 進捗メモ
+
+## 完了済み（2026-04-30）
+
+### PWA化（ホーム画面アプリ対応）
+
+- `site.webmanifest` 更新：ちがログ用の名前・テーマカラー・start_url設定
+- `index.html`：マニフェストリンク・iOS用メタタグ・Service Worker登録スクリプト追加
+- `sw.js` 新規作成：同一オリジンのみNetwork First、外部APIは素通し
+- `app.js`：`visibilitychange`（10分超→自動fetch、3分超→トースト）＋ `pageshow`（bfcache復帰→強制fetch）追加
+
+**関連ファイル**
+- `site.webmanifest`
+- `index.html`
+- `sw.js`
+- `assets/js/app.js` / `app.min.js`
+
+---
 
 ## 完了済み（2026-04-21）
 

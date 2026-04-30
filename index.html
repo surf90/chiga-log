@@ -17,6 +17,10 @@ lang: ja
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="icon" href="favicon.ico" sizes="any">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="manifest" href="{{ site.baseurl }}/site.webmanifest">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ちがログ">
 
     <meta property="og:title" content="{{ page.title }} | ちがログ">
     <meta property="og:description" content="{{ page.description }}">
@@ -230,6 +234,25 @@ lang: ja
 </div>
 
 <div id="toast" onclick="fetchWeatherData(); hideToast();">🔄 データを更新する</div>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('{{ site.baseurl }}/sw.js', { scope: '{{ site.baseurl }}/' })
+        .then(reg => {
+          reg.addEventListener('updatefound', () => {
+            const nw = reg.installing;
+            nw.addEventListener('statechange', () => {
+              if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                window.location.reload();
+              }
+            });
+          });
+        })
+        .catch(err => console.error('SW登録失敗:', err));
+    });
+  }
+</script>
 
 </body>
 </html>

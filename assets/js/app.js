@@ -849,3 +849,18 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchWeatherData();
     setInterval(fetchWeatherData, 3 * 60 * 60 * 1000);
 });
+
+// PWA復帰ロジック
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    const elapsed = Date.now() - _lastFetchTime;
+    if (elapsed >= 10 * 60 * 1000) {
+        fetchWeatherData();
+    } else if (elapsed >= 3 * 60 * 1000) {
+        showToast();
+    }
+});
+
+window.addEventListener('pageshow', e => {
+    if (e.persisted) fetchWeatherData();
+});
