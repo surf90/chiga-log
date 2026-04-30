@@ -864,3 +864,30 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('pageshow', e => {
     if (e.persisted) fetchWeatherData();
 });
+
+// ダークモード自動追従（Chart.js用）
+const _prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+function _updateChartsTheme(e) {
+    const isDark = e.matches;
+    const tickColor = isDark ? '#94a3b8' : '#707070';
+    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+    if (window.Chart) {
+        Chart.defaults.color = tickColor;
+        Chart.defaults.borderColor = gridColor;
+    }
+    if (tideChartInstance) {
+        tideChartInstance.options.scales.x.ticks.color = tickColor;
+        tideChartInstance.options.scales.y.ticks.color = tickColor;
+        tideChartInstance.update();
+    }
+    if (waveChartInstance) {
+        waveChartInstance.options.scales.x.ticks.color = tickColor;
+        waveChartInstance.options.scales.yWave.ticks.color = tickColor;
+        waveChartInstance.options.scales.yPeriod.ticks.color = tickColor;
+        waveChartInstance.update();
+    }
+}
+
+_prefersDark.addEventListener('change', _updateChartsTheme);
+_updateChartsTheme(_prefersDark);

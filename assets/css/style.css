@@ -1,11 +1,37 @@
+:root {
+    --bg-gradient: linear-gradient(160deg, #FFFBEB 0%, #EFF6FF 100%);
+    --text-main: #222222;
+    --text-sub: #707070;
+    --container-bg: rgba(255, 255, 255, 0.75);
+    --container-shadow: 0 4px 24px rgba(0, 86, 120, 0.10);
+    --box-bg: #ffffff;
+    --box-border: rgba(0, 0, 0, 0.06);
+    --warning-bg: #fff5f5;
+    --warning-border: #c0392b;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-gradient: linear-gradient(160deg, #121212 0%, #1e1e1e 100%);
+        --text-main: #e2e8f0;
+        --text-sub: #94a3b8;
+        --container-bg: rgba(30, 30, 30, 0.85);
+        --container-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+        --box-bg: #2a2a2a;
+        --box-border: rgba(255, 255, 255, 0.08);
+        --warning-bg: #3f1d1d;
+        --warning-border: #ef4444;
+    }
+}
+
 *, *::before, *::after {
     box-sizing: border-box;
 }
 body {
     font-family: Inter, "Zen Kaku Gothic New", sans-serif;
-    background: linear-gradient(160deg, #FFFBEB 0%, #EFF6FF 100%);
+    background: var(--bg-gradient);
     min-height: 100vh;
-    color: #222222;
+    color: var(--text-main);
     margin: 0;
     padding: 24px 16px;
     font-size: 15px;
@@ -18,12 +44,12 @@ body {
 .container {
     max-width: 600px;
     margin: 0 auto;
-    background: rgba(255,255,255,0.75);
+    background: var(--container-bg);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     padding: 32px 24px;
     border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0,86,120,0.10);
+    box-shadow: var(--container-shadow);
 }
 h1 {
     text-align: center;
@@ -49,7 +75,7 @@ h1 {
 h1 small {
     font-size: 14px;
     font-weight: 500;
-    color: #707070;
+    color: var(--text-sub);
     display: inline-block;
     transform: translateY(2px);
 }
@@ -129,21 +155,21 @@ h1 small {
 }
 .subtitle {
     font-size: 12px;
-    color: #757575;
+    color: var(--text-sub);
     display: block;
     margin-bottom: 24px;
     text-align: center;
 }
 .weather-box {
-    background: #ffffff;
-    border: 1px solid rgba(0,0,0,0.06);
+    background: var(--box-bg);
+    border: 1px solid var(--box-border);
     padding: 20px 24px;
     border-radius: 10px;
     margin-bottom: 16px;
 }
 .weather-box.warning-active {
-    background: #fff5f5;
-    border: 2px solid #c0392b;
+    background: var(--warning-bg);
+    border: 2px solid var(--warning-border);
 }
 #typhoon-box {
     border: 2px solid #e67e22;
@@ -152,14 +178,14 @@ h1 small {
 .weather-box h2 small {
     font-size: 11px;
     font-weight: 400;
-    color: #707070;
+    color: var(--text-sub);
 }
 .weather-box h2 {
     font-size: 1rem;
     font-weight: 600;
     margin-top: 0;
     margin-bottom: 12px;
-    color: #222222;
+    color: var(--text-main);
     letter-spacing: -0.28px;
     display: flex;
     align-items: center;
@@ -187,7 +213,7 @@ h1 small {
 .section-source {
     font-size: 10px;
     font-weight: 400;
-    color: #aaaaaa;
+    color: var(--text-sub);
     letter-spacing: -0.2px;
     margin-left: auto;
     flex-shrink: 0;
@@ -198,10 +224,10 @@ h1 small {
     justify-content: space-between;
     margin-bottom: 8px;
     font-size: 15px;
-    color: #222222;
+    color: var(--text-main);
 }
 .data-row span:first-child {
-    color: #707070;
+    color: var(--text-sub);
     font-size: 14px;
     font-weight: 500;
     letter-spacing: -0.28px;
@@ -216,7 +242,7 @@ h1 small {
 }
 .loading {
     text-align: center;
-    color: #707070;
+    color: var(--text-sub);
     font-size: 14px;
 }
 .error {
@@ -317,26 +343,26 @@ h1 small {
 .badge-chuiho    { background-color: #d97706; }
 .warning-name {
     font-size: 14px;
-    color: #222222;
+    color: var(--text-main);
     font-weight: 500;
 }
 .warning-detail-link {
     display: block;
     font-size: 12px;
-    color: #707070;
+    color: var(--text-sub);
     text-align: right;
     margin-top: 8px;
     letter-spacing: -0.28px;
 }
 p.note {
     font-size: 11px;
-    color: #707070;
+    color: var(--text-sub);
     margin-top: 8px;
     margin-bottom: 0;
     line-height: 1.6;
 }
 p.note a {
-    color: #707070;
+    color: var(--text-sub);
     text-decoration: none;
 }
 p.note a:hover {
@@ -349,7 +375,7 @@ p.note strong a {
 .footer {
     margin-top: 8px;
     font-size: 11px;
-    color: #707070;
+    color: var(--text-sub);
     line-height: 1.7;
     text-align: center;
     padding: 24px 0 8px;
@@ -358,7 +384,7 @@ p.note strong a {
     gap: 24px;
 }
 .footer a {
-    color: #707070;
+    color: var(--text-sub);
     text-decoration: none;
     transition: opacity 0.2s;
 }
@@ -369,7 +395,7 @@ p.note strong a {
 .footer-disclaimer {
     font-size: 11px;
     letter-spacing: -0.28px;
-    color: #888888;
+    color: var(--text-sub);
     line-height: 1.5;
 }
 .footer-copyright {
