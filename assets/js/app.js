@@ -58,11 +58,9 @@ function displayFetchTime() {
     };
     const el = document.getElementById('current-time');
     el.innerHTML = `更新日時: ${now.toLocaleString('ja-JP', options)} 🔄`;
-    el.onclick = () => fetchWeatherData();
+    el.onclick = () => fetchWeatherData(true);
 }
 
-const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current_weather=true&windspeed_unit=ms`;
-const marineUrl  = `https://marine-api.open-meteo.com/v1/marine?latitude=${LAT}&longitude=${LON}&current=wave_height,sea_surface_temperature`;
 
 function getWindDirection16(degree) {
     const directions = ["北","北北東","北東","東北東","東","東南東","南東","南南東","南","南南西","南西","西南西","西","西北西","北西","北北西"];
@@ -144,66 +142,31 @@ async function fetchTideExtremes() {
         return;
     }
 
-    const now = new Date();
-    const dayKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-
-// STEP 1: 3日分JSON（tide_3day.json）を優先
     try {
-        const res = await fetch(`data/tide_3day.json?d=${dayKey}`);
-        if (res.ok) {
-            const data2 = await res.json();
-            if (data2.days && data2.days.length > 0 && data2.days[0].date === dayKey) {
-                const todayTides = data2.days[0].tides;
-                const allTides   = data2.days.flatMap(d => d.tides);
-                if (allTides.length > 0) {
-                    displayTideData(todayTides, allTides);
-                    updateTideSource("気象庁");
-                    return;
-                }
-            }
-        }
-    } catch (e) {
-        console.warn("tide_2day.json 取得失敗 -> tide_today.jsonへフォールバック");
-    }
+        const dayKey = new Date().toISOString().slice(0, 10);
+        const res = await fetch(`data/tide_widget.json?d=${dayKey}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
 
-    // STEP 1b: 当日JSONにフォールバック
-    try {
-        const res = await fetch(`data/tide_today.json?d=${dayKey}`);
-        if (res.ok) {
-            const todayData = await res.json();
-            if (todayData.date === dayKey && todayData.tides && todayData.tides.length > 0) {
-                displayTideData(todayData.tides, todayData.tides);
-                updateTideSource("気象庁");
-                return;
-            }
-        }
-    } catch (e) {
-        console.warn("tide_today.json 取得失敗 -> Stormglassへフォールバック");
-    }
+        const todayTides = data.today || [];
+        const allTides   = Object.values(data.forecast || {}).flat();
 
-    // STEP 2: Stormglass フォールバック
-    try {
-        const hour12Buster = Math.floor(Date.now() / (12 * 60 * 60 * 1000));
-        const res = await fetch(`data/tide_data.json?t=${hour12Buster}`);
-        if (!res.ok) throw new Error();
-        const sgData = await res.json();
-        if (sgData && sgData.data) {
-            displayTideData(sgData.data, sgData.data);
-            updateTideSource("Stormglass");
+        if (allTides.length > 0) {
+            displayTideData(todayTides, allTides);
+            updateTideSource(data.source || "気象庁");
             return;
         }
+        throw new Error("tide_widget.json にデータがありません");
     } catch (e) {
-        console.error("Stormglass tide_data.json も取得失敗");
+        console.error("tide_widget.json 取得失敗:", e);
+        displayTideData(getDummyTideExtremes());
+        updateTideSource("取得失敗");
+        const container = document.getElementById('tide-extremes-container');
+        const note = document.createElement('div');
+        note.style.cssText = 'font-size:.8rem;color:#c0392b;text-align:right;margin-top:5px;';
+        note.textContent = '※データ取得エラーのためダミー波形を表示しています';
+        container.appendChild(note);
     }
-
-    // STEP 3: ダミー波形
-    displayTideData(getDummyTideExtremes());
-    updateTideSource("取得失敗");
-    const container = document.getElementById('tide-extremes-container');
-    const note = document.createElement('div');
-    note.style.cssText = 'font-size:.8rem;color:#c0392b;text-align:right;margin-top:5px;';
-    note.textContent = '※データ取得エラーのためダミー波形を表示しています';
-    container.appendChild(note);
 }
 
 function updateTideSource(sourceName) {
@@ -314,12 +277,12 @@ function syncChartScroll() {
         if (syncing) return; syncing = true;
         waveScroll.scrollLeft = tideScroll.scrollLeft;
         syncing = false;
-    });
+    }, { passive: true });
     waveScroll.addEventListener('scroll', () => {
         if (syncing) return; syncing = true;
         tideScroll.scrollLeft = waveScroll.scrollLeft;
         syncing = false;
-    });
+    }, { passive: true });
 }
 
 function scrollChartsToNow() {
@@ -746,7 +709,7 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
     return chart;
 }
 
-async function fetchWeatherData() {
+async function fetchWeatherData(isManual = false) {
     if (_isFetching) return;
     _isFetching = true;
     const timeEl = document.getElementById('current-time');
@@ -754,15 +717,17 @@ async function fetchWeatherData() {
         timeEl.innerHTML = 'データを更新中... ⏳';
         document.getElementById('weather-content').style.opacity      = '0.5';
         document.getElementById('weather-content').style.pointerEvents = 'none';
-        (function smoothTop() {
-            const start = window.scrollY, t0 = performance.now();
-            function step(t) {
-                const p = Math.min((t - t0) / 500, 1);
-                window.scrollTo(0, start * (1 - p * p * (3 - 2 * p)));
-                if (p < 1) requestAnimationFrame(step);
-            }
-            requestAnimationFrame(step);
-        })();
+        if (isManual) {
+            (function smoothTop() {
+                const start = window.scrollY, t0 = performance.now();
+                function step(t) {
+                    const p = Math.min((t - t0) / 500, 1);
+                    window.scrollTo(0, start * (1 - p * p * (3 - 2 * p)));
+                    if (p < 1) requestAnimationFrame(step);
+                }
+                requestAnimationFrame(step);
+            })();
+        }
     }
     try {
         await calculateTide();
@@ -774,15 +739,10 @@ async function fetchWeatherData() {
         ]);
         await fetchWaveGuidance();
 
-        // Open-Meteo はセッション内30分キャッシュ
-        const [weatherResult, marineResult] = await Promise.allSettled([
-            fetchWithCache(weatherUrl, 'cache_weather'),
-            fetchWithCache(marineUrl,  'cache_marine'),
-        ]);
-        if (weatherResult.status === 'rejected') throw weatherResult.reason;
-        if (marineResult.status  === 'rejected') throw marineResult.reason;
-        const weatherData = weatherResult.value;
-        const marineData  = marineResult.value;
+        // Open-Meteo: バックエンド生成の静的JSONを読み込む（30分キャッシュ）
+        const wmData = await fetchWithCache('data/weather_marine.json', 'cache_weather_marine');
+        const weatherData = wmData;
+        const marineData  = wmData;
 
         const temp = weatherData.current_weather.temperature;
         document.getElementById('temp').textContent     = `${temp}℃`;
@@ -791,7 +751,7 @@ async function fetchWeatherData() {
         document.getElementById('hero-temp').textContent = temp;
         document.getElementById('hero-wind').textContent = weatherData.current_weather.windspeed;
 
-        const cur = marineData.current;
+        const cur = marineData.marine?.current;
         document.getElementById('wave-height').textContent =
             (cur?.wave_height != null) ? `${cur.wave_height} m` : 'データなし';
         if (cur?.sea_surface_temperature != null) {
