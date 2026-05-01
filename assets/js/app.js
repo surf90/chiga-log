@@ -448,9 +448,12 @@ async function fetchJmaWarning() {
             : [];
 
         const warningBox = document.getElementById('jma-warning-box');
+        const floatingBar = document.getElementById('floating-alert-bar');
         if (activeWarnings.length === 0) {
             listEl.innerHTML = '<div class="warning-none">✅ 現在、注意報・警報はありません</div>';
             warningBox.classList.remove('warning-active');
+            floatingBar.style.display = 'none';
+            floatingBar.className = 'floating-alert';
         } else {
             warningBox.classList.add('warning-active');
             const order = { tokubetsu: 0, keiho: 1, chuiho: 2 };
@@ -467,6 +470,31 @@ async function fetchJmaWarning() {
                 item.innerHTML = `<span class="warning-badge badge-${info.level}">${levelLabel}</span><span class="warning-name">${info.name}</span>`;
                 listEl.appendChild(item);
             });
+
+            // フローティングバー: 警報・特別警報のみ表示（注意報は非表示）
+            const topLevel = (WARNING_CODE_MAP[activeWarnings[0].code] || {}).level || 'chuiho';
+            if (topLevel === 'tokubetsu' || topLevel === 'keiho') {
+                const hasTokubetsu = activeWarnings.some(w => (WARNING_CODE_MAP[w.code] || {}).level === 'tokubetsu');
+                const hasKeiho     = activeWarnings.some(w => (WARNING_CODE_MAP[w.code] || {}).level === 'keiho');
+                const severeList   = activeWarnings.filter(w => {
+                    const lv = (WARNING_CODE_MAP[w.code] || {}).level;
+                    return lv === 'tokubetsu' || lv === 'keiho';
+                });
+                let barText;
+                if (severeList.length === 1) {
+                    const info = WARNING_CODE_MAP[severeList[0].code];
+                    barText = `⚠ ${info.name} 発令中`;
+                } else {
+                    const label = hasTokubetsu ? '特別警報・警報' : '警報';
+                    barText = `⚠ ${label} 発令中`;
+                }
+                floatingBar.textContent = barText;
+                floatingBar.className = `floating-alert level-${hasTokubetsu ? 'tokubetsu' : 'keiho'}`;
+                floatingBar.style.display = 'block';
+            } else {
+                floatingBar.style.display = 'none';
+                floatingBar.className = 'floating-alert';
+            }
         }
 
         document.getElementById('jma-warning-loading').style.display = 'none';
