@@ -6,6 +6,19 @@ updated: 2026-05-01
 
 ## 完了済み（2026-05-01）
 
+### 波グラフ Y軸固定スクロール
+
+- `index.html`：`#wave-chart-scroll` を `#wave-chart-wrapper`（`position:relative`）で囲み、左右に `#waveChartLeftAxis` / `#waveChartRightAxis` のダミーCanvasを追加
+- `assets/css/style.css`：`.fixed-axis` / `.left-axis` / `.right-axis` を追加（`position:absolute` で wrapper 上に重ねて固定、`background:var(--box-bg)` で背後のグラフ線を遮蔽）
+- `assets/js/app.js`：`drawWaveCombinedChart` 末尾にダミーグラフ生成ロジックを追加。メイングラフの確定済み `min/max` を取得して目盛りを完全同期。`_updateChartsTheme` にダミー軸の色更新を追加
+
+**関連ファイル**
+- `index.html`
+- `assets/css/style.css`
+- `assets/js/app.js`
+
+---
+
 ### BFF化：外部API通信をGitHub Actions側へ移管
 
 - `scripts/fetch_openmeteo.py` 新規作成：Open-Meteo（天気）＋Marine API（海面）を取得し `data/weather_marine.json` を生成
