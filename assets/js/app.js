@@ -546,9 +546,7 @@ function toggleOverview() {
     }
 }
 
-let waveChartInstance     = null;
-let waveLeftAxisInstance  = null;
-let waveRightAxisInstance = null;
+let waveChartInstance = null;
 
 async function fetchWaveGuidance() {
     try {
@@ -736,77 +734,6 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
     syncChartScroll();
     scrollChartsToNow();
 
-    // ダミー軸グラフの再生成
-    if (waveLeftAxisInstance)  { waveLeftAxisInstance.destroy();  waveLeftAxisInstance  = null; }
-    if (waveRightAxisInstance) { waveRightAxisInstance.destroy(); waveRightAxisInstance = null; }
-
-    const yWaveMin   = chart.scales.yWave.min;
-    const yWaveMax   = chart.scales.yWave.max;
-    const yPeriodMin = chart.scales.yPeriod.min;
-    const yPeriodMax = chart.scales.yPeriod.max;
-
-    const ghostDatasets = [
-        {
-            data: heightData, yAxisID: 'yWave',
-            borderColor: 'transparent', backgroundColor: 'transparent',
-            pointRadius: 0, tension: 0.3,
-        },
-        {
-            data: periodData, yAxisID: 'yPeriod',
-            borderColor: 'transparent', backgroundColor: 'transparent',
-            pointRadius: 0, tension: 0.3,
-        },
-    ];
-
-    const leftCanvas = document.getElementById('waveChartLeftAxis');
-    leftCanvas.width = 45; leftCanvas.height = 200;
-    waveLeftAxisInstance = new Chart(leftCanvas.getContext('2d'), {
-        type: 'line',
-        data: { datasets: ghostDatasets },
-        options: {
-            responsive: false, maintainAspectRatio: false,
-            animation: false,
-            plugins: { legend: { display: false }, tooltip: { enabled: false } },
-            scales: {
-                x: { type: 'linear', min: xMin, max: xMax, display: false },
-                yWave: {
-                    type: 'linear', position: 'left', display: true,
-                    min: yWaveMin, max: yWaveMax,
-                    ticks: { maxTicksLimit: 4, callback: v => v.toFixed(1), padding: 0 },
-                    grid: { drawTicks: false },
-                    afterFit: s => { s.width = 45; },
-                },
-                yPeriod: { type: 'linear', position: 'right', display: false, min: yPeriodMin, max: yPeriodMax },
-            }
-        }
-    });
-
-    const rightCanvas = document.getElementById('waveChartRightAxis');
-    rightCanvas.width = 45; rightCanvas.height = 200;
-    waveRightAxisInstance = new Chart(rightCanvas.getContext('2d'), {
-        type: 'line',
-        data: { datasets: ghostDatasets },
-        options: {
-            responsive: false, maintainAspectRatio: false,
-            animation: false,
-            plugins: { legend: { display: false }, tooltip: { enabled: false } },
-            scales: {
-                x: { type: 'linear', min: xMin, max: xMax, display: false },
-                yWave: { type: 'linear', position: 'left', display: false, min: yWaveMin, max: yWaveMax },
-                yPeriod: {
-                    type: 'linear', position: 'right', display: true,
-                    min: yPeriodMin, max: yPeriodMax,
-                    ticks: {
-                        maxTicksLimit: 4, stepSize: 1, padding: 0,
-                        callback: v => Number.isInteger(v) ? v : null,
-                    },
-                    grid: { display: false, drawTicks: false },
-                    afterFit: s => { s.width = 45; },
-                },
-            }
-        }
-    });
-
     return chart;
 }
 
@@ -947,14 +874,6 @@ function _updateChartsTheme(e) {
         waveChartInstance.options.scales.yWave.ticks.color = tickColor;
         waveChartInstance.options.scales.yPeriod.ticks.color = tickColor;
         waveChartInstance.update();
-    }
-    if (waveLeftAxisInstance) {
-        waveLeftAxisInstance.options.scales.yWave.ticks.color = tickColor;
-        waveLeftAxisInstance.update();
-    }
-    if (waveRightAxisInstance) {
-        waveRightAxisInstance.options.scales.yPeriod.ticks.color = tickColor;
-        waveRightAxisInstance.update();
     }
 }
 

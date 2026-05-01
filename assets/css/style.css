@@ -290,17 +290,6 @@ h1 small {
 }
 #toast.show { opacity: 1; }
 
-.fixed-axis {
-    position: absolute;
-    top: 12px;
-    height: 200px;
-    background: var(--box-bg);
-    pointer-events: none;
-    z-index: 10;
-}
-.left-axis  { left: 0;  width: 45px; }
-.right-axis { right: 0; width: 45px; }
-
 .floating-alert {
     position: fixed;
     bottom: 0;

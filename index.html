@@ -156,17 +156,9 @@ lang: ja
             <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg></span><span class="section-label">WAVE</span>波情報<span class="section-source">気象庁</span></h2>
             <div id="wave-guid-loading" style="color:#707070; font-size:14px;">取得中...</div>
             <div id="wave-guid-content" style="display:none;">
-                <div id="wave-chart-wrapper" style="position:relative;">
-                    <div id="wave-chart-scroll" style="overflow-x:scroll;overflow-y:hidden;-webkit-overflow-scrolling:touch;">
-                        <div id="wave-chart-container" style="height:200px;margin-top:12px;">
-                            <canvas id="waveChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="fixed-axis left-axis">
-                        <canvas id="waveChartLeftAxis"></canvas>
-                    </div>
-                    <div class="fixed-axis right-axis">
-                        <canvas id="waveChartRightAxis"></canvas>
+                <div id="wave-chart-scroll" style="overflow-x:scroll;overflow-y:hidden;-webkit-overflow-scrolling:touch;">
+                    <div id="wave-chart-container" style="height:200px;margin-top:12px;">
+                        <canvas id="waveChart"></canvas>
                     </div>
                 </div>
                 <p class="note" style="position: relative; z-index: 10;">※<a href="https://www.data.jma.go.jp/waveinf/guid/wave_guid.html?area=19" target="_blank" rel="noopener noreferrer">気象庁が提供している（関東地方南部全域の）予想値</a>です。</p>
