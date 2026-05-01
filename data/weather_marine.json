@@ -1,11 +1,11 @@
 {
-  "updated_at": "2026-05-02T07:25:59.337726+09:00",
+  "updated_at": "2026-05-02T08:28:36.520553+09:00",
   "current_weather": {
-    "time": "2026-05-01T22:15",
+    "time": "2026-05-01T23:15",
     "interval": 900,
-    "temperature": 18.1,
-    "windspeed": 5.13,
-    "winddirection": 237,
+    "temperature": 19.3,
+    "windspeed": 4.74,
+    "winddirection": 235,
     "is_day": 1,
     "weathercode": 0
   },
@@ -24,9 +24,9 @@
       "sea_surface_temperature": "°C"
     },
     "current": {
-      "time": "2026-05-01T22:15",
+      "time": "2026-05-01T23:15",
       "interval": 900,
-      "wave_height": 1.24,
+      "wave_height": 1.2,
       "sea_surface_temperature": 18.2
     }
   }
