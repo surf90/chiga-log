@@ -1,9 +1,10 @@
-const CACHE_NAME = 'chigalog-v1';
+const CACHE_NAME = 'chigalog-v2';
+const BASE = self.location.pathname.replace(/sw\.js$/, '');
 const ASSETS = [
-  '/chiga-log/',
-  '/chiga-log/index.html',
-  '/chiga-log/assets/css/style.min.css',
-  '/chiga-log/assets/js/app.min.js',
+  BASE,
+  BASE + 'index.html',
+  BASE + 'assets/css/style.min.css',
+  BASE + 'assets/js/app.min.js',
 ];
 
 self.addEventListener('install', e => {
@@ -29,6 +30,9 @@ self.addEventListener('fetch', e => {
         caches.open(CACHE_NAME).then(c => c.put(e.request, res.clone()));
         return res;
       })
-      .catch(() => caches.match(e.request))
+      .catch(async () =>
+        (await caches.match(e.request)) ||
+        new Response('', { status: 504, statusText: 'offline' })
+      )
   );
 });

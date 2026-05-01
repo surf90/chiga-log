@@ -772,12 +772,20 @@ async function fetchWeatherData(isManual = false) {
         const weatherData = wmData;
         const marineData  = wmData;
 
-        const temp = weatherData.current_weather.temperature;
-        document.getElementById('temp').textContent     = `${temp}℃`;
-        document.getElementById('wind').textContent     = `${weatherData.current_weather.windspeed} m/s`;
-        document.getElementById('wind-dir').textContent = getWindDirection16(weatherData.current_weather.winddirection);
-        document.getElementById('hero-temp').textContent = temp;
-        document.getElementById('hero-wind').textContent = weatherData.current_weather.windspeed;
+        const cw = weatherData?.current_weather;
+        if (cw) {
+            document.getElementById('temp').textContent      = `${cw.temperature}℃`;
+            document.getElementById('wind').textContent      = `${cw.windspeed} m/s`;
+            document.getElementById('wind-dir').textContent  = getWindDirection16(cw.winddirection);
+            document.getElementById('hero-temp').textContent = cw.temperature;
+            document.getElementById('hero-wind').textContent = cw.windspeed;
+        } else {
+            document.getElementById('temp').textContent      = 'データなし';
+            document.getElementById('wind').textContent      = 'データなし';
+            document.getElementById('wind-dir').textContent  = '--';
+            document.getElementById('hero-temp').textContent = '--';
+            document.getElementById('hero-wind').textContent = '--';
+        }
 
         const cur = marineData.marine?.current;
         document.getElementById('wave-height').textContent =
