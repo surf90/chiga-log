@@ -1,18 +1,18 @@
 {
-  "updated_at": "2026-05-04T08:52:15.357716+09:00",
+  "updated_at": "2026-05-04T12:34:28.215068+09:00",
   "current_weather": {
-    "time": "2026-05-03T23:45",
+    "time": "2026-05-04T03:30",
     "interval": 900,
-    "temperature": 21.4,
-    "windspeed": 8.5,
-    "winddirection": 207,
+    "temperature": 22.0,
+    "windspeed": 9.62,
+    "winddirection": 205,
     "is_day": 1,
-    "weathercode": 51
+    "weathercode": 1
   },
   "marine": {
     "latitude": 35.291664,
     "longitude": 139.37502,
-    "generationtime_ms": 0.16570091247558594,
+    "generationtime_ms": 0.054836273193359375,
     "utc_offset_seconds": 0,
     "timezone": "GMT",
     "timezone_abbreviation": "GMT",
@@ -24,10 +24,10 @@
       "sea_surface_temperature": "°C"
     },
     "current": {
-      "time": "2026-05-03T23:45",
+      "time": "2026-05-04T03:30",
       "interval": 900,
-      "wave_height": 2.4,
-      "sea_surface_temperature": 18.3
+      "wave_height": 1.96,
+      "sea_surface_temperature": 18.4
     }
   }
 }
