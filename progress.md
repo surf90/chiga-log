@@ -1,8 +1,38 @@
 ---
-updated: 2026-04-30
+updated: 2026-05-07
 ---
 
 # ちがログ 進捗メモ
+
+## 完了済み（2026-05-07）
+
+### 風予報カード統合 (PR #87 → main マージ)
+
+- `scripts/fetch_openmeteo.py`：`WIND_FORECAST_URL` 追加、`wind_forecast.json` 出力
+- `assets/js/app.js`：`renderWindForecast` / `toggleWindForecast` / `fetchWindForecast` 関数追加
+- `index.html`：`wind-forecast-box` セクションを `jma-forecast-box` 直下に追加
+- `assets/css/style.css`：`.wind-grid/.wind-row/.wind-time/.wind-dir/.wind-speed` スタイル追加
+- `.github/workflows/fetch_openmeteo.yml`：`data/wind_forecast.json` を `git add` 対象に追加
+
+**関連ファイル**
+- `scripts/fetch_openmeteo.py`
+- `assets/js/app.js` / `app.min.js`
+- `assets/css/style.css` / `style.min.css`
+- `index.html`
+- `.github/workflows/fetch_openmeteo.yml`
+- `data/wind_forecast.json`（Actions 自動生成）
+
+---
+
+### Service Worker `Response.clone()` 二重消費バグ修正 (PR #88)
+
+- `sw.js`：`res.clone()` を `caches.open()` Promise の外（同期タイミング）で実行するよう修正
+- `CACHE_NAME`：`'chigalog-v2'` → `'chigalog-v3'` にバンプし旧 SW を強制更新
+
+**関連ファイル**
+- `sw.js`
+
+---
 
 ## 完了済み（2026-04-30）
 
