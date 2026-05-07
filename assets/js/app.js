@@ -524,16 +524,20 @@ async function fetchJmaForecast() {
         document.getElementById('jma-weather').textContent = areaWeather.weathers?.[0] ?? '--';
         document.getElementById('jma-pop').textContent     = areaPop.pops?.[0] ? areaPop.pops[0] + '%' : '--';
 
-        // 当日(JST)の気温のみ抽出して最高/最低を算出
+        // JMA仕様: timeDefines は [今日09:00, 今日00:00, 明日00:00, 明日09:00]
+        // 09:00 = 最高気温、00:00 = 最低気温。当日値が空なら翌日にフォールバック
         const nowJst = new Date(Date.now() + 9 * 60 * 60 * 1000);
-        const todayPrefix = `${nowJst.getUTCFullYear()}-${String(nowJst.getUTCMonth()+1).padStart(2,'0')}-${String(nowJst.getUTCDate()).padStart(2,'0')}`;
-        const todayTemps = (timeSeries2.timeDefines || [])
-            .map((t, i) => ({ t, v: areaTemp.temps?.[i] }))
-            .filter(x => x.t.startsWith(todayPrefix) && x.v !== '' && x.v != null)
-            .map(x => Number(x.v))
-            .filter(n => !Number.isNaN(n));
-        document.getElementById('jma-temp-max').textContent = todayTemps.length ? Math.max(...todayTemps) : '--';
-        document.getElementById('jma-temp-min').textContent = todayTemps.length ? Math.min(...todayTemps) : '--';
+        const fmtDate = d => `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+        const tomorrowJst = new Date(nowJst.getTime() + 86400000);
+        const findTemp = (datePrefix, hour) => {
+            const idx = (timeSeries2.timeDefines || []).findIndex(t => t.startsWith(`${datePrefix}T${hour}:`));
+            const v = idx >= 0 ? areaTemp.temps?.[idx] : null;
+            return (v !== '' && v != null) ? v : null;
+        };
+        const tempMax = findTemp(fmtDate(nowJst), '09') ?? findTemp(fmtDate(tomorrowJst), '09');
+        const tempMin = findTemp(fmtDate(nowJst), '00') ?? findTemp(fmtDate(tomorrowJst), '00');
+        document.getElementById('jma-temp-max').textContent = tempMax ?? '--';
+        document.getElementById('jma-temp-min').textContent = tempMin ?? '--';
 
         // 風（概況折りたたみ内）
         document.getElementById('jma-wind').textContent = (areaWeather.winds?.[0] || '--').replace(/　/g, ' ');
