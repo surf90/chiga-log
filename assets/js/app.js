@@ -599,15 +599,25 @@ function toggleOverview() {
 }
 
 
+let windForecastRange = '';
+
+function updateWindForecastToggleLabel(isOpen) {
+    const btn = document.getElementById('wind-forecast-toggle');
+    if (!btn) return;
+    const range = windForecastRange || '昼間';
+    btn.textContent = isOpen
+        ? `予想風（${range}）を閉じる ▲`
+        : `予想風（${range}）を表示 ▼`;
+}
+
 function toggleWindForecast() {
     const el = document.getElementById('wind-forecast-list');
-    const btn = document.getElementById('wind-forecast-toggle');
     if (el.style.display === 'none' || !el.style.display) {
         el.style.display = 'block';
-        btn.textContent = '予想風（08:00-20:00）を閉じる ▲';
+        updateWindForecastToggleLabel(true);
     } else {
         el.style.display = 'none';
-        btn.textContent = '予想風（08:00-20:00）を表示 ▼';
+        updateWindForecastToggleLabel(false);
     }
 }
 
@@ -618,18 +628,25 @@ async function fetchWindForecast() {
         const res = await fetch(`data/wind_forecast.json?t=${hourBuster}`);
         if (!res.ok) throw new Error('wind_forecast.json fetch failed');
         const data = await res.json();
+        const now = new Date();
+        const cutoff = now.getTime() - 60 * 60 * 1000;
+        const today = now.toDateString();
         const items = (data.items || []).map(item => {
             const dt = new Date(item.time);
             const hh = dt.getHours();
             return {
                 h: hh,
+                ts: dt.getTime(),
+                date: dt.toDateString(),
                 time: dt.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
                 dir: item.wind_direction_text || (item.wind_direction_deg != null ? getWindDirection16(Number(item.wind_direction_deg)) : 'データなし'),
                 speed: item.wind_speed_ms != null ? Number(item.wind_speed_ms).toFixed(1) : null,
             };
-        }).filter(item => item.h >= 8 && item.h <= 20).slice(0, 13);
+        }).filter(item => item.h >= 8 && item.h <= 20 && item.ts >= cutoff && item.date === today).slice(0, 13);
 
+        windForecastRange = items.length > 0 ? `${items[0].time}-${items[items.length - 1].time}` : '';
         renderWindForecast(items);
+        updateWindForecastToggleLabel(false);
         document.getElementById('wind-forecast-loading').style.display = 'none';
         document.getElementById('wind-forecast-content').style.display = 'block';
     } catch (e) {
