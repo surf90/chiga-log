@@ -542,8 +542,7 @@ async function fetchJmaForecast() {
         const tempMin = (todayMinRaw != null && todayMinRaw !== tempMax)
             ? todayMinRaw
             : (tomorrowMin ?? todayMinRaw);
-        document.getElementById('jma-temp-max').textContent = tempMax ?? '--';
-        document.getElementById('jma-temp-min').textContent = tempMin ?? '--';
+        document.getElementById('jma-temp').textContent = `${tempMax ?? '--'}℃ / ${tempMin ?? '--'}℃`;
 
         // 風（概況折りたたみ内）
         document.getElementById('jma-wind').textContent = (areaWeather.winds?.[0] || '--').replace(/　/g, ' ');
