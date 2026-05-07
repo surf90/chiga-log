@@ -203,11 +203,13 @@ lang: ja
         </div>
 
         <div class="weather-box" id="weather-current-box">
-            <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg></span><span class="section-label">NOW</span>現在の天気<small style="font-weight:400;color:#aaaaaa;font-size:10px;">&nbsp;参考</small><span class="section-source">Open-Meteo</span></h2>
+            <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg></span><span class="section-label">NOW</span>現在の天気<span class="section-source">気象庁</span></h2>
             <div class="data-row"><span>気 温: </span> <span id="temp">--℃</span></div>
+            <div class="data-row"><span>湿 度: </span> <span id="humidity">-- %</span></div>
             <div class="data-row"><span>風 速: </span> <span id="wind">-- m/s</span></div>
             <div class="data-row"><span>風 向: </span> <span id="wind-dir">-- °</span></div>
-            <p class="note">※周辺の気象モデルに基づく推計値のため、実測値とは異なる場合があります。</p>
+            <div class="data-row"><span>降水量(1h): </span> <span id="precip-1h">-- mm</span></div>
+            <p class="note">※辻堂アメダス（46091）の観測値です。</p>
         </div>
     </div>
 
