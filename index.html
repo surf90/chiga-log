@@ -181,9 +181,13 @@ lang: ja
             <div id="jma-forecast-content" style="display:none;">
                 <div class="data-row"><span>天 気: </span> <span id="jma-weather">--</span></div>
                 <div class="data-row"><span>降水確率: </span> <span id="jma-pop">--</span></div>
+                <div class="data-row"><span>最高/最低: </span> <span><span id="jma-temp-max">--</span>℃ / <span id="jma-temp-min">--</span>℃</span></div>
                 <div class="data-row" id="jma-typhoon-notice" style="display:none; color:#c0392b; font-weight:bold;">⚠ 台風情報あり</div>
                 <button class="toggle-btn" id="jma-overview-toggle" onclick="toggleOverview()">概況を表示 ▼</button>
-                <div class="jma-overview" id="jma-overview-text"></div>
+                <div class="jma-overview" id="jma-overview-text">
+                    <div class="data-row" id="jma-wind-row"><span>風: </span> <span id="jma-wind">--</span></div>
+                    <div id="jma-overview-body"></div>
+                </div>
             </div>
             <div id="jma-error" style="display:none; color:#c0392b; font-size:14px;">天気予報の取得に失敗しました。</div>
         </div>
