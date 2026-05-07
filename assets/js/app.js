@@ -535,7 +535,13 @@ async function fetchJmaForecast() {
             return (v !== '' && v != null) ? v : null;
         };
         const tempMax = findTemp(fmtDate(nowJst), '09') ?? findTemp(fmtDate(tomorrowJst), '09');
-        const tempMin = findTemp(fmtDate(nowJst), '00') ?? findTemp(fmtDate(tomorrowJst), '00');
+        // 11時発表では当日00:00がダミー（当日09:00と同値）になるため、
+        // 当日min==当日max なら翌日最低にフォールバック
+        const todayMinRaw = findTemp(fmtDate(nowJst), '00');
+        const tomorrowMin = findTemp(fmtDate(tomorrowJst), '00');
+        const tempMin = (todayMinRaw != null && todayMinRaw !== tempMax)
+            ? todayMinRaw
+            : (tomorrowMin ?? todayMinRaw);
         document.getElementById('jma-temp-max').textContent = tempMax ?? '--';
         document.getElementById('jma-temp-min').textContent = tempMin ?? '--';
 
