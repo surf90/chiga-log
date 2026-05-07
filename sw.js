@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chigalog-v2';
+const CACHE_NAME = 'chigalog-v3';
 const BASE = self.location.pathname.replace(/sw\.js$/, '');
 const ASSETS = [
   BASE,
@@ -27,7 +27,8 @@ self.addEventListener('fetch', e => {
     fetch(e.request)
       .then(res => {
         if (!res || res.status !== 200 || res.type !== 'basic') return res;
-        caches.open(CACHE_NAME).then(c => c.put(e.request, res.clone()));
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then(c => c.put(e.request, copy));
         return res;
       })
       .catch(async () =>
