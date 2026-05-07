@@ -150,12 +150,36 @@ python generate_tide.py
 
 https://www.data.jma.go.jp/kaiyou/db/tide/suisan/txt/
 
+---
+
+## 📊 Chart.js（自ホスト版）の更新手順
+
+サードパーティCDN通信を排除するため、Chart.js は `assets/vendor/chart.umd.min.js` に自ホストしています。アップデート時は以下を実行：
+
+```bash
+curl -sL "https://cdn.jsdelivr.net/npm/chart.js@<VERSION>/dist/chart.umd.min.js" \
+  -o assets/vendor/chart.umd.min.js
+```
+
+`<VERSION>` は更新したいバージョン（例: `4.4.7`）。配置後、ローカルサーバーで潮汐・波グラフが正常に描画されることを確認してからコミット。
+
+---
+
+## 🛠 minify ファイルの再生成手順
+
+`assets/js/app.min.js` と `assets/css/style.min.css` は `app.js` / `style.css` を編集後に再生成が必要です：
+
+```bash
+npx --yes terser assets/js/app.js -c -m -o assets/js/app.min.js
+npx --yes clean-css-cli -o assets/css/style.min.css assets/css/style.css
+```
+
 </details>
 
 ## 使用技術・API
 
 - **フロントエンド**: HTML5 / CSS3 / JavaScript (ES6+)
-- **グラフ描画**: Chart.js
+- **グラフ描画**: Chart.js（自ホスト版 `assets/vendor/chart.umd.min.js`。CDN通信を排除し、サードパーティ依存を最小化）
 - **自動化・ホスティング**: GitHub Actions / GitHub Pages
 - **気象庁データ (天気予報・注意報・潮汐)**: 気象庁公式データ (GitHub ActionsによるJSON定期取得、および年次更新データを利用)
 - **月齢データ**: NASA SVS (年次更新のJSONデータを利用)

@@ -323,8 +323,6 @@ function scrollChartsToNow() {
 }
 
 function drawTideChart(extremes, hasHeightData) {
-    if (window.Chart) Chart.defaults.font.family = 'Inter, "Zen Kaku Gothic New", sans-serif';
-
     document.getElementById('tide-chart-container').style.display = 'block';
     setChartContainerWidth('tide-chart-container', CHART_TOTAL_PX);
 
@@ -695,7 +693,6 @@ async function fetchWaveGuidance() {
 }
 
 function drawWaveCombinedChart(canvasId, existingInstance, data) {
-    if (window.Chart) Chart.defaults.font.family = 'Inter, "Zen Kaku Gothic New", sans-serif';
     if (existingInstance) existingInstance.destroy();
 
     const heightData = data.map(d => ({ x: new Date(d.time).getTime(), y: d.wave_height }));
@@ -1001,6 +998,7 @@ function _updateChartsTheme(e) {
     const tickColor = isDark ? '#94a3b8' : '#707070';
     const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
     if (window.Chart) {
+        Chart.defaults.font.family = 'Inter, "Zen Kaku Gothic New", sans-serif';
         Chart.defaults.color = tickColor;
         Chart.defaults.borderColor = gridColor;
     }
