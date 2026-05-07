@@ -516,12 +516,29 @@ async function fetchJmaForecast() {
         const shortTerm  = data.forecast[0];
         const timeSeries0 = shortTerm.timeSeries[0];
         const timeSeries1 = shortTerm.timeSeries[1];
+        const timeSeries2 = shortTerm.timeSeries[2];
         const areaWeather = timeSeries0.areas.find(a => a.area.code === '140010') || timeSeries0.areas[0];
         const areaPop     = timeSeries1.areas.find(a => a.area.code === '140010') || timeSeries1.areas[0];
+        const areaTemp    = timeSeries2.areas.find(a => a.area.code === '46106') || timeSeries2.areas[0];
 
         document.getElementById('jma-weather').textContent = areaWeather.weathers?.[0] ?? '--';
         document.getElementById('jma-pop').textContent     = areaPop.pops?.[0] ? areaPop.pops[0] + '%' : '--';
-        document.getElementById('jma-overview-text').textContent = data.overview.text || '';
+
+        // 当日(JST)の気温のみ抽出して最高/最低を算出
+        const nowJst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+        const todayPrefix = `${nowJst.getUTCFullYear()}-${String(nowJst.getUTCMonth()+1).padStart(2,'0')}-${String(nowJst.getUTCDate()).padStart(2,'0')}`;
+        const todayTemps = (timeSeries2.timeDefines || [])
+            .map((t, i) => ({ t, v: areaTemp.temps?.[i] }))
+            .filter(x => x.t.startsWith(todayPrefix) && x.v !== '' && x.v != null)
+            .map(x => Number(x.v))
+            .filter(n => !Number.isNaN(n));
+        document.getElementById('jma-temp-max').textContent = todayTemps.length ? Math.max(...todayTemps) : '--';
+        document.getElementById('jma-temp-min').textContent = todayTemps.length ? Math.min(...todayTemps) : '--';
+
+        // 風（概況折りたたみ内）
+        document.getElementById('jma-wind').textContent = (areaWeather.winds?.[0] || '--').replace(/　/g, ' ');
+
+        document.getElementById('jma-overview-body').textContent = data.overview.text || '';
         const hasTyphoon = data.overview.text?.includes('台風');
         document.getElementById('jma-typhoon-notice').style.display = hasTyphoon ? 'flex' : 'none';
 
