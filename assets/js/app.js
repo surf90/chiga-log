@@ -67,6 +67,14 @@ function getWindDirection16(degree) {
     return directions[Math.round(degree / 22.5) % 16];
 }
 
+function getWindDirectionJma(num) {
+    // 気象庁アメダスの風向: 1=北北東, 2=北東, ..., 16=北, 0=静穏
+    if (num == null) return '--';
+    if (num === 0) return '静穏';
+    const directions = ["北北東","北東","東北東","東","東南東","南東","南南東","南","南南西","南西","西南西","西","西北西","北西","北北西","北"];
+    return directions[(num - 1) % 16] || '--';
+}
+
 async function calculateTide() {
     const synodicMonth = 29.530588853;
     const knownNewMoon = new Date('2000-01-06T18:14:00+09:00').getTime();
@@ -798,19 +806,40 @@ async function fetchWeatherData(isManual = false) {
         const weatherData = wmData;
         const marineData  = wmData;
 
-        const cw = weatherData?.current_weather;
-        if (cw) {
-            document.getElementById('temp').textContent      = `${cw.temperature}℃`;
-            document.getElementById('wind').textContent      = `${cw.windspeed} m/s`;
-            document.getElementById('wind-dir').textContent  = getWindDirection16(cw.winddirection);
-            document.getElementById('hero-temp').textContent = cw.temperature;
-            document.getElementById('hero-wind').textContent = cw.windspeed;
+        const jma = weatherData?.jma_amedas;
+        const cw  = weatherData?.current_weather;
+        const tempEl     = document.getElementById('temp');
+        const humEl      = document.getElementById('humidity');
+        const windEl     = document.getElementById('wind');
+        const windDirEl  = document.getElementById('wind-dir');
+        const precipEl   = document.getElementById('precip-1h');
+        const heroTempEl = document.getElementById('hero-temp');
+        const heroWindEl = document.getElementById('hero-wind');
+
+        if (jma) {
+            tempEl.textContent    = (jma.temp != null) ? `${jma.temp}℃` : '--℃';
+            humEl.textContent     = (jma.humidity != null) ? `${jma.humidity} %` : '-- %';
+            windEl.textContent    = (jma.wind != null) ? `${jma.wind} m/s` : '-- m/s';
+            windDirEl.textContent = getWindDirectionJma(jma.windDirection);
+            precipEl.textContent  = (jma.precipitation1h != null) ? `${jma.precipitation1h} mm` : '0 mm';
+            heroTempEl.textContent = (jma.temp != null) ? jma.temp : '--';
+            heroWindEl.textContent = (jma.wind != null) ? jma.wind : '--';
+        } else if (cw) {
+            tempEl.textContent    = `${cw.temperature}℃`;
+            humEl.textContent     = '-- %';
+            windEl.textContent    = `${cw.windspeed} m/s`;
+            windDirEl.textContent = getWindDirection16(cw.winddirection);
+            precipEl.textContent  = '-- mm';
+            heroTempEl.textContent = cw.temperature;
+            heroWindEl.textContent = cw.windspeed;
         } else {
-            document.getElementById('temp').textContent      = 'データなし';
-            document.getElementById('wind').textContent      = 'データなし';
-            document.getElementById('wind-dir').textContent  = '--';
-            document.getElementById('hero-temp').textContent = '--';
-            document.getElementById('hero-wind').textContent = '--';
+            tempEl.textContent    = 'データなし';
+            humEl.textContent     = '--';
+            windEl.textContent    = 'データなし';
+            windDirEl.textContent = '--';
+            precipEl.textContent  = '--';
+            heroTempEl.textContent = '--';
+            heroWindEl.textContent = '--';
         }
 
         const cur = marineData.marine?.current;
