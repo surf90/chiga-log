@@ -640,7 +640,7 @@ async function fetchWindForecast() {
                 dir: item.wind_direction_text || (item.wind_direction_deg != null ? getWindDirection16(Number(item.wind_direction_deg)) : 'データなし'),
                 speed: item.wind_speed_ms != null ? Number(item.wind_speed_ms).toFixed(1) : null,
             };
-        }).filter(item => item.h >= 8 && item.h <= 20 && item.ts >= cutoff && item.date === today).slice(0, 13);
+        }).filter(item => item.h >= 4 && item.h <= 23 && item.ts >= cutoff && item.date === today).slice(0, 21);
 
         windForecastRange = items.length > 0 ? `${items[0].time}-${items[items.length - 1].time}` : '';
         renderWindForecast(items);
