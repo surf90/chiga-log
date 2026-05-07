@@ -10,6 +10,13 @@ WEATHER_URL = (
     f"https://api.open-meteo.com/v1/forecast"
     f"?latitude={LAT}&longitude={LON}&current_weather=true&windspeed_unit=ms"
 )
+WIND_FORECAST_URL = (
+    f"https://api.open-meteo.com/v1/forecast"
+    f"?latitude={LAT}&longitude={LON}"
+    f"&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m"
+    f"&forecast_days=2&timezone=Asia%2FTokyo&windspeed_unit=ms"
+)
+
 MARINE_URL = (
     f"https://marine-api.open-meteo.com/v1/marine"
     f"?latitude={LAT}&longitude={LON}&current=wave_height,sea_surface_temperature"
@@ -96,8 +103,9 @@ def main() -> None:
     weather = fetch_json(WEATHER_URL)
     marine = fetch_json(MARINE_URL)
     jma_amedas = fetch_jma_amedas()
+    wind_fc = fetch_json(WIND_FORECAST_URL)
 
-    if weather is None or marine is None:
+    if weather is None or marine is None or wind_fc is None:
         raise RuntimeError("データの取得に失敗しました。")
 
     result = {
@@ -107,12 +115,32 @@ def main() -> None:
         "jma_amedas": jma_amedas,
     }
 
+    wind_hourly = wind_fc.get("hourly", {})
+    wind_items = []
+    for i, t in enumerate(wind_hourly.get("time", [])):
+        ws = (wind_hourly.get("wind_speed_10m") or [None])[i] if i < len(wind_hourly.get("wind_speed_10m", [])) else None
+        wd = (wind_hourly.get("wind_direction_10m") or [None])[i] if i < len(wind_hourly.get("wind_direction_10m", [])) else None
+        wg = (wind_hourly.get("wind_gusts_10m") or [None])[i] if i < len(wind_hourly.get("wind_gusts_10m", [])) else None
+        wind_items.append({"time": t, "wind_speed_ms": ws, "wind_direction_deg": wd, "wind_gust_ms": wg})
+
     os.makedirs("data", exist_ok=True)
     output_path = "data/weather_marine.json"
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
 
     print(f"保存完了: {output_path}")
+
+    wind_path = "data/wind_forecast.json"
+    wind_result = {
+        "source": "Open-Meteo",
+        "location": {"name": "茅ヶ崎ヘッドランド", "lat": LAT, "lon": LON},
+        "updated_at": result["updated_at"],
+        "interval": "1h",
+        "items": wind_items,
+    }
+    with open(wind_path, "w", encoding="utf-8") as f:
+        json.dump(wind_result, f, ensure_ascii=False, indent=2)
+    print(f"保存完了: {wind_path}")
 
 
 if __name__ == "__main__":

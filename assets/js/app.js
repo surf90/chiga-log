@@ -75,6 +75,24 @@ function getWindDirectionJma(num) {
     return directions[(num - 1) % 16] || '--';
 }
 
+function renderWindForecast(entries) {
+    const grid = document.getElementById('wind-forecast-list');
+    grid.innerHTML = '';
+    if (!entries || entries.length === 0) {
+        const row = document.createElement('div');
+        row.className = 'wind-row';
+        row.innerHTML = '<span class="wind-time">--:--</span><span class="wind-dir">データなし</span><span class="wind-speed">-</span>';
+        grid.appendChild(row);
+        return;
+    }
+    entries.forEach(({ time, dir, speed }) => {
+        const row = document.createElement('div');
+        row.className = 'wind-row';
+        row.innerHTML = `<span class="wind-time">${time}</span><span class="wind-dir">${dir || 'データなし'}</span><span class="wind-speed">${speed ?? '-'} m/s</span>`;
+        grid.appendChild(row);
+    });
+}
+
 async function calculateTide() {
     const synodicMonth = 29.530588853;
     const knownNewMoon = new Date('2000-01-06T18:14:00+09:00').getTime();
@@ -580,6 +598,47 @@ function toggleOverview() {
     }
 }
 
+
+function toggleWindForecast() {
+    const el = document.getElementById('wind-forecast-list');
+    const btn = document.getElementById('wind-forecast-toggle');
+    if (el.style.display === 'none' || !el.style.display) {
+        el.style.display = 'block';
+        btn.textContent = '予想風（08:00-20:00）を閉じる ▲';
+    } else {
+        el.style.display = 'none';
+        btn.textContent = '予想風（08:00-20:00）を表示 ▼';
+    }
+}
+
+
+async function fetchWindForecast() {
+    try {
+        const hourBuster = Math.floor(Date.now() / (60 * 60 * 1000));
+        const res = await fetch(`data/wind_forecast.json?t=${hourBuster}`);
+        if (!res.ok) throw new Error('wind_forecast.json fetch failed');
+        const data = await res.json();
+        const items = (data.items || []).map(item => {
+            const dt = new Date(item.time);
+            const hh = dt.getHours();
+            return {
+                h: hh,
+                time: dt.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
+                dir: item.wind_direction_text || (item.wind_direction_deg != null ? getWindDirection16(Number(item.wind_direction_deg)) : 'データなし'),
+                speed: item.wind_speed_ms != null ? Number(item.wind_speed_ms).toFixed(1) : null,
+            };
+        }).filter(item => item.h >= 8 && item.h <= 20).slice(0, 13);
+
+        renderWindForecast(items);
+        document.getElementById('wind-forecast-loading').style.display = 'none';
+        document.getElementById('wind-forecast-content').style.display = 'block';
+    } catch (e) {
+        console.error('Wind forecast error:', e);
+        document.getElementById('wind-forecast-loading').style.display = 'none';
+        document.getElementById('wind-forecast-error').style.display = 'block';
+    }
+}
+
 let waveChartInstance = null;
 
 async function fetchWaveGuidance() {
@@ -800,6 +859,7 @@ async function fetchWeatherData(isManual = false) {
             fetchJmaWarning(),
         ]);
         await fetchWaveGuidance();
+        await fetchWindForecast();
 
         // Open-Meteo: バックエンド生成の静的JSONを読み込む（30分キャッシュ）
         const wmData = await fetchWithCache('data/weather_marine.json', 'cache_weather_marine');
