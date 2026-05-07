@@ -333,6 +333,33 @@ h1 small {
     background: #0e7490;
     color: #fff;
 }
+
+.wind-grid {
+    display: none;
+    margin-top: 10px;
+}
+.wind-row {
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    gap: 8px;
+    align-items: center;
+    border-bottom: 1px dashed rgba(14,116,144,0.2);
+    padding: 6px 0;
+    font-size: 14px;
+}
+.wind-time {
+    color: var(--text-sub);
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+.wind-dir {
+    color: var(--text-main);
+    font-weight: 500;
+}
+.wind-speed {
+    color: #0e7490;
+    font-weight: 600;
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
 .warning-none {
     font-size: 14px;
     color: #707070;
