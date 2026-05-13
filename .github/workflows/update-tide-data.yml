@@ -6,6 +6,9 @@ on:
     - cron: '5 15 * * *'
   workflow_dispatch: # GitHubの画面から手動で実行するボタンも有効化
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   update-data:
     runs-on: ubuntu-latest

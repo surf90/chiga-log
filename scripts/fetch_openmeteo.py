@@ -1,4 +1,6 @@
 import json
+import time
+import urllib.error
 import urllib.request
 import os
 from datetime import datetime, timezone, timedelta
@@ -28,26 +30,47 @@ JMA_LATEST_TIME_URL = "https://www.jma.go.jp/bosai/amedas/data/latest_time.txt"
 JMA_AMEDAS_MAP_URL = "https://www.jma.go.jp/bosai/amedas/data/map/{ymdhns}.json"
 
 
-def fetch_json(url: str) -> dict | None:
-    """URLからJSONデータを取得する。"""
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (ChigaLog/1.0)"})
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            return json.loads(resp.read().decode("utf-8"))
-    except Exception as e:
-        print(f"[error] {url}: {e}")
-        return None
+_MAX_ATTEMPTS = 3
+_BACKOFF_SECONDS = (2, 4)
 
 
-def fetch_text(url: str) -> str | None:
-    """URLからテキストデータを取得する。"""
+def _fetch_with_retry(url: str, label: str, parse_json: bool):
+    """URL取得を最大3回試行する。一時的な失敗はバックオフでリトライする。"""
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (ChigaLog/1.0)"})
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            return resp.read().decode("utf-8")
-    except Exception as e:
-        print(f"[error] {url}: {e}")
-        return None
+    for attempt in range(1, _MAX_ATTEMPTS + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                raw = resp.read().decode("utf-8")
+                return json.loads(raw) if parse_json else raw
+        except urllib.error.HTTPError as e:
+            # 4xx (429除く) はリトライしても無駄
+            if 400 <= e.code < 500 and e.code != 429:
+                print(f"[error] {label} {url}: HTTP {e.code} {e.reason}")
+                return None
+            last_err = f"HTTP {e.code} {e.reason}"
+        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as e:
+            last_err = repr(e)
+        except Exception as e:
+            print(f"[error] {label} {url}: {e}")
+            return None
+
+        if attempt < _MAX_ATTEMPTS:
+            wait = _BACKOFF_SECONDS[attempt - 1]
+            print(f"[warn] {label} attempt {attempt}/{_MAX_ATTEMPTS} failed: {url}: {last_err} (retry in {wait}s)")
+            time.sleep(wait)
+        else:
+            print(f"[error] {label} giving up after {_MAX_ATTEMPTS} attempts: {url}: {last_err}")
+    return None
+
+
+def fetch_json(url: str, label: str) -> dict | None:
+    """URLからJSONデータを取得する。失敗時は最大3回までリトライする。"""
+    return _fetch_with_retry(url, label, parse_json=True)
+
+
+def fetch_text(url: str, label: str) -> str | None:
+    """URLからテキストデータを取得する。失敗時は最大3回までリトライする。"""
+    return _fetch_with_retry(url, label, parse_json=False)
 
 
 def _qc_value(field):
@@ -65,7 +88,7 @@ def fetch_jma_amedas() -> dict | None:
 
     ガイドライン遵守のため latest_time.txt を必ず参照してから map JSON を取得する。
     """
-    latest = fetch_text(JMA_LATEST_TIME_URL)
+    latest = fetch_text(JMA_LATEST_TIME_URL, "jma_latest_time")
     if not latest:
         return None
     latest = latest.strip().lstrip("﻿")
@@ -77,7 +100,7 @@ def fetch_jma_amedas() -> dict | None:
         return None
 
     ymdhns = observed_dt.strftime("%Y%m%d%H%M%S")
-    data = fetch_json(JMA_AMEDAS_MAP_URL.format(ymdhns=ymdhns))
+    data = fetch_json(JMA_AMEDAS_MAP_URL.format(ymdhns=ymdhns), "jma_amedas_map")
     if not data:
         return None
     point = data.get(JMA_AMEDAS_CODE)
@@ -100,13 +123,14 @@ def main() -> None:
     """Open-MeteoとMarine APIからデータを取得してweather_marine.jsonを生成する。"""
     print("Open-Meteo データの取得を開始します...")
 
-    weather = fetch_json(WEATHER_URL)
-    marine = fetch_json(MARINE_URL)
+    weather = fetch_json(WEATHER_URL, "weather")
+    marine = fetch_json(MARINE_URL, "marine")
     jma_amedas = fetch_jma_amedas()
-    wind_fc = fetch_json(WIND_FORECAST_URL)
+    wind_fc = fetch_json(WIND_FORECAST_URL, "wind_forecast")
 
-    if weather is None or marine is None or wind_fc is None:
-        raise RuntimeError("データの取得に失敗しました。")
+    failed = [k for k, v in {"weather": weather, "marine": marine, "wind_fc": wind_fc}.items() if v is None]
+    if failed:
+        raise RuntimeError(f"必須データ取得失敗: {failed}")
 
     result = {
         "updated_at": datetime.now(timezone(timedelta(hours=9))).isoformat(),
