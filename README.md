@@ -47,6 +47,28 @@ https://surf90.github.io/chiga-log/
 <details>
 <summary><b>（クリックで展開）</b></summary>
 
+## GitHub Actions シークレット
+
+フォークして使う場合は以下のリポジトリシークレットを「Settings → Secrets and variables → Actions → New repository secret」で設定してください。
+
+| 名前 | 用途 | 必須 |
+|---|---|:-:|
+| `STORMGLASS_API_KEY` | 気象庁潮汐データ欠損時のフォールバック（`scripts/fetch_tide.py`, `scripts/extract_daily_data.py`） | 任意 |
+
+未設定の場合、Stormglassフォールバックはスキップされ、気象庁データが取得できなければ「取得失敗」が表示されます（誤読防止のためダミー潮汐は表示しません）。
+
+## ローカル動作確認チェックリスト
+
+`python -m http.server 8000` 起動後、ブラウザで http://localhost:8000 を開いて以下を確認:
+
+- [ ] ヒーローカード3枚（SEA / AIR / WIND）に `--` ではなく実数値が表示される
+- [ ] 潮汐セクションに「大潮/中潮/...」と月齢が出る（「NASA」または「計算値」のラベル）
+- [ ] 潮汐グラフと波グラフが2つとも描画され、スクロールが同期する
+- [ ] 警報セクションが「✅ 現在、注意報・警報はありません」または該当バッジ
+- [ ] 天気予報「天気/降水確率/最高最低」が `--` でない
+- [ ] 風予報トグルを開くと時刻別の風速一覧が出る
+- [ ] DevTools Console にエラーが出ていない
+
 ## 使い方（ローカルでの開発・確認方法）
 
 本アプリは静的なHTML/JavaScriptで構築されていますが、潮汐データ（tide_data.json）の読み込みに fetch APIを使用しています。
@@ -120,7 +142,14 @@ git push
 **推奨実行時期:** 毎年12月下旬〜1月上旬（翌年分のデータが公開されたタイミング）
 
 ### 準備
-この処理はPythonの標準ライブラリのみを使用するため、追加のインストール（`pip install`など）は不要です。
+本リポジトリの実行系スクリプト（`scripts/*.py`）は Python 3.10+ の**標準ライブラリのみ**で動作するため、追加のインストールは不要です。
+
+`scripts/requirements.txt` には**開発時に任意で使う**ツール（テスト実行用の `pytest`）を記載しています。テストを走らせる場合のみ:
+
+```bash
+pip install -r scripts/requirements.txt
+pytest tests
+```
 
 ### 手順
 
@@ -146,9 +175,13 @@ python generate_tide.py
 
 **補足**
 
-データの取得元: 気象庁 潮汐観測資料（江の島）
+データの取得元: 気象庁 潮汐観測資料（江の島・観測所コード `D8`）
 
-https://www.data.jma.go.jp/kaiyou/db/tide/suisan/txt/
+```
+https://www.data.jma.go.jp/kaiyou/data/db/tide/suisan/txt/<year>/D8.txt
+```
+
+`scripts/generate_tide.py` の `JMA_TIDE_URL` 定数で参照しています。気象庁側でパス構造が変更された場合は当該定数を更新してください。
 
 ---
 

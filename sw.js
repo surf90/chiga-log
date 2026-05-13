@@ -1,10 +1,11 @@
-const CACHE_NAME = 'chigalog-v3';
+const CACHE_NAME = 'chigalog-v4';
 const BASE = self.location.pathname.replace(/sw\.js$/, '');
 const ASSETS = [
   BASE,
   BASE + 'index.html',
   BASE + 'assets/css/style.min.css',
   BASE + 'assets/js/app.min.js',
+  BASE + 'assets/vendor/chart.umd.min.js',
 ];
 
 self.addEventListener('install', e => {

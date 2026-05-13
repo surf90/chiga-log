@@ -1,2 +1,8 @@
-# 現在のスクリプトは標準ライブラリ（urllib, json, datetime等）のみで動くため、
-# 外部パッケージのインストールは基本的に不要です。空のままで問題ありません。
+# 実行系スクリプト（GitHub Actionsから呼ばれるもの）は標準ライブラリのみで動作するため、
+# 本番では pip install は不要です。
+#
+# 以下は開発時のみ使用するツールです:
+#   pip install -r scripts/requirements.txt
+#   pytest tests
+
+pytest>=8.0

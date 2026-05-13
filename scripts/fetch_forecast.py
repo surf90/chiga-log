@@ -1,36 +1,17 @@
-import json
-import urllib.request
-import os
-from datetime import datetime, timezone, timedelta
+"""気象庁の天気予報（140000神奈川県）と概況を取得する。"""
+
+from _common import http_get_json, now_jst, save_json
 
 
-def fetch_json(url):
-    """URLからJSONデータを取得する。"""
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (ChigaLog/1.0)'})
-    try:
-        with urllib.request.urlopen(req) as response:
-            return json.loads(response.read().decode('utf-8'))
-    except Exception as e:
-        print(f"Error fetching {url}: {e}")
-        return None
-
-
-def main():
+def main() -> None:
     print("気象庁 天気予報データの取得を開始します...")
 
-    aggregated_data = {
-        "updated_at": datetime.now(timezone(timedelta(hours=9))).isoformat(),
-        "forecast": fetch_json("https://www.jma.go.jp/bosai/forecast/data/forecast/140000.json"),
-        "overview": fetch_json("https://www.jma.go.jp/bosai/forecast/data/overview_forecast/140000.json"),
-    }
-
-    os.makedirs("data", exist_ok=True)
-
-    output_path = "data/forecast_data.json"
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(aggregated_data, f, ensure_ascii=False, indent=2)
-
-    print(f"保存完了: {output_path}")
+    save_json("data/forecast_data.json", {
+        "updated_at": now_jst().isoformat(),
+        "forecast": http_get_json("https://www.jma.go.jp/bosai/forecast/data/forecast/140000.json"),
+        "overview": http_get_json("https://www.jma.go.jp/bosai/forecast/data/overview_forecast/140000.json"),
+    }, indent=2)
+    print("保存完了: data/forecast_data.json")
 
 
 if __name__ == "__main__":
