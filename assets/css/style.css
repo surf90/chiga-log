@@ -469,3 +469,84 @@ p.note strong a {
 #weather-content {
     transition: opacity 0.3s ease;
 }
+#weather-content.is-updating {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* スケルトンローディング */
+.hero-cards-skeleton { margin-bottom: 20px; }
+.skeleton-hero-card {
+    background: #e2e8f0;
+    border-radius: 12px;
+    height: 72px;
+}
+.skeleton-line-spacer { margin-top: 20px; }
+
+/* 状態表示 */
+.section-loading { color: #707070; font-size: 14px; }
+.section-error   { display: none; color: #c0392b; font-size: 14px; }
+.hidden          { display: none; }
+.float-alert-wrap { overflow: hidden; margin-bottom: 4px; }
+.note-z          { position: relative; z-index: 10; }
+
+/* ヒーローカードのクリック可能化 */
+.hero-card { cursor: pointer; }
+
+/* 潮汐表示の文字スタイル */
+.tide-age-label { font-weight: normal; font-size: 0.85em; color: #707070; }
+.tide-height    { color: #888888; font-weight: normal; font-size: 0.85em; }
+.tide-sep       { color: #888888; font-weight: normal; }
+.tide-high      { color: #0275d8; font-weight: bold; }
+.tide-low       { color: #d9534f; font-weight: bold; }
+.tide-error     { color: #c0392b; font-size: 0.9rem; }
+
+/* 波グラフ凡例 */
+.wave-legend {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+.wave-legend-item {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: opacity 0.2s, text-decoration 0.2s;
+}
+.wave-legend-item.disabled {
+    opacity: 0.4;
+    text-decoration: line-through;
+}
+.wave-legend-swatch {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+/* チャート横スクロールラッパー */
+.chart-scroll {
+    overflow-x: scroll;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+.tide-chart-scroll-wrap { margin-top: 20px; }
+.tide-chart-area  { display: none; height: 160px; }
+.wave-chart-area  { height: 200px; margin-top: 12px; }
+
+/* 台風通知行 */
+.typhoon-notice {
+    display: none;
+    color: #c0392b;
+    font-weight: bold;
+}
+
+/* セクション補足ラベル */
+.section-sub {
+    font-weight: 400;
+    color: #aaaaaa;
+    font-size: 10px;
+}
