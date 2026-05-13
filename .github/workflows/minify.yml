@@ -7,6 +7,9 @@ on:
       - 'assets/css/style.css'
       - 'assets/js/app.js'
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   minify:
     runs-on: ubuntu-latest

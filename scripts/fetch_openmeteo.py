@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from _common import JST, http_get_json, http_get_text, now_jst, save_json
+from _common import http_get_json, http_get_text, now_jst, save_json
 
 LAT = 35.3175
 LON = 139.4151
@@ -39,7 +39,10 @@ def _qc_value(field):
 
 
 def fetch_jma_amedas() -> dict | None:
-    """気象庁アメダス(辻堂)の最新観測値を取得する。"""
+    """気象庁アメダス(辻堂)の最新観測値を取得する。
+
+    ガイドライン遵守のため latest_time.txt を必ず参照してから map JSON を取得する。
+    """
     latest = http_get_text(JMA_LATEST_TIME_URL)
     if not latest:
         return None
@@ -96,8 +99,9 @@ def main() -> None:
     jma_amedas = fetch_jma_amedas()
     wind_fc = http_get_json(WIND_FORECAST_URL)
 
-    if weather is None or marine is None or wind_fc is None:
-        raise RuntimeError("データの取得に失敗しました。")
+    failed = [k for k, v in {"weather": weather, "marine": marine, "wind_fc": wind_fc}.items() if v is None]
+    if failed:
+        raise RuntimeError(f"必須データ取得失敗: {failed}")
 
     updated_at = now_jst().isoformat()
 

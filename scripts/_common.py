@@ -1,4 +1,4 @@
-"""共通ユーティリティ: HTTP取得、JSON入出力、JST日時。
+"""共通ユーティリティ: HTTP取得（リトライ付き）、JSON入出力、JST日時。
 
 GitHub Actionsから実行される各データ取得スクリプトで共有する。
 """
@@ -6,6 +6,7 @@ GitHub Actionsから実行される各データ取得スクリプトで共有す
 import json
 import os
 import sys
+import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -13,24 +14,49 @@ from datetime import datetime, timedelta, timezone
 JST = timezone(timedelta(hours=9), "JST")
 USER_AGENT = "Mozilla/5.0 (ChigaLog/1.0)"
 DEFAULT_TIMEOUT = 15
+_MAX_ATTEMPTS = 3
+_BACKOFF_SECONDS = (2, 4)
 
 
-def http_get_bytes(url: str, *, headers: dict[str, str] | None = None, timeout: int = DEFAULT_TIMEOUT) -> bytes | None:
-    """URLからバイト列を取得する。失敗時はNone。"""
+def _http_request(url: str, *, headers: dict[str, str] | None, timeout: int) -> bytes | None:
+    """指定URLに対してリトライ付きでHTTPリクエストを送り、本文バイト列を返す。
+
+    一時的な失敗（5xx, 429, ネットワーク例外）はバックオフでリトライする。
+    4xx (429除く) は即時にNone。
+    """
     h = {"User-Agent": USER_AGENT}
     if headers:
         h.update(headers)
     req = urllib.request.Request(url, headers=h)
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return resp.read()
-    except urllib.error.URLError as e:
-        code = getattr(e, "code", None)
-        print(f"[http] {url}: {e} (HTTP {code})", file=sys.stderr)
-        return None
-    except Exception as e:
-        print(f"[http] {url}: {e}", file=sys.stderr)
-        return None
+    label = url
+    last_err = ""
+    for attempt in range(1, _MAX_ATTEMPTS + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return resp.read()
+        except urllib.error.HTTPError as e:
+            if 400 <= e.code < 500 and e.code != 429:
+                print(f"[http] {label}: HTTP {e.code} {e.reason}", file=sys.stderr)
+                return None
+            last_err = f"HTTP {e.code} {e.reason}"
+        except (urllib.error.URLError, TimeoutError) as e:
+            last_err = repr(e)
+        except Exception as e:
+            print(f"[http] {label}: {e}", file=sys.stderr)
+            return None
+
+        if attempt < _MAX_ATTEMPTS:
+            wait = _BACKOFF_SECONDS[attempt - 1]
+            print(f"[http] attempt {attempt}/{_MAX_ATTEMPTS} failed: {label}: {last_err} (retry in {wait}s)", file=sys.stderr)
+            time.sleep(wait)
+        else:
+            print(f"[http] giving up after {_MAX_ATTEMPTS} attempts: {label}: {last_err}", file=sys.stderr)
+    return None
+
+
+def http_get_bytes(url: str, *, headers: dict[str, str] | None = None, timeout: int = DEFAULT_TIMEOUT) -> bytes | None:
+    """URLからバイト列を取得する。最大3回までリトライ。失敗時はNone。"""
+    return _http_request(url, headers=headers, timeout=timeout)
 
 
 def http_get_text(url: str, *, encoding: str = "utf-8", headers: dict[str, str] | None = None, timeout: int = DEFAULT_TIMEOUT) -> str | None:
