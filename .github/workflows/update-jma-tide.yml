@@ -7,6 +7,10 @@ on:
     - cron: '5 15 1 7 *'
   workflow_dispatch: # 手動実行ボタンも有効化
 
+concurrency:
+  group: data-push
+  cancel-in-progress: false
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -33,4 +37,10 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add data/tidedata.json
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update JMA tide data" && git push)
+        if ! git diff --quiet || ! git diff --staged --quiet; then
+          git commit -m "Auto-update JMA tide data"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && break
+            sleep $((RANDOM % 10 + 5))
+          done
+        fi

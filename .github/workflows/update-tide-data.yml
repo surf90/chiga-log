@@ -6,6 +6,10 @@ on:
     - cron: '5 15 * * *'
   workflow_dispatch: # GitHubの画面から手動で実行するボタンも有効化
 
+concurrency:
+  group: data-push
+  cancel-in-progress: false
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -36,4 +40,10 @@ jobs:
         git config --local user.name "GitHub Action"
         git add data/tide_data.json
         # データに更新（差分）がある場合のみコミットしてプッシュする
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update tide data" && git push)
+        if ! git diff --quiet || ! git diff --staged --quiet; then
+          git commit -m "Auto-update tide data"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && break
+            sleep $((RANDOM % 10 + 5))
+          done
+        fi
