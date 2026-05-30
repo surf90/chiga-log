@@ -1,18 +1,18 @@
 {
-  "updated_at": "2026-05-30T09:11:31.475194+09:00",
+  "updated_at": "2026-05-30T13:34:32.023964+09:00",
   "current_weather": {
-    "time": "2026-05-30T00:00",
+    "time": "2026-05-30T04:30",
     "interval": 900,
-    "temperature": 21.4,
-    "windspeed": 1.12,
-    "winddirection": 280,
+    "temperature": 23.3,
+    "windspeed": 5.12,
+    "winddirection": 176,
     "is_day": 1,
     "weathercode": 0
   },
   "marine": {
     "latitude": 35.291664,
     "longitude": 139.37502,
-    "generationtime_ms": 0.19276142120361328,
+    "generationtime_ms": 0.1442432403564453,
     "utc_offset_seconds": 0,
     "timezone": "GMT",
     "timezone_abbreviation": "GMT",
@@ -24,19 +24,19 @@
       "sea_surface_temperature": "°C"
     },
     "current": {
-      "time": "2026-05-30T00:00",
+      "time": "2026-05-30T04:30",
       "interval": 900,
       "wave_height": 0.46,
-      "sea_surface_temperature": 20.8
+      "sea_surface_temperature": 21.3
     }
   },
   "jma_amedas": {
-    "observed_at": "2026-05-30T09:00:00+09:00",
+    "observed_at": "2026-05-30T13:20:00+09:00",
     "amedas_code": "46091",
-    "temp": 25.9,
-    "wind": 2.2,
+    "temp": 27.1,
+    "wind": 5.1,
     "windDirection": 9,
-    "humidity": 32,
+    "humidity": 43,
     "precipitation1h": 0.0
   }
 }
