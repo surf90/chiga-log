@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx --yes terser assets/js/app.js --compress --mangle --output assets/js/app.min.js)",
+      "Bash(curl -sL \"https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js\" -o \"D:/My Documents/GitHub/chiga-log/assets/vendor/chart.umd.min.js\")",
+      "Bash(npx --yes terser assets/js/app.min.js -c -m -o assets/js/app.min.js)",
+      "Bash(npx --yes clean-css-cli -o assets/css/style.min.css assets/css/style.css)",
+      "Bash(python -m http.server 8765)",
+      "Bash(curl -sI http://localhost:8765/assets/vendor/chart.umd.min.js)",
+      "Bash(curl -sI http://localhost:8765/assets/js/app.min.js)",
+      "Bash(curl -sI http://localhost:8765/assets/css/style.min.css)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
+    ]
+  }
+}
