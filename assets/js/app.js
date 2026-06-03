@@ -769,19 +769,34 @@ async function fetchJmaWarning() {
       localStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() }));
     }
 
+    // JMAは警報を一次細分区域(東部=140010)単位で発表する。市町村(茅ヶ崎=1420700)
+    // の配列が空/解除のまま残るケースがあるため、両エリアを併合して取りこぼしを防ぐ。
+    const regionAreas = data.areaTypes?.[0]?.areas ?? [];
     const cityAreas = data.areaTypes?.[1]?.areas ?? [];
-    const chigasakiArea = cityAreas.find((a) => a.code === "1420700");
+    const regionArea = regionAreas.find((a) => a.code === "140010"); // 東部
+    const cityArea = cityAreas.find((a) => a.code === "1420700"); // 茅ヶ崎市
     const listEl = document.getElementById("jma-warning-list");
     listEl.innerHTML = "";
 
-    const rawWarnings = chigasakiArea?.warnings ?? [];
-    const activeWarnings = rawWarnings.filter(
-      (w) => w && w.code && w.code !== "00" && w.status !== "解除",
+    // コードをキーに集約。解除エントリで有効発令を上書きしない。
+    const byCode = new Map();
+    for (const w of [
+      ...(regionArea?.warnings ?? []),
+      ...(cityArea?.warnings ?? []),
+    ]) {
+      if (!w || !w.code || w.code === "00") continue;
+      const prev = byCode.get(w.code);
+      if (!prev || prev.status === "解除") byCode.set(w.code, w);
+    }
+    const activeWarnings = [...byCode.values()].filter(
+      (w) => w.status !== "解除",
     );
     console.debug("[JMA warning]", {
       reportDatetime: data.reportDatetime,
-      areaFound: !!chigasakiArea,
-      rawWarnings,
+      regionFound: !!regionArea,
+      cityFound: !!cityArea,
+      regionWarnings: regionArea?.warnings ?? [],
+      cityWarnings: cityArea?.warnings ?? [],
       activeCount: activeWarnings.length,
     });
 
