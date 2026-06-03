@@ -1,8 +1,30 @@
 ---
-updated: 2026-05-07
+updated: 2026-06-03
 ---
 
 # ちがログ 進捗メモ
+
+## 完了済み（2026-06-03）
+
+### 警報・注意報の取得をBFF化（bosai更新停止対策） (PR #92→#93→#94 → main マージ)
+
+- **背景**: 茅ヶ崎で発令中でもカードが「✅ なし」表示になる不具合。調査の結果、JMA bosai の警報JSON（`warning/140000.json`）が**神奈川県で更新停止**（forecast は最新なのに warning だけ凍結）。最新データは `data.jma.go.jp` のレガシーフィード（`VPWS50/JPTF`）にのみ存在。
+- **制約**: レガシーフィードは CORS 非対応 → ブラウザ直 fetch 不可。
+- **対応**: BFF化。GitHub Actions 側で取得し同一オリジンJSONへ書き出し。
+  - `scripts/fetch_warning.py`（新規）：`VPWS50/JPTF_jp.json` の `itemArea4` から茅ヶ崎（`1420700`）を抽出し `data/warning_chigasaki.json` へ出力。取得失敗時は既存ファイルを温存（誤って空にしない＝三原則1）。
+  - `.github/workflows/fetch_openmeteo.yml`：警報取得ステップ＋`git add` 追加。**既存30分cronに相乗り（新規cron追加なし）**。
+  - `assets/js/app.js`：`fetchJmaWarning()` を同一オリジンJSON読み込みに全面置換。レベル判定を名称ベース化（レベル4「危険警報」にも対応）。`WARNING_CODE_MAP` 撤去。
+  - `sw.js`：`CACHE_NAME` `'chigalog-v4'` → `'chigalog-v5'`（更新JS配信）。
+- 経緯メモ：#92（cache-buster＋TTL短縮）, #93（東部140010併合）は bosai が空データだったため無効と判明。真因特定後 #94 で BFF へ切替し解決。
+
+**関連ファイル**
+- `scripts/fetch_warning.py`（新規）
+- `assets/js/app.js` / `app.min.js`
+- `.github/workflows/fetch_openmeteo.yml`
+- `sw.js`
+- `data/warning_chigasaki.json`（Actions 自動生成 / 初期データ同梱）
+
+---
 
 ## 完了済み（2026-05-07）
 

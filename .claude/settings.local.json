@@ -1,7 +1,20 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python scripts/dl_wave-guid.py)"
+      "Bash(python scripts/dl_wave-guid.py)",
+      "Bash(python3 -)",
+      "Bash(curl -s \"https://www.data.jma.go.jp/multi/warn/warn_detail.html?code=140010&selected_code=1420700&warning=all&lang=jp\")",
+      "Bash(curl -s \"https://www.data.jma.go.jp/multi/warn/js/warn_detail.js\")",
+      "Bash(curl -s 'https://www.data.jma.go.jp/multi/warn/warn_detail.html?code=140010&selected_code=1420700&warning=all&lang=jp')",
+      "Bash(grep -inE \"getJSON|ajax|\\\\.json|\\\\.xml|url|VPWW|warn/data|bosai|/data/\" /tmp/warn_detail.js | head -40)",
+      "Bash(curl -s -o /tmp/jptf.json -w \"JPTF_jp.json http=%{http_code} size=%{size_download}\\\\n\" \"https://www.data.jma.go.jp/multi/data/VPWS50/JPTF_jp.json\")",
+      "Bash(curl -s \"https://www.data.jma.go.jp/multi/data/VPWS50/JPTF_jp.json\")",
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s -I \"https://www.data.jma.go.jp/multi/data/VPWS50/JPTF_jp.json\")",
+      "Bash(curl -s -I \"https://www.jma.go.jp/bosai/warning/data/warning/140000.json\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('itemArea4件数:',len\\(d['itemArea4']\\)\\); print\\('1420700 kind数:',[len\\(a['kind']\\) for a in d['itemArea4'] if a['area']['code']=='1420700']\\)\")",
+      "Bash(curl -s __TRACKED_VAR__?_=__TRACKED_VAR__)",
+      "Bash(grep -A3 schedule: .github/workflows/__TRACKED_VAR__.yml)"
     ]
   }
 }
