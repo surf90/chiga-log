@@ -14,5 +14,8 @@ exclude:
   - scripts/
   - DESIGN.md
   - progress.md
+  - CLAUDE.md
+  - README.md
+  - reports/
 
 google_analytics: G-L922RQ9G6R
