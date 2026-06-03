@@ -710,95 +710,28 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
 }
 
 // ─── 6. 警報・注意報 ────────────────────────────────────────
-const WARNING_CODE_MAP = {
-  "02": { name: "暴風雪警報", level: "keiho" },
-  "03": { name: "大雨警報", level: "keiho" },
-  "04": { name: "洪水警報", level: "keiho" },
-  "05": { name: "暴風警報", level: "keiho" },
-  "06": { name: "大雪警報", level: "keiho" },
-  "07": { name: "波浪警報", level: "keiho" },
-  "08": { name: "高潮警報", level: "keiho" },
-  "09": { name: "土砂災害警報", level: "keiho" },
-  10: { name: "大雨注意報", level: "chuiho" },
-  12: { name: "大雪注意報", level: "chuiho" },
-  13: { name: "風雪注意報", level: "chuiho" },
-  14: { name: "雷注意報", level: "chuiho" },
-  15: { name: "強風注意報", level: "chuiho" },
-  16: { name: "波浪注意報", level: "chuiho" },
-  17: { name: "融雪注意報", level: "chuiho" },
-  18: { name: "洪水注意報", level: "chuiho" },
-  19: { name: "高潮注意報", level: "chuiho" },
-  20: { name: "濃霧注意報", level: "chuiho" },
-  21: { name: "乾燥注意報", level: "chuiho" },
-  22: { name: "なだれ注意報", level: "chuiho" },
-  23: { name: "低温注意報", level: "chuiho" },
-  24: { name: "霜注意報", level: "chuiho" },
-  25: { name: "着氷注意報", level: "chuiho" },
-  26: { name: "着雪注意報", level: "chuiho" },
-  32: { name: "暴風雪特別警報", level: "tokubetsu" },
-  33: { name: "大雨特別警報", level: "tokubetsu" },
-  35: { name: "暴風特別警報", level: "tokubetsu" },
-  36: { name: "大雪特別警報", level: "tokubetsu" },
-  37: { name: "波浪特別警報", level: "tokubetsu" },
-  38: { name: "高潮特別警報", level: "tokubetsu" },
-};
+// 注: JMA bosai の警報JSON(140000.json)は神奈川で更新停止が確認されたため、
+// GitHub Actions側(BFF)が最新のレガシーフィードから抽出した同一オリジンの
+// data/warning_chigasaki.json を読む。クライアントからJMAは直接叩かない。
+
+/** 警報名からバッジ用レベルを判定する。危険警報(レベル4)も「警報」を含むためkeiho。 */
+function warningLevelFromName(name) {
+  if (name.includes("特別警報")) return "tokubetsu";
+  if (name.includes("警報")) return "keiho";
+  return "chuiho";
+}
 
 async function fetchJmaWarning() {
-  const warningUrl =
-    "https://www.jma.go.jp/bosai/warning/data/warning/140000.json";
   try {
-    // ブラウザHTTPキャッシュを避けるため毎分粒度のクエリ + no-store
-    // localStorageキャッシュは3分に短縮し、発令の取りこぼしを防ぐ
-    const cacheKey = "cache_jma_warning";
-    const ttlMs = 3 * 60 * 1000;
-    let data;
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        if (Date.now() - parsed.ts < ttlMs) data = parsed.data;
-      } catch {
-        localStorage.removeItem(cacheKey);
-      }
-    }
-    if (!data) {
-      const bust = Math.floor(Date.now() / 60000);
-      const res = await fetch(`${warningUrl}?_=${bust}`, { cache: "no-store" });
-      if (!res.ok) throw new Error(`fetch failed: ${warningUrl}`);
-      data = await res.json();
-      localStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() }));
-    }
+    const bust = Math.floor(Date.now() / 60000);
+    const res = await fetch(`data/warning_chigasaki.json?t=${bust}`);
+    if (!res.ok) throw new Error("warning_chigasaki.json fetch failed");
+    const data = await res.json();
 
-    // JMAは警報を一次細分区域(東部=140010)単位で発表する。市町村(茅ヶ崎=1420700)
-    // の配列が空/解除のまま残るケースがあるため、両エリアを併合して取りこぼしを防ぐ。
-    const regionAreas = data.areaTypes?.[0]?.areas ?? [];
-    const cityAreas = data.areaTypes?.[1]?.areas ?? [];
-    const regionArea = regionAreas.find((a) => a.code === "140010"); // 東部
-    const cityArea = cityAreas.find((a) => a.code === "1420700"); // 茅ヶ崎市
     const listEl = document.getElementById("jma-warning-list");
     listEl.innerHTML = "";
 
-    // コードをキーに集約。解除エントリで有効発令を上書きしない。
-    const byCode = new Map();
-    for (const w of [
-      ...(regionArea?.warnings ?? []),
-      ...(cityArea?.warnings ?? []),
-    ]) {
-      if (!w || !w.code || w.code === "00") continue;
-      const prev = byCode.get(w.code);
-      if (!prev || prev.status === "解除") byCode.set(w.code, w);
-    }
-    const activeWarnings = [...byCode.values()].filter(
-      (w) => w.status !== "解除",
-    );
-    console.debug("[JMA warning]", {
-      reportDatetime: data.reportDatetime,
-      regionFound: !!regionArea,
-      cityFound: !!cityArea,
-      regionWarnings: regionArea?.warnings ?? [],
-      cityWarnings: cityArea?.warnings ?? [],
-      activeCount: activeWarnings.length,
-    });
+    const activeWarnings = (data.warnings ?? []).filter((w) => w && w.name);
 
     const warningBox = document.getElementById("jma-warning-box");
     const floatingBar = document.getElementById("floating-alert-bar");
@@ -811,50 +744,44 @@ async function fetchJmaWarning() {
     } else {
       warningBox.classList.add("warning-active");
       const order = { tokubetsu: 0, keiho: 1, chuiho: 2 };
-      activeWarnings.sort((a, b) => {
-        const la = (WARNING_CODE_MAP[a.code] || {}).level || "chuiho";
-        const lb = (WARNING_CODE_MAP[b.code] || {}).level || "chuiho";
-        return (order[la] ?? 9) - (order[lb] ?? 9);
-      });
+      activeWarnings.sort(
+        (a, b) =>
+          (order[warningLevelFromName(a.name)] ?? 9) -
+          (order[warningLevelFromName(b.name)] ?? 9),
+      );
       activeWarnings.forEach((w) => {
-        const info = WARNING_CODE_MAP[w.code] || {
-          name: `コード${w.code}`,
-          level: "chuiho",
-        };
+        const level = warningLevelFromName(w.name);
         const levelLabel =
-          info.level === "tokubetsu"
+          level === "tokubetsu"
             ? "特別警報"
-            : info.level === "keiho"
+            : level === "keiho"
               ? "警報"
               : "注意報";
         const item = document.createElement("div");
         item.className = "warning-item";
         const badge = document.createElement("span");
-        badge.className = `warning-badge badge-${info.level}`;
+        badge.className = `warning-badge badge-${level}`;
         badge.textContent = levelLabel;
         const name = document.createElement("span");
         name.className = "warning-name";
-        name.textContent = info.name;
+        name.textContent = w.name;
         item.append(badge, name);
         listEl.appendChild(item);
       });
 
-      const topLevel =
-        (WARNING_CODE_MAP[activeWarnings[0].code] || {}).level || "chuiho";
+      const topLevel = warningLevelFromName(activeWarnings[0].name);
       if (topLevel === "tokubetsu" || topLevel === "keiho") {
         const hasTokubetsu = activeWarnings.some(
-          (w) => (WARNING_CODE_MAP[w.code] || {}).level === "tokubetsu",
+          (w) => warningLevelFromName(w.name) === "tokubetsu",
         );
         const severeList = activeWarnings.filter((w) => {
-          const lv = (WARNING_CODE_MAP[w.code] || {}).level;
+          const lv = warningLevelFromName(w.name);
           return lv === "tokubetsu" || lv === "keiho";
         });
-        let barText;
-        if (severeList.length === 1) {
-          barText = `⚠ ${WARNING_CODE_MAP[severeList[0].code].name} 発令中`;
-        } else {
-          barText = `⚠ ${hasTokubetsu ? "特別警報・警報" : "警報"} 発令中`;
-        }
+        const barText =
+          severeList.length === 1
+            ? `⚠ ${severeList[0].name} 発令中`
+            : `⚠ ${hasTokubetsu ? "特別警報・警報" : "警報"} 発令中`;
         floatingBar.textContent = barText;
         floatingBar.className = `floating-alert level-${hasTokubetsu ? "tokubetsu" : "keiho"}`;
         floatingBar.style.display = "block";
@@ -872,18 +799,8 @@ async function fetchJmaWarning() {
       headlineEl.className = "warning-headline";
       contentEl.appendChild(headlineEl);
     }
-    if (activeWarnings.length > 0 && data.headlineText) {
-      const dt = data.reportDatetime
-        ? new Date(data.reportDatetime).toLocaleString("ja-JP", {
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })
-        : "";
-      headlineEl.textContent = dt
-        ? `${data.headlineText}（${dt} 発表）`
-        : data.headlineText;
+    if (activeWarnings.length > 0 && data.reportDateTime) {
+      headlineEl.textContent = `気象庁発表（${data.reportDateTime}）`;
       headlineEl.style.display = "block";
     } else {
       headlineEl.style.display = "none";

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chigalog-v4';
+const CACHE_NAME = 'chigalog-v5';
 const BASE = self.location.pathname.replace(/sw\.js$/, '');
 const ASSETS = [
   BASE,
