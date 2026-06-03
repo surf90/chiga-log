@@ -13,7 +13,6 @@ plugins:
 exclude:
   - scripts/
   - DESIGN.md
-  - DEPLOYMENT.md
-  - requirements.txt
+  - progress.md
 
 google_analytics: G-L922RQ9G6R

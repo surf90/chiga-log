@@ -14,7 +14,10 @@
       "Bash(curl -s -I \"https://www.jma.go.jp/bosai/warning/data/warning/140000.json\")",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('itemArea4件数:',len\\(d['itemArea4']\\)\\); print\\('1420700 kind数:',[len\\(a['kind']\\) for a in d['itemArea4'] if a['area']['code']=='1420700']\\)\")",
       "Bash(curl -s __TRACKED_VAR__?_=__TRACKED_VAR__)",
-      "Bash(grep -A3 schedule: .github/workflows/__TRACKED_VAR__.yml)"
+      "Bash(grep -A3 schedule: .github/workflows/__TRACKED_VAR__.yml)",
+      "Bash(Select-String -NotMatch \"^\\\\.claude/worktrees\")",
+      "Bash(Select-Object -First 120)",
+      "PowerShell(git ls-files | Where-Object { $_ -notmatch \"^\\\\.claude/worktrees\" })"
     ]
   }
 }
