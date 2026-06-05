@@ -231,6 +231,9 @@ h1 .title-sub {
     flex-shrink: 0;
     font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 }
+.data-list {
+    margin: 0;
+}
 .data-row {
     display: flex;
     justify-content: space-between;
@@ -238,7 +241,8 @@ h1 .title-sub {
     font-size: 15px;
     color: var(--text-main);
 }
-.data-row span:first-child {
+.data-row dt,
+.data-row > span:first-child {
     color: var(--text-sub);
     font-size: 14px;
     font-weight: 500;
@@ -246,11 +250,14 @@ h1 .title-sub {
     white-space: nowrap;
     word-break: keep-all;
     flex-shrink: 0;
+    margin: 0;
 }
-.data-row span:last-child {
+.data-row dd,
+.data-row > span:last-child {
     font-weight: 600;
     min-width: 0;
     text-align: right;
+    margin: 0;
 }
 .error {
     color: #c0392b;

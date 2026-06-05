@@ -37,15 +37,20 @@ lang: ja
     <meta property="og:locale"    content="ja_JP">
     <meta property="og:site_name" content="ちがログ">
     <meta property="fb:app_id"    content="1225249939823906">
-    <meta property="og:image"     content="{{ site.url }}{{ site.baseurl }}/ogp.webp">
-    <meta property="og:image:type"   content="image/webp">
+    <!-- PNG を先頭に置き、WebP 非対応の旧プレビューエンジン(Slack/Discord旧版)でも確実にサムネ表示 -->
+    <meta property="og:image"        content="{{ site.url }}{{ site.baseurl }}/ogp.png">
+    <meta property="og:image:type"   content="image/png">
     <meta property="og:image:width"  content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt"    content="ちがログ OGP画像">
+    <meta property="og:image"        content="{{ site.url }}{{ site.baseurl }}/ogp.webp">
+    <meta property="og:image:type"   content="image/webp">
+    <meta property="og:image:width"  content="1200">
+    <meta property="og:image:height" content="630">
 
     <meta name="twitter:title"       content="{{ page.title }} | ちがログ">
     <meta name="twitter:description" content="{{ page.description }}">
-    <meta name="twitter:image"       content="{{ site.url }}{{ site.baseurl }}/ogp.webp">
+    <meta name="twitter:image"       content="{{ site.url }}{{ site.baseurl }}/ogp.png">
 
     <script type="application/ld+json">
     {
@@ -141,10 +146,12 @@ lang: ja
 
         <div class="weather-box" id="tide-info-box">
             <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></span><span class="section-label">TIDE</span>潮汐情報<span class="section-source" id="tide-source-label">--</span></h2>
-            <div class="data-row"><span>潮回り: </span> <span id="tide-type">--</span></div>
-            <div id="tide-extremes-container">
-                <div class="data-row"><span>満潮・干潮: </span> <span id="tide-status">読み込み中...</span></div>
-            </div>
+            <dl class="data-list">
+                <div class="data-row"><dt>潮回り:</dt> <dd id="tide-type">--</dd></div>
+            </dl>
+            <dl class="data-list" id="tide-extremes-container">
+                <div class="data-row"><dt>満潮・干潮:</dt> <dd id="tide-status">読み込み中...</dd></div>
+            </dl>
 
             <div id="tide-chart-scroll" class="chart-scroll tide-chart-scroll-wrap">
                 <div id="tide-chart-container" class="tide-chart-area">
@@ -171,8 +178,10 @@ lang: ja
 
         <div class="weather-box" id="marine-box">
             <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span><span class="section-label">MARINE</span>海面状況<small class="section-sub">&nbsp;予測</small><span class="section-source">Open-Meteo</span></h2>
-            <div class="data-row"><span>平均波高: </span> <span id="wave-height">-- m</span></div>
-            <div class="data-row"><span>海水温: </span> <span id="sea-temp">--℃</span></div>
+            <dl class="data-list">
+                <div class="data-row"><dt>平均波高:</dt> <dd id="wave-height">-- m</dd></div>
+                <div class="data-row"><dt>海水温:</dt> <dd id="sea-temp">--℃</dd></div>
+            </dl>
             <p class="note">※波と海水温のデータは沖合の予測値ベースです。</p>
         </div>
 
@@ -191,13 +200,17 @@ lang: ja
             <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M3 20a5 5 0 1 1 8.9-4H13a3 3 0 0 1 2 5.24"/><path d="M11 20v2"/><path d="M7 19v2"/></svg></span><span class="section-label">WEATHER</span>天気予報<span class="section-source">気象庁</span></h2>
             <div id="jma-loading" class="section-loading">取得中...</div>
             <div id="jma-forecast-content" class="hidden">
-                <div class="data-row"><span>天 気: </span> <span id="jma-weather">--</span></div>
-                <div class="data-row"><span>降水確率: </span> <span id="jma-pop">--</span></div>
-                <div class="data-row"><span>最高/最低: </span> <span id="jma-temp">-- / --</span></div>
+                <dl class="data-list">
+                    <div class="data-row"><dt>天 気:</dt> <dd id="jma-weather">--</dd></div>
+                    <div class="data-row"><dt>降水確率:</dt> <dd id="jma-pop">--</dd></div>
+                    <div class="data-row"><dt>最高/最低:</dt> <dd id="jma-temp">-- / --</dd></div>
+                </dl>
                 <div class="data-row typhoon-notice" id="jma-typhoon-notice">⚠ 台風情報あり</div>
                 <button class="toggle-btn" id="jma-overview-toggle" type="button">概況を表示 ▼</button>
                 <div class="jma-overview" id="jma-overview-text">
-                    <div class="data-row" id="jma-wind-row"><span>風: </span> <span id="jma-wind">--</span></div>
+                    <dl class="data-list">
+                        <div class="data-row" id="jma-wind-row"><dt>風:</dt> <dd id="jma-wind">--</dd></div>
+                    </dl>
                     <div id="jma-overview-body"></div>
                 </div>
             </div>
@@ -218,11 +231,13 @@ lang: ja
 
         <div class="weather-box" id="weather-current-box">
             <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg></span><span class="section-label">NOW</span>現在の天気<span class="section-source">気象庁</span></h2>
-            <div class="data-row"><span>気 温: </span> <span id="temp">--℃</span></div>
-            <div class="data-row"><span>湿 度: </span> <span id="humidity">-- %</span></div>
-            <div class="data-row"><span>風 速: </span> <span id="wind">-- m/s</span></div>
-            <div class="data-row"><span>風 向: </span> <span id="wind-dir">-- °</span></div>
-            <div class="data-row"><span>降水量(1h): </span> <span id="precip-1h">-- mm</span></div>
+            <dl class="data-list">
+                <div class="data-row"><dt>気 温:</dt> <dd id="temp">--℃</dd></div>
+                <div class="data-row"><dt>湿 度:</dt> <dd id="humidity">-- %</dd></div>
+                <div class="data-row"><dt>風 速:</dt> <dd id="wind">-- m/s</dd></div>
+                <div class="data-row"><dt>風 向:</dt> <dd id="wind-dir">-- °</dd></div>
+                <div class="data-row"><dt>降水量(1h):</dt> <dd id="precip-1h">-- mm</dd></div>
+            </dl>
             <p class="note">※<a href="https://www.jma.go.jp/bosai/amedas/#amdno=46141&area_type=offices&area_code=140000&format=table1h&elems=53410" target="_blank" rel="noopener noreferrer">アメダス（辻堂）</a>の観測値です。</p>
         </div>
     </div>
