@@ -20,6 +20,8 @@
 const LAT = 35.3175;
 const LON = 139.4151;
 const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+const STORAGE_PREFIX = "chigalog:v6:";
+const _reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 let _isFetching = false;
 let _toastShown = false;
@@ -47,6 +49,8 @@ async function fetchCached(
   { store = "session", ttlMs = 30 * 60 * 1000 } = {},
 ) {
   const storage = store === "local" ? localStorage : sessionStorage;
+  // 同オリジン内の他コードとのキー衝突を避けるためプレフィックスを付与する
+  key = STORAGE_PREFIX + key;
   const cached = storage.getItem(key);
   if (cached) {
     try {
@@ -459,7 +463,10 @@ function drawTideChart(extremes, hasHeightData) {
     pointColors.push(last.type === "high" ? "#0275d8" : "#d9534f");
   }
 
-  if (tideChartInstance) tideChartInstance.destroy();
+  if (tideChartInstance) {
+    tideChartInstance.destroy();
+    tideChartInstance = null;
+  }
   const xTicks = buildChartXTicks(chartXMin, xMax);
 
   tideChartInstance = new Chart(ctx, {
@@ -575,7 +582,10 @@ async function fetchWaveGuidance() {
 }
 
 function drawWaveCombinedChart(canvasId, existingInstance, data) {
-  if (existingInstance) existingInstance.destroy();
+  if (existingInstance) {
+    existingInstance.destroy();
+    existingInstance = null;
+  }
 
   const heightData = data.map((d) => ({
     x: new Date(d.time).getTime(),
@@ -1058,16 +1068,20 @@ async function fetchWeatherData(isManual = false) {
     const wc = document.getElementById("weather-content");
     wc.classList.add("is-updating");
     if (isManual) {
-      (function smoothTop() {
-        const start = window.scrollY,
-          t0 = performance.now();
-        function step(t) {
-          const p = Math.min((t - t0) / 500, 1);
-          window.scrollTo(0, start * (1 - p * p * (3 - 2 * p)));
-          if (p < 1) requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
-      })();
+      if (_reducedMotion.matches) {
+        window.scrollTo(0, 0);
+      } else {
+        (function smoothTop() {
+          const start = window.scrollY,
+            t0 = performance.now();
+          function step(t) {
+            const p = Math.min((t - t0) / 500, 1);
+            window.scrollTo(0, start * (1 - p * p * (3 - 2 * p)));
+            if (p < 1) requestAnimationFrame(step);
+          }
+          requestAnimationFrame(step);
+        })();
+      }
     }
   }
   try {
@@ -1221,7 +1235,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("[data-scroll-to]").forEach((el) => {
     el.addEventListener("click", () => {
       const target = document.getElementById(el.dataset.scrollTo);
-      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (!target) return;
+      const behavior = _reducedMotion.matches ? "auto" : "smooth";
+      target.scrollIntoView({ behavior, block: "start" });
     });
   });
   const overviewBtn = document.getElementById("jma-overview-toggle");

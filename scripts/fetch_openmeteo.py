@@ -9,7 +9,8 @@ LON = 139.4151
 
 WEATHER_URL = (
     f"https://api.open-meteo.com/v1/forecast"
-    f"?latitude={LAT}&longitude={LON}&current_weather=true&windspeed_unit=ms"
+    f"?latitude={LAT}&longitude={LON}&current_weather=true"
+    f"&timezone=Asia%2FTokyo&windspeed_unit=ms"
 )
 WIND_FORECAST_URL = (
     f"https://api.open-meteo.com/v1/forecast"
@@ -20,7 +21,21 @@ WIND_FORECAST_URL = (
 MARINE_URL = (
     f"https://marine-api.open-meteo.com/v1/marine"
     f"?latitude={LAT}&longitude={LON}&current=wave_height,sea_surface_temperature"
+    f"&timezone=Asia%2FTokyo"
 )
+# Open-Meteo の time フィールドは timezone=Asia/Tokyo 指定時に JST だが
+# 文字列には TZ オフセットが含まれない。フロントが new Date() で
+# ブラウザTZ依存に解釈してしまうのを防ぐため、生成側で "+09:00" を付与する。
+_JST_SUFFIX = "+09:00"
+
+
+def _add_jst_tz(value):
+    """JST想定のISO文字列にタイムゾーン表記が無い場合 +09:00 を付与する。"""
+    if not isinstance(value, str) or not value:
+        return value
+    if value.endswith("Z") or "+" in value[10:] or value.count("-") >= 3:
+        return value
+    return value + _JST_SUFFIX
 
 # 茅ヶ崎ヘッドランド最寄り官署: 辻堂 (46091)
 JMA_AMEDAS_CODE = "46091"
@@ -82,12 +97,40 @@ def _build_wind_items(hourly: dict) -> list[dict]:
     gusts = hourly.get("wind_gusts_10m") or []
     for i, t in enumerate(times):
         items.append({
-            "time": t,
+            "time": _add_jst_tz(t),
             "wind_speed_ms": speeds[i] if i < len(speeds) else None,
             "wind_direction_deg": dirs[i] if i < len(dirs) else None,
             "wind_gust_ms": gusts[i] if i < len(gusts) else None,
         })
     return items
+
+
+def _normalize_current_weather(cw: dict) -> dict:
+    """current_weather オブジェクトの time に JST オフセットを付与する。"""
+    if not isinstance(cw, dict):
+        return cw
+    out = dict(cw)
+    if "time" in out:
+        out["time"] = _add_jst_tz(out["time"])
+    return out
+
+
+def _normalize_marine(marine: dict) -> dict:
+    """Marine API の current/hourly の time に JST オフセットを付与する。"""
+    if not isinstance(marine, dict):
+        return marine
+    out = dict(marine)
+    cur = out.get("current")
+    if isinstance(cur, dict) and "time" in cur:
+        cur = dict(cur)
+        cur["time"] = _add_jst_tz(cur["time"])
+        out["current"] = cur
+    hourly = out.get("hourly")
+    if isinstance(hourly, dict) and isinstance(hourly.get("time"), list):
+        hourly = dict(hourly)
+        hourly["time"] = [_add_jst_tz(t) for t in hourly["time"]]
+        out["hourly"] = hourly
+    return out
 
 
 def main() -> None:
@@ -107,8 +150,8 @@ def main() -> None:
 
     save_json("data/weather_marine.json", {
         "updated_at": updated_at,
-        "current_weather": weather.get("current_weather", {}),
-        "marine": marine,
+        "current_weather": _normalize_current_weather(weather.get("current_weather", {})),
+        "marine": _normalize_marine(marine),
         "jma_amedas": jma_amedas,
     }, indent=2)
     print("保存完了: data/weather_marine.json")
