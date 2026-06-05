@@ -18,6 +18,8 @@ lang: ja
     <link rel="icon" href="favicon.ico" sizes="any">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="manifest" href="{{ site.baseurl }}/site.webmanifest">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ちがログ">
@@ -36,6 +38,7 @@ lang: ja
     <meta property="og:site_name" content="ちがログ">
     <meta property="fb:app_id"    content="1225249939823906">
     <meta property="og:image"     content="{{ site.url }}{{ site.baseurl }}/ogp.webp">
+    <meta property="og:image:type"   content="image/webp">
     <meta property="og:image:width"  content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt"    content="ちがログ OGP画像">
@@ -81,16 +84,15 @@ lang: ja
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <!-- Inter (variable 400-700) + Zen Kaku 本文用 (400/500/700) -->
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
     <!-- Zen Kaku 900：ロゴ文字のみサブセット -->
     <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@900&text=ちがログ&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="{{ site.baseurl }}/assets/css/style.min.css">
 
-    <link rel="preload" as="script" href="{{ site.baseurl }}/assets/vendor/chart.umd.min.js">
-    <script src="{{ site.baseurl }}/assets/vendor/chart.umd.min.js" defer></script>
+    <script src="{{ site.baseurl }}/assets/vendor/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous" defer></script>
     <script src="{{ site.baseurl }}/assets/js/app.min.js" defer></script>
+    <script src="{{ site.baseurl }}/assets/js/sw-register.js" data-sw-url="{{ site.baseurl }}/sw.js" data-scope="{{ site.baseurl }}/" defer></script>
 </head>
 <body>
 
@@ -114,27 +116,27 @@ lang: ja
 
     <div id="weather-content" class="hidden">
         <div class="hero-cards">
-            <div class="hero-card" data-scroll-to="marine-box">
+            <button type="button" class="hero-card" data-scroll-to="marine-box" aria-label="海水温セクションへ移動">
                 <span class="hero-card-label"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>SEA</span>
                 <div class="hero-value-group">
                     <span class="hero-card-value" id="hero-sea-temp">--</span>
                     <span class="hero-card-unit">℃</span>
                 </div>
-            </div>
-            <div class="hero-card" data-scroll-to="weather-current-box">
+            </button>
+            <button type="button" class="hero-card" data-scroll-to="weather-current-box" aria-label="気温セクションへ移動">
                 <span class="hero-card-label"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/><path d="M20 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M20 3v2"/><path d="M20 9v2"/><path d="M23 6h-2"/><path d="M17 6h-2"/></svg>AIR</span>
                 <div class="hero-value-group">
                     <span class="hero-card-value" id="hero-temp">--</span>
                     <span class="hero-card-unit">℃</span>
                 </div>
-            </div>
-            <div class="hero-card" data-scroll-to="weather-current-box">
+            </button>
+            <button type="button" class="hero-card" data-scroll-to="weather-current-box" aria-label="風速セクションへ移動">
                 <span class="hero-card-label"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg>WIND</span>
                 <div class="hero-value-group">
                     <span class="hero-card-value" id="hero-wind">--</span>
                     <span class="hero-card-unit">&nbsp;m/s</span>
                 </div>
-            </div>
+            </button>
         </div>
 
         <div class="weather-box" id="tide-info-box">
@@ -146,7 +148,7 @@ lang: ja
 
             <div id="tide-chart-scroll" class="chart-scroll tide-chart-scroll-wrap">
                 <div id="tide-chart-container" class="tide-chart-area">
-                    <canvas id="tideChart"></canvas>
+                    <canvas id="tideChart" role="img" aria-label="潮汐タイドグラフ"></canvas>
                 </div>
             </div>
 
@@ -159,7 +161,7 @@ lang: ja
             <div id="wave-guid-content" class="hidden">
                 <div id="wave-chart-scroll" class="chart-scroll">
                     <div id="wave-chart-container" class="wave-chart-area">
-                        <canvas id="waveChart"></canvas>
+                        <canvas id="waveChart" role="img" aria-label="波高と周期の予測グラフ"></canvas>
                     </div>
                 </div>
                 <p class="note note-z">※<a href="https://www.data.jma.go.jp/waveinf/guid/wave_guid.html?area=19" target="_blank" rel="noopener noreferrer">気象庁が提供している（関東地方南部全域の）予想値</a>です。</p>
@@ -226,7 +228,7 @@ lang: ja
     </div>
 
     <div class="float-alert-wrap">
-        <div id="current-time" class="current-time"></div>
+        <button type="button" id="current-time" class="current-time" aria-live="polite" aria-label="データを手動で更新"></button>
     </div>
 
     <div class="footer">
@@ -253,28 +255,9 @@ lang: ja
     </div>
 </div>
 
-<div id="toast">🔄 データを更新する</div>
+<button type="button" id="toast" aria-live="polite">🔄 データを更新する</button>
 
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('{{ site.baseurl }}/sw.js', { scope: '{{ site.baseurl }}/' })
-        .then(reg => {
-          reg.addEventListener('updatefound', () => {
-            const nw = reg.installing;
-            nw.addEventListener('statechange', () => {
-              if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-                window.location.reload();
-              }
-            });
-          });
-        })
-        .catch(err => console.error('SW登録失敗:', err));
-    });
-  }
-</script>
-
-<div id="floating-alert-bar" class="floating-alert hidden"></div>
+<div id="floating-alert-bar" class="floating-alert hidden" role="alert" aria-live="assertive"></div>
 
 </body>
 </html>

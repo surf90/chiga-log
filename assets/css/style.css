@@ -95,12 +95,18 @@ h1 small {
 }
 .hero-card {
     background: linear-gradient(135deg, #0e7490 0%, #0284c7 100%);
+    border: 0;
     border-radius: 12px;
     padding: 14px 8px 12px;
     text-align: center;
     color: #fff;
+    font: inherit;
     transition: transform .15s ease;
     cursor: pointer;
+}
+.hero-card:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
 }
 .hero-card:active {
     transform: scale(.98);
@@ -254,6 +260,9 @@ h1 small {
 .current-time {
     text-align: right;
     margin-bottom: 16px;
+    background: none;
+    border: 0;
+    border-bottom: 1px dashed #0e7490;
     color: #0e7490;
     font-size: 12px;
     font-weight: 500;
@@ -261,10 +270,11 @@ h1 small {
     font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
     cursor: pointer;
     transition: opacity 0.2s;
-    border-bottom: 1px dashed #0e7490;
     display: inline-block;
     float: right;
+    padding: 0;
 }
+.current-time:focus-visible { outline: 2px solid #0e7490; outline-offset: 2px; }
 .current-time:hover { opacity: 0.6; }
 .current-time:active { opacity: 0.4; }
 #toast {
@@ -273,6 +283,7 @@ h1 small {
     bottom: 24px;
     left: 50%;
     transform: translateX(-50%);
+    font: inherit;
     background: rgba(255,255,255,0.92);
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
