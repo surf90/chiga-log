@@ -59,8 +59,19 @@ async function fetchCached(
   const res = await fetch(url);
   if (!res.ok) throw new Error(`fetch failed: ${url}`);
   const data = await res.json();
-  storage.setItem(key, JSON.stringify({ data, ts: Date.now() }));
+  try {
+    storage.setItem(key, JSON.stringify({ data, ts: Date.now() }));
+  } catch {
+    // QuotaExceeded等は無視（取得済みデータはそのまま返す）
+  }
   return data;
+}
+
+/** ミリ秒(epoch)を JST の "H:MM" に整形する共通関数。 */
+function formatJstHm(ms) {
+  const h = (new Date(ms).getUTCHours() + 9) % 24;
+  const m = new Date(ms).getUTCMinutes();
+  return h + ":" + String(m).padStart(2, "0");
 }
 
 // ─── 2. ユーティリティ ──────────────────────────────────────
@@ -326,18 +337,14 @@ function displayTideData(extremes, chartExtremes) {
   if (!extremes || extremes.length === 0) {
     const row = document.createElement("div");
     row.className = "data-row";
-    row.innerHTML = "<span>満潮・干潮:</span> <span>データなし</span>";
+    const l = document.createElement("span");
+    l.textContent = "満潮・干潮:";
+    const v = document.createElement("span");
+    v.textContent = "データなし";
+    row.append(l, " ", v);
     container.appendChild(row);
     return;
   }
-
-  const buildHeightSpan = (item) => {
-    if (item.height == null) return "";
-    const s = document.createElement("span");
-    s.className = "tide-height";
-    s.textContent = ` (${parseFloat(item.height).toFixed(1)} m)`;
-    return s.outerHTML;
-  };
 
   const highTides = [],
     lowTides = [];
@@ -347,17 +354,35 @@ function displayTideData(extremes, chartExtremes) {
       hour: "2-digit",
       minute: "2-digit",
     });
-    const heightText = buildHeightSpan(item);
-    (item.type === "high" ? highTides : lowTides).push(
-      `${timeStr}${heightText}`,
-    );
+    (item.type === "high" ? highTides : lowTides).push({
+      timeStr,
+      height: item.height,
+    });
   });
 
-  const sep = '<span class="tide-sep"> , </span>';
   const addRow = (label, list, cssClass) => {
     const row = document.createElement("div");
     row.className = "data-row";
-    row.innerHTML = `<span>${label}:</span> <span class="${cssClass}">${list.join(sep)}</span>`;
+    const labelSpan = document.createElement("span");
+    labelSpan.textContent = label + ":";
+    const valueSpan = document.createElement("span");
+    valueSpan.className = cssClass;
+    list.forEach((entry, idx) => {
+      if (idx > 0) {
+        const sep = document.createElement("span");
+        sep.className = "tide-sep";
+        sep.textContent = " , ";
+        valueSpan.appendChild(sep);
+      }
+      valueSpan.appendChild(document.createTextNode(entry.timeStr));
+      if (entry.height != null) {
+        const h = document.createElement("span");
+        h.className = "tide-height";
+        h.textContent = ` (${parseFloat(entry.height).toFixed(1)} m)`;
+        valueSpan.appendChild(h);
+      }
+    });
+    row.append(labelSpan, " ", valueSpan);
     container.appendChild(row);
   };
   if (highTides.length > 0) addRow("満潮", highTides, "tide-high");
@@ -393,9 +418,14 @@ function drawTideChart(extremes, hasHeightData) {
   setChartContainerWidth("tide-chart-container", CHART_TOTAL_PX);
 
   const canvas = document.getElementById("tideChart");
-  canvas.width = CHART_TOTAL_PX;
-  canvas.height = 160;
+  const dpr = window.devicePixelRatio || 1;
+  const cssH = 160;
+  canvas.width = CHART_TOTAL_PX * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = CHART_TOTAL_PX + "px";
+  canvas.style.height = cssH + "px";
   const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
 
   extremes.sort((a, b) => a.timeMs - b.timeMs);
   chartXMin = extremes[0].timeMs;
@@ -460,11 +490,7 @@ function drawTideChart(extremes, hasHeightData) {
         tooltip: {
           callbacks: {
             title(items) {
-              if (!items.length) return "";
-              const ms = items[0].parsed.x;
-              const h = (new Date(ms).getUTCHours() + 9) % 24;
-              const m = new Date(ms).getUTCMinutes();
-              return h + ":" + String(m).padStart(2, "0");
+              return items.length ? formatJstHm(items[0].parsed.x) : "";
             },
             label: (c) =>
               hasHeightData ? c.parsed.y.toFixed(2) + " m" : "潮位イメージ",
@@ -571,9 +597,14 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
   const waveXTicks = buildChartXTicks(xMin, xMax);
 
   const waveCanvas = document.getElementById(canvasId);
-  waveCanvas.width = CHART_TOTAL_PX;
-  waveCanvas.height = 200;
+  const dpr = window.devicePixelRatio || 1;
+  const cssH = 200;
+  waveCanvas.width = CHART_TOTAL_PX * dpr;
+  waveCanvas.height = cssH * dpr;
+  waveCanvas.style.width = CHART_TOTAL_PX + "px";
+  waveCanvas.style.height = cssH + "px";
   const ctx = waveCanvas.getContext("2d");
+  ctx.scale(dpr, dpr);
   const chart = new Chart(ctx, {
     type: "line",
     plugins: [nowLinePlugin],
@@ -619,11 +650,7 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
         tooltip: {
           callbacks: {
             title(items) {
-              if (!items.length) return "";
-              const ms = items[0].parsed.x;
-              const h = (new Date(ms).getUTCHours() + 9) % 24;
-              const m = new Date(ms).getUTCMinutes();
-              return h + ":" + String(m).padStart(2, "0");
+              return items.length ? formatJstHm(items[0].parsed.x) : "";
             },
             label(c) {
               return c.dataset.yAxisID === "yWave"
@@ -684,14 +711,22 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
     container.insertBefore(legendDiv, document.getElementById(canvasId));
   }
 
-  legendDiv.innerHTML = `
-        <div class="wave-legend-item" data-index="0" style="color:#0275d8;">
-            <span class="wave-legend-swatch" style="background-color:#0275d8;"></span>最大波高 [m]
-        </div>
-        <div class="wave-legend-item" data-index="1" style="color:#27ae60;">
-            <span class="wave-legend-swatch" style="background-color:#27ae60;"></span>周期 [秒]
-        </div>
-    `;
+  legendDiv.textContent = "";
+  const legendItems = [
+    { color: "#0275d8", label: "最大波高 [m]" },
+    { color: "#27ae60", label: "周期 [秒]" },
+  ];
+  legendItems.forEach((meta, idx) => {
+    const item = document.createElement("div");
+    item.className = "wave-legend-item";
+    item.dataset.index = String(idx);
+    item.style.color = meta.color;
+    const swatch = document.createElement("span");
+    swatch.className = "wave-legend-swatch";
+    swatch.style.backgroundColor = meta.color;
+    item.append(swatch, meta.label);
+    legendDiv.appendChild(item);
+  });
 
   legendDiv.querySelectorAll(".wave-legend-item").forEach((item) => {
     item.addEventListener("click", () => {
@@ -736,8 +771,10 @@ async function fetchJmaWarning() {
     const warningBox = document.getElementById("jma-warning-box");
     const floatingBar = document.getElementById("floating-alert-bar");
     if (activeWarnings.length === 0) {
-      listEl.innerHTML =
-        '<div class="warning-none">✅ 現在、注意報・警報はありません</div>';
+      const none = document.createElement("div");
+      none.className = "warning-none";
+      none.textContent = "✅ 現在、注意報・警報はありません";
+      listEl.appendChild(none);
       warningBox.classList.remove("warning-active");
       floatingBar.style.display = "none";
       floatingBar.className = "floating-alert";
@@ -823,19 +860,25 @@ async function fetchJmaForecast() {
     if (!res.ok) throw new Error("forecast_data.json fetch failed");
     const data = await res.json();
 
-    const shortTerm = data.forecast[0];
-    const timeSeries0 = shortTerm.timeSeries[0];
-    const timeSeries1 = shortTerm.timeSeries[1];
-    const timeSeries2 = shortTerm.timeSeries[2];
+    const shortTerm = data?.forecast?.[0];
+    const timeSeries0 = shortTerm?.timeSeries?.[0];
+    const timeSeries1 = shortTerm?.timeSeries?.[1];
+    const timeSeries2 = shortTerm?.timeSeries?.[2];
+    if (!timeSeries0 || !timeSeries1 || !timeSeries2) {
+      throw new Error("forecast_data.json の構造が不正です");
+    }
     const areaWeather =
-      timeSeries0.areas.find((a) => a.area.code === "140010") ||
-      timeSeries0.areas[0];
+      timeSeries0.areas?.find((a) => a.area?.code === "140010") ||
+      timeSeries0.areas?.[0];
     const areaPop =
-      timeSeries1.areas.find((a) => a.area.code === "140010") ||
-      timeSeries1.areas[0];
+      timeSeries1.areas?.find((a) => a.area?.code === "140010") ||
+      timeSeries1.areas?.[0];
     const areaTemp =
-      timeSeries2.areas.find((a) => a.area.code === "46106") ||
-      timeSeries2.areas[0];
+      timeSeries2.areas?.find((a) => a.area?.code === "46106") ||
+      timeSeries2.areas?.[0];
+    if (!areaWeather || !areaPop || !areaTemp) {
+      throw new Error("forecast_data.json に対象エリアがありません");
+    }
 
     document.getElementById("jma-weather").textContent =
       areaWeather.weathers?.[0] ?? "--";
@@ -867,9 +910,9 @@ async function fetchJmaForecast() {
     document.getElementById("jma-wind").textContent = (
       areaWeather.winds?.[0] || "--"
     ).replace(/　/g, " ");
-    document.getElementById("jma-overview-body").textContent =
-      data.overview.text || "";
-    const hasTyphoon = data.overview.text?.includes("台風");
+    const overviewText = data?.overview?.text ?? "";
+    document.getElementById("jma-overview-body").textContent = overviewText;
+    const hasTyphoon = overviewText.includes("台風");
     document.getElementById("jma-typhoon-notice").style.display = hasTyphoon
       ? "flex"
       : "none";
@@ -898,8 +941,17 @@ function renderWindForecast(entries) {
   if (!entries || entries.length === 0) {
     const row = document.createElement("div");
     row.className = "wind-row";
-    row.innerHTML =
-      '<span class="wind-time">--:--</span><span class="wind-dir">データなし</span><span class="wind-speed">-</span>';
+    const mkSpan = (cls, text) => {
+      const s = document.createElement("span");
+      s.className = cls;
+      s.textContent = text;
+      return s;
+    };
+    row.append(
+      mkSpan("wind-time", "--:--"),
+      mkSpan("wind-dir", "データなし"),
+      mkSpan("wind-speed", "-"),
+    );
     grid.appendChild(row);
     return;
   }
@@ -948,16 +1000,19 @@ async function fetchWindForecast() {
     const todayJst = toJstDateStr(now);
     const items = (data.items || [])
       .map((item) => {
-        const dt = new Date(item.time);
-        const hh = dt.getHours();
+        // item.time は TZ無しISO（例: "2026-06-03T00:00"）。JST固定で解釈する。
+        const tzSuffix = /[zZ]|[+-]\d{2}:?\d{2}$/.test(item.time) ? "" : "+09:00";
+        const dt = new Date(item.time + tzSuffix);
+        // ブラウザTZ非依存にJST時刻を抽出
+        const jstMs = dt.getTime() + JST_OFFSET_MS;
+        const jstDate = new Date(jstMs);
+        const hh = jstDate.getUTCHours();
+        const mm = jstDate.getUTCMinutes();
         return {
           h: hh,
           ts: dt.getTime(),
           dateJst: toJstDateStr(dt),
-          time: dt.toLocaleTimeString("ja-JP", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
+          time: String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0"),
           dir:
             item.wind_direction_text ||
             (item.wind_direction_deg != null
@@ -1066,7 +1121,7 @@ async function fetchWeatherData(isManual = false) {
       heroWindEl.textContent = "--";
     }
 
-    const cur = wmData.marine?.current;
+    const cur = wmData?.marine?.current;
     document.getElementById("wave-height").textContent =
       cur?.wave_height != null ? `${cur.wave_height} m` : "データなし";
     if (cur?.sea_surface_temperature != null) {
@@ -1148,7 +1203,19 @@ function _onUserInteraction() {
 
 document.addEventListener("DOMContentLoaded", () => {
   fetchWeatherData();
-  setInterval(fetchWeatherData, 3 * 60 * 60 * 1000);
+  // 背景タブで間引かれるsetIntervalを避け、経過時間を見て再帰実行
+  const REFRESH_INTERVAL_MS = 3 * 60 * 60 * 1000;
+  const scheduleNextFetch = () => {
+    setTimeout(() => {
+      const elapsed = Date.now() - _lastFetchTime;
+      if (elapsed >= REFRESH_INTERVAL_MS) {
+        fetchWeatherData().finally(scheduleNextFetch);
+      } else {
+        scheduleNextFetch();
+      }
+    }, REFRESH_INTERVAL_MS);
+  };
+  scheduleNextFetch();
 
   // 旧インライン onclick の置換
   document.querySelectorAll("[data-scroll-to]").forEach((el) => {

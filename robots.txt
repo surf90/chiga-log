@@ -1,3 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /reports/
+Disallow: /.claude/
 Sitemap: https://surf90.github.io/chiga-log/sitemap.xml
