@@ -341,9 +341,9 @@ function displayTideData(extremes, chartExtremes) {
   if (!extremes || extremes.length === 0) {
     const row = document.createElement("div");
     row.className = "data-row";
-    const l = document.createElement("span");
+    const l = document.createElement("dt");
     l.textContent = "満潮・干潮:";
-    const v = document.createElement("span");
+    const v = document.createElement("dd");
     v.textContent = "データなし";
     row.append(l, " ", v);
     container.appendChild(row);
@@ -367,9 +367,9 @@ function displayTideData(extremes, chartExtremes) {
   const addRow = (label, list, cssClass) => {
     const row = document.createElement("div");
     row.className = "data-row";
-    const labelSpan = document.createElement("span");
+    const labelSpan = document.createElement("dt");
     labelSpan.textContent = label + ":";
-    const valueSpan = document.createElement("span");
+    const valueSpan = document.createElement("dd");
     valueSpan.className = cssClass;
     list.forEach((entry, idx) => {
       if (idx > 0) {

@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from _common import http_get_json, http_get_text, now_jst, save_json
+from _common import http_get_json, http_get_text, now_jst, require_keys, save_json
 
 LAT = 35.3175
 LON = 139.4151
@@ -145,6 +145,11 @@ def main() -> None:
     failed = [k for k, v in {"weather": weather, "marine": marine, "wind_fc": wind_fc}.items() if v is None]
     if failed:
         raise RuntimeError(f"必須データ取得失敗: {failed}")
+
+    # スキーマ検証: 主要キーが揃っているか確認 (BFFやAPI仕様変更の早期検知)
+    require_keys(weather, ["current_weather"], label="openmeteo.weather")
+    require_keys(marine, ["current"], label="openmeteo.marine")
+    require_keys(wind_fc, ["hourly"], label="openmeteo.wind_forecast")
 
     updated_at = now_jst().isoformat()
 

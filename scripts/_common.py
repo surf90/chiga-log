@@ -121,3 +121,24 @@ def save_json(filepath: str, data, *, indent: int | None = None) -> None:
 def now_jst() -> datetime:
     """JSTの現在日時を返す。"""
     return datetime.now(JST)
+
+
+def require_keys(data, required: list[str], *, label: str = "data") -> None:
+    """dict に必須キーが揃っているか検証する。
+
+    1つでも欠ければ ValueError を送出し、呼び出し側の try で
+    既存のリトライ/失敗ログ経路に流す。スキーマ実態のドキュメントとしても機能する。
+
+    Args:
+        data: 検証対象 (dict 以外は型エラー扱い)。
+        required: 必須キー名の配列。
+        label: エラーメッセージに含めるデータ名 (例: "openmeteo.weather")。
+
+    Raises:
+        ValueError: dict でない、または必須キーが欠落している場合。
+    """
+    if not isinstance(data, dict):
+        raise ValueError(f"{label}: dict ではありません (got {type(data).__name__})")
+    missing = [k for k in required if k not in data]
+    if missing:
+        raise ValueError(f"{label}: 必須キー欠落 {missing}")
