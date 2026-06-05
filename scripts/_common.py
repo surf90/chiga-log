@@ -6,6 +6,7 @@ GitHub Actionsから実行される各データ取得スクリプトで共有す
 import json
 import os
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -93,10 +94,28 @@ def load_json(filepath: str) -> dict | list | None:
 
 
 def save_json(filepath: str, data, *, indent: int | None = None) -> None:
-    """JSONファイルとして保存する。親ディレクトリは自動作成。"""
-    os.makedirs(os.path.dirname(filepath) or ".", exist_ok=True)
-    with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=indent)
+    """JSONファイルとして保存する。親ディレクトリは自動作成。
+
+    部分書き込みを避けるため、同ディレクトリに一時ファイルを作成して
+    完全に書き終えてから os.replace() で原子的に置換する。
+    GitHub Actions ジョブの中断や I/O 失敗で破損 JSON が
+    リポジトリにコミットされる事故を防ぐ。
+    """
+    directory = os.path.dirname(filepath) or "."
+    os.makedirs(directory, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(
+        prefix=".tmp_", suffix=".json", dir=directory
+    )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=indent)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, filepath)
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
 
 
 def now_jst() -> datetime:

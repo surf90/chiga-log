@@ -2,8 +2,9 @@ name: Update Tide Data
 
 on:
   schedule:
-    # 毎日 UTC 15:05 （＝日本時間の午前0時05分） に実行
-    - cron: '5 15 * * *'
+    # 毎日 UTC 15:15 （＝日本時間の午前0時15分） に実行
+    # update-daily-data.yml (15:05) と 10 分ずらし、concurrency 待機を短縮する
+    - cron: '15 15 * * *'
   workflow_dispatch: # GitHubの画面から手動で実行するボタンも有効化
 
 concurrency:
