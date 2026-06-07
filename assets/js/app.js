@@ -422,14 +422,9 @@ function drawTideChart(extremes, hasHeightData) {
   setChartContainerWidth("tide-chart-container", CHART_TOTAL_PX);
 
   const canvas = document.getElementById("tideChart");
-  const dpr = window.devicePixelRatio || 1;
-  const cssH = 160;
-  canvas.width = CHART_TOTAL_PX * dpr;
-  canvas.height = cssH * dpr;
-  canvas.style.width = CHART_TOTAL_PX + "px";
-  canvas.style.height = cssH + "px";
+  canvas.width = CHART_TOTAL_PX;
+  canvas.height = 160;
   const ctx = canvas.getContext("2d");
-  ctx.scale(dpr, dpr);
 
   extremes.sort((a, b) => a.timeMs - b.timeMs);
   chartXMin = extremes[0].timeMs;
@@ -607,14 +602,9 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
   const waveXTicks = buildChartXTicks(xMin, xMax);
 
   const waveCanvas = document.getElementById(canvasId);
-  const dpr = window.devicePixelRatio || 1;
-  const cssH = 200;
-  waveCanvas.width = CHART_TOTAL_PX * dpr;
-  waveCanvas.height = cssH * dpr;
-  waveCanvas.style.width = CHART_TOTAL_PX + "px";
-  waveCanvas.style.height = cssH + "px";
+  waveCanvas.width = CHART_TOTAL_PX;
+  waveCanvas.height = 200;
   const ctx = waveCanvas.getContext("2d");
-  ctx.scale(dpr, dpr);
   const chart = new Chart(ctx, {
     type: "line",
     plugins: [nowLinePlugin],
