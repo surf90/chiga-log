@@ -912,7 +912,8 @@ async function fetchTsunami() {
     }
 
     // タイトルとバッジ
-    document.getElementById("tsunami-title").textContent = kind.Name ?? "津波注意報";
+    document.getElementById("tsunami-title").textContent =
+      kind.Name ?? "津波注意報";
 
     const listEl = document.getElementById("tsunami-list");
     listEl.innerHTML = "";
@@ -1101,7 +1102,9 @@ async function fetchWindForecast() {
     const items = (data.items || [])
       .map((item) => {
         // item.time は TZ無しISO（例: "2026-06-03T00:00"）。JST固定で解釈する。
-        const tzSuffix = /[zZ]|[+-]\d{2}:?\d{2}$/.test(item.time) ? "" : "+09:00";
+        const tzSuffix = /[zZ]|[+-]\d{2}:?\d{2}$/.test(item.time)
+          ? ""
+          : "+09:00";
         const dt = new Date(item.time + tzSuffix);
         // ブラウザTZ非依存にJST時刻を抽出
         const jstMs = dt.getTime() + JST_OFFSET_MS;
