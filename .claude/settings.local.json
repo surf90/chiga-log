@@ -17,7 +17,15 @@
       "Bash(grep -A3 schedule: .github/workflows/__TRACKED_VAR__.yml)",
       "Bash(Select-String -NotMatch \"^\\\\.claude/worktrees\")",
       "Bash(Select-Object -First 120)",
-      "PowerShell(git ls-files | Where-Object { $_ -notmatch \"^\\\\.claude/worktrees\" })"
+      "PowerShell(git ls-files | Where-Object { $_ -notmatch \"^\\\\.claude/worktrees\" })",
+      "Bash(Get-ChildItem -Path \"D:\\\\My Documents\\\\GitHub\\\\chiga-log\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "WebFetch(domain:www.jma.go.jp)",
+      "WebFetch(domain:www.data.jma.go.jp)",
+      "Bash(curl -s -I -H \"Origin: https://example.github.io\" \"https://www.jma.go.jp/bosai/tsunami/data/list.json\")",
+      "Bash(findstr /I \"access-control cache-control content-type HTTP\")",
+      "Bash(curl -s -D - -o NUL -H \"Origin: https://example.github.io\" \"https://www.jma.go.jp/bosai/tsunami/data/list.json\")"
     ]
   }
 }

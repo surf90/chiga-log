@@ -411,6 +411,9 @@ h1 .title-sub {
 .badge-tokubetsu { background-color: #7c3aed; }
 .badge-keiho     { background-color: #c0392b; }
 .badge-chuiho    { background-color: #d97706; }
+.badge-tsunami-major { background-color: #7c3aed; }
+.badge-tsunami-warn  { background-color: #c0392b; }
+.badge-tsunami-adv   { background-color: #d97706; }
 .warning-name {
     font-size: 14px;
     color: var(--text-main);

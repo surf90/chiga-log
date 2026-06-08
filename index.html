@@ -120,6 +120,14 @@ lang: ja
     <div id="error" class="error hidden">データの取得に失敗しました。</div>
 
     <div id="weather-content" class="hidden">
+        <div class="weather-box warning-active hidden" id="tsunami-box" role="alert" aria-live="assertive">
+            <h2><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg></span><span class="section-label">TSUNAMI</span><span id="tsunami-title">津波注意報</span><span class="section-source">気象庁</span></h2>
+            <div id="tsunami-content">
+                <div id="tsunami-list"></div>
+                <p class="note"><strong>※必ず<a href="https://www.data.jma.go.jp/multi/tsunami/index.html?lang=jp" target="_blank" rel="noopener noreferrer">気象庁HP</a>で最新の情報を確認してください！</strong></p>
+            </div>
+        </div>
+
         <div class="hero-cards">
             <button type="button" class="hero-card" data-scroll-to="marine-box" aria-label="海水温セクションへ移動">
                 <span class="hero-card-label"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>SEA</span>

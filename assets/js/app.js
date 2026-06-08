@@ -852,6 +852,106 @@ async function fetchJmaWarning() {
   }
 }
 
+// ─── 6.5 津波注意報・警報（相模湾・三浦半島） ──────────────────
+// 注: 気象庁 bosai 津波フィードはCORS対応のためクライアントから直接取得する。
+// 相模湾・三浦半島(予報区コード330)に津波注意報/警報が出ている時だけカード表示。
+const TSUNAMI_AREA_CODE = "330"; // 相模湾・三浦半島
+const TSUNAMI_LIST_URL = "https://www.jma.go.jp/bosai/tsunami/data/list.json";
+const TSUNAMI_BASE_URL = "https://www.jma.go.jp/bosai/tsunami/data/";
+
+/** Kind.Codeから津波バッジのレベルを判定する。52:大津波警報 53:津波警報 62:津波注意報。*/
+function tsunamiLevelFromCode(code) {
+  if (code === "52") return { cls: "badge-tsunami-major", show: true };
+  if (code === "53") return { cls: "badge-tsunami-warn", show: true };
+  if (code === "62") return { cls: "badge-tsunami-adv", show: true };
+  return { cls: "", show: false }; // 71:津波予報 や解除相当は非表示
+}
+
+/** ISO日時を HH:MM 形式に整形する。失敗時は空文字。*/
+function formatTsunamiTime(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+async function fetchTsunami() {
+  const box = document.getElementById("tsunami-box");
+  try {
+    const bust = Math.floor(Date.now() / 60000);
+    const listRes = await fetch(`${TSUNAMI_LIST_URL}?t=${bust}`);
+    if (!listRes.ok) throw new Error("tsunami list.json fetch failed");
+    const list = await listRes.json();
+
+    // 「津波警報・注意報・予報」系の最新エントリ（満潮時刻情報VTSE51は除外）
+    const latest = (list ?? []).find(
+      (e) =>
+        e &&
+        typeof e.ttl === "string" &&
+        e.ttl.includes("津波") &&
+        !e.ttl.includes("満潮") &&
+        !e.ttl.includes("到達予想時刻") &&
+        e.json,
+    );
+    if (!latest) {
+      box.classList.add("hidden");
+      return;
+    }
+
+    const detRes = await fetch(`${TSUNAMI_BASE_URL}${latest.json}`);
+    if (!detRes.ok) throw new Error("tsunami detail fetch failed");
+    const det = await detRes.json();
+
+    const items = det?.Body?.Tsunami?.Forecast?.Item ?? [];
+    const area = items.find((it) => it?.Area?.Code === TSUNAMI_AREA_CODE);
+    const kind = area?.Category?.Kind;
+    const level = tsunamiLevelFromCode(kind?.Code);
+    if (!area || !level.show) {
+      box.classList.add("hidden");
+      return;
+    }
+
+    // タイトルとバッジ
+    document.getElementById("tsunami-title").textContent = kind.Name ?? "津波注意報";
+
+    const listEl = document.getElementById("tsunami-list");
+    listEl.innerHTML = "";
+
+    const item = document.createElement("div");
+    item.className = "warning-item";
+    const badge = document.createElement("span");
+    badge.className = `warning-badge ${level.cls}`;
+    badge.textContent = kind.Name ?? "";
+    const name = document.createElement("span");
+    name.className = "warning-name";
+    name.textContent = area.Area.Name ?? "相模湾・三浦半島";
+    item.append(badge, name);
+    listEl.appendChild(item);
+
+    // 予想高さ・第一波到達（数値高さには m を付与。"巨大"等の文言やConditionはそのまま）
+    const rawHeight = area?.MaxHeight?.TsunamiHeight;
+    const height = /^[\d.]+$/.test(rawHeight ?? "")
+      ? `${rawHeight}m`
+      : (rawHeight ?? area?.MaxHeight?.Condition);
+    const arrival =
+      formatTsunamiTime(area?.FirstHeight?.ArrivalTime) ||
+      area?.FirstHeight?.Condition ||
+      "";
+    const detail = document.createElement("p");
+    detail.className = "warning-headline";
+    const parts = [];
+    if (height) parts.push(`予想の高さ: ${height}`);
+    if (arrival) parts.push(`第一波到達: ${arrival}`);
+    detail.textContent = parts.join("　");
+    if (parts.length) listEl.appendChild(detail);
+
+    box.classList.remove("hidden");
+  } catch (e) {
+    console.error("Tsunami fetch error:", e);
+    box.classList.add("hidden"); // 失敗時はダミーを出さず非表示
+  }
+}
+
 // ─── 7. 天気予報 ────────────────────────────────────────────
 async function fetchJmaForecast() {
   const hour8Buster = Math.floor(Date.now() / (8 * 60 * 60 * 1000));
@@ -1080,6 +1180,7 @@ async function fetchWeatherData(isManual = false) {
       fetchTideExtremes(),
       fetchJmaForecast(),
       fetchJmaWarning(),
+      fetchTsunami(),
     ]);
     await fetchWaveGuidance();
     await fetchWindForecast();

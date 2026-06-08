@@ -83,6 +83,10 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 ### 警報バッジ / フローティングアラート
 - `.floating-alert.level-tokubetsu { background:#7c3aed; }`（特別警報）。通常警報は `#c0392b` 系、注意報は橙系。
 
+### 津波カード（`#tsunami-box`）
+- 相模湾・三浦半島（予報区330）に津波注意報/警報発表時のみ、ページ最上部に表示（通常は `hidden`）。`.warning-active` の赤枠・赤背景を流用。
+- バッジ配色: 大津波警報 `.badge-tsunami-major` `#7c3aed`（紫）／津波警報 `.badge-tsunami-warn` `#c0392b`（赤）／津波注意報 `.badge-tsunami-adv` `#d97706`（橙）。
+
 ### 角丸スケール
 | 用途 | radius |
 |------|--------|
