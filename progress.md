@@ -1,10 +1,34 @@
 ---
-updated: 2026-06-03
+updated: 2026-06-08
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-06-08）
+
+### 津波注意報・警報カード追加（相模湾・三浦半島） (main マージ)
+
+- **目的**: 相模湾・三浦半島に津波注意報/警報が発表中の時だけ、ページ最上部に専用カードを表示。デザインは既存「注意報・警報」カードに準拠。
+- **データ源**: 気象庁 bosai 津波フィード（一覧 `bosai/tsunami/data/list.json` → 詳細JSON）。予報区「相模湾・三浦半島」= `Area.Code 330`。`Category.Kind.Code` で 大津波警報(52)/津波警報(53)/津波注意報(62) のみ表示、津波予報(71)・不在・解除は非表示。
+- **方針**: bosai は **CORS対応**のためクライアント直接fetch（警報VPWS50と異なりBFF不要・**Actions/cron追加なし**＝三原則3）。1分キャッシュバスター。
+- **実装**:
+  - `index.html`：`#weather-content` 先頭に `#tsunami-box`（初期 `hidden`）を追加。気象庁HPリンク・注釈文埋め込み。
+  - `assets/js/app.js`：`fetchTsunami()` 追加、`fetchWeatherData` の `Promise.allSettled` に登録。
+  - `assets/css/style.css`：`.badge-tsunami-major/warn/adv`（紫/赤/橙）追加。`.warning-active` 流用。
+  - `DESIGN.md`：津波カード配色・バッジ仕様を追記。
+- **不具合修正（マージ後）**: カード非表示の原因は `index.html` の CSP `connect-src 'self'` が JMA へのクロスオリジンfetchをブロックしていたため。`connect-src 'self' https://www.jma.go.jp` に変更して解消。
+- `sw.js`：`CACHE_NAME` `'chigalog-v6'` → `'chigalog-v7'`。
+
+**関連ファイル**
+- `index.html`
+- `assets/js/app.js` / `app.min.js`
+- `assets/css/style.css` / `style.min.css`
+- `DESIGN.md`
+- `sw.js`
+
+---
 
 ## 完了済み（2026-06-03）
 
