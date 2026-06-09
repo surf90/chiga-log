@@ -1,17 +1,7 @@
 {
-  "updated_at": "2026-06-09T19:00:29.766440+09:00",
+  "updated_at": "2026-06-10T00:24:30.096909+09:00",
   "area": 20,
   "data": [
-    {
-      "time": "2026-06-06T09:00:00+09:00",
-      "period": 11.2,
-      "wave_height": 3.5
-    },
-    {
-      "time": "2026-06-06T12:00:00+09:00",
-      "period": 11.2,
-      "wave_height": 3.3
-    },
     {
       "time": "2026-06-06T15:00:00+09:00",
       "period": 11.2,
@@ -150,32 +140,32 @@
     {
       "time": "2026-06-10T00:00:00+09:00",
       "period": 8.6,
-      "wave_height": 1.8
+      "wave_height": 1.7
     },
     {
       "time": "2026-06-10T03:00:00+09:00",
       "period": 8.6,
-      "wave_height": 1.9
+      "wave_height": 1.8
     },
     {
       "time": "2026-06-10T06:00:00+09:00",
       "period": 8.6,
-      "wave_height": 2.0
+      "wave_height": 1.7
     },
     {
       "time": "2026-06-10T09:00:00+09:00",
       "period": 8.6,
-      "wave_height": 2.0
+      "wave_height": 1.7
     },
     {
       "time": "2026-06-10T12:00:00+09:00",
       "period": 8.6,
-      "wave_height": 1.9
+      "wave_height": 1.8
     },
     {
       "time": "2026-06-10T15:00:00+09:00",
       "period": 8.6,
-      "wave_height": 1.8
+      "wave_height": 1.7
     },
     {
       "time": "2026-06-10T18:00:00+09:00",
@@ -185,47 +175,47 @@
     {
       "time": "2026-06-10T21:00:00+09:00",
       "period": 8.6,
-      "wave_height": 1.5
+      "wave_height": 1.6
     },
     {
       "time": "2026-06-11T00:00:00+09:00",
       "period": 8.6,
-      "wave_height": 1.4
+      "wave_height": 1.6
     },
     {
       "time": "2026-06-11T03:00:00+09:00",
-      "period": 8.6,
-      "wave_height": 1.4
+      "period": 9.4,
+      "wave_height": 1.6
     },
     {
       "time": "2026-06-11T06:00:00+09:00",
-      "period": 8.6,
-      "wave_height": 1.5
+      "period": 9.4,
+      "wave_height": 1.6
     },
     {
       "time": "2026-06-11T09:00:00+09:00",
-      "period": 8.6,
-      "wave_height": 1.5
+      "period": 10.3,
+      "wave_height": 1.6
     },
     {
       "time": "2026-06-11T12:00:00+09:00",
-      "period": 9.4,
-      "wave_height": 1.5
+      "period": 10.3,
+      "wave_height": 1.6
     },
     {
       "time": "2026-06-11T15:00:00+09:00",
-      "period": 9.4,
+      "period": 10.3,
       "wave_height": 1.5
     },
     {
       "time": "2026-06-11T18:00:00+09:00",
-      "period": 9.4,
-      "wave_height": 1.4
+      "period": 10.3,
+      "wave_height": 1.5
     },
     {
       "time": "2026-06-11T21:00:00+09:00",
-      "period": 9.4,
-      "wave_height": 1.4
+      "period": 10.3,
+      "wave_height": 1.5
     },
     {
       "time": "2026-06-12T00:00:00+09:00",
@@ -235,17 +225,27 @@
     {
       "time": "2026-06-12T03:00:00+09:00",
       "period": 10.3,
-      "wave_height": 1.6
+      "wave_height": 1.5
     },
     {
       "time": "2026-06-12T06:00:00+09:00",
       "period": 10.3,
-      "wave_height": 1.6
+      "wave_height": 1.5
     },
     {
       "time": "2026-06-12T09:00:00+09:00",
-      "period": 8.6,
-      "wave_height": 1.6
+      "period": 9.4,
+      "wave_height": 1.5
+    },
+    {
+      "time": "2026-06-12T12:00:00+09:00",
+      "period": 9.4,
+      "wave_height": 1.4
+    },
+    {
+      "time": "2026-06-12T15:00:00+09:00",
+      "period": 9.4,
+      "wave_height": 1.4
     }
   ]
 }
