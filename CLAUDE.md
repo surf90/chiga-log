@@ -2,16 +2,16 @@
 
 ## 三原則
 1. **確かなソース**: 気象庁を一次優先。Open-Meteo/Stormglass/NASA は補助。取得失敗時はUI上で明示し、ダミー値で誤読を誘発しない。
-2. **高速表示**: JSライブラリ原則不使用。例外は Chart.js のみ（自ホスト軽量Build）。フォントは可変フォント+サブセットで最小化。
+2. **高速表示**: JSライブラリ原則不使用。例外は Chart.js のみ（自ホストUMDビルド `assets/vendor/chart.umd.min.js`）。フォントは可変フォント+サブセットで最小化。
 3. **API/Actions 節約**: fetch は sessionStorage/localStorage キャッシュ経由。GitHub Actions cron は既存頻度維持、追加禁止。軽微Pushでの再ビルド禁止。
 
 ## 実行コマンド（PowerShell / win32）
-- プレビュー: `python -m http.server 8000`
+- プレビュー:
+  - 忠実: `bundle exec jekyll serve`（`baseurl`/Liquid を解決。要 Gemfile 追加）
+  - 簡易（生HTMLのみ）: `python -m http.server 8000`（`{{ site.baseurl }}` 未解決＝アセット/Chart.js は読めない）
 - 整形: `npx prettier --write .`
-- minify 再生成（`app.js`/`style.css` 編集後）:
-  - `npx --yes terser assets/js/app.js -c -m -o assets/js/app.min.js`
-  - `npx --yes clean-css-cli -o assets/css/style.min.css assets/css/style.css`
-- 容量確認: `Get-ChildItem -Recurse -File | Measure-Object Length -Sum`
+- minify: `assets/css/style.css` / `assets/js/app.js` を編集して push すると `minify.yml` が自動生成（ローカル実行不要）。
+- 容量確認: `Get-ChildItem -Recurse -File | Where-Object FullName -notmatch '\\(\.git|\.claude)\\' | Measure-Object Length -Sum`
 - テスト: `pytest tests`（任意。`pip install -r scripts/requirements.txt`）
 
 ## コーディング規約
@@ -28,7 +28,7 @@
 
 ## セキュリティ
 - 機密情報（APIキー・.env）のコミット厳禁。
-- `.claudeignore` でソース以外を除外。
+- ソース以外（`scripts/`・各md・`reports/`）は `_config.yml` の `exclude:` でビルド除外。
 
 ## GitHub Actions（`.github/workflows/`）
 | ファイル | 役割 | cron (UTC) |
@@ -41,10 +41,11 @@
 | `minify.yml` | CSS/JS minify | push トリガ |
 | `test.yml` | Python ユニットテスト | push/PR |
 
+- データ品質は気象庁を一次優先（原則1）、更新頻度は Open-Meteo が主力（`fetch-openmeteo.yml`）。
 - cron 追加・頻度変更は要相談（三原則3: API/Actions 節約）。
 - 軽微修正は複数まとめて1コミットに集約。
 
 ## トークン節約
-- 応答は原始人スタイル（簡潔・名詞句優先）。
+- 応答は簡潔・名詞句優先（グローバル Concise Output に準拠）。
 - 大規模変更は計画モード。
-- セッション末で `progress.md` 更新後 `/clear`。
+- セッション末に `progress.md` 更新（`/clear` はユーザー操作）。
