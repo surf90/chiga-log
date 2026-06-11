@@ -19,11 +19,13 @@ _MAX_ATTEMPTS = 3
 _BACKOFF_SECONDS = (2, 4)
 
 
-def _http_request(url: str, *, headers: dict[str, str] | None, timeout: int) -> bytes | None:
+def _http_request(url: str, *, headers: dict[str, str] | None, timeout: int, retry_on_404: bool = False) -> bytes | None:
     """指定URLに対してリトライ付きでHTTPリクエストを送り、本文バイト列を返す。
 
     一時的な失敗（5xx, 429, ネットワーク例外）はバックオフでリトライする。
     4xx (429除く) は即時にNone。
+    retry_on_404=True の場合、404も一時障害とみなしリトライ対象にする
+    （JMAガイダンスCSVの再生成時の瞬断対策）。
     """
     h = {"User-Agent": USER_AGENT}
     if headers:
@@ -36,7 +38,8 @@ def _http_request(url: str, *, headers: dict[str, str] | None, timeout: int) -> 
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 return resp.read()
         except urllib.error.HTTPError as e:
-            if 400 <= e.code < 500 and e.code != 429:
+            transient = e.code == 429 or (retry_on_404 and e.code == 404)
+            if 400 <= e.code < 500 and not transient:
                 print(f"[http] {label}: HTTP {e.code} {e.reason}", file=sys.stderr)
                 return None
             last_err = f"HTTP {e.code} {e.reason}"
@@ -55,9 +58,12 @@ def _http_request(url: str, *, headers: dict[str, str] | None, timeout: int) -> 
     return None
 
 
-def http_get_bytes(url: str, *, headers: dict[str, str] | None = None, timeout: int = DEFAULT_TIMEOUT) -> bytes | None:
-    """URLからバイト列を取得する。最大3回までリトライ。失敗時はNone。"""
-    return _http_request(url, headers=headers, timeout=timeout)
+def http_get_bytes(url: str, *, headers: dict[str, str] | None = None, timeout: int = DEFAULT_TIMEOUT, retry_on_404: bool = False) -> bytes | None:
+    """URLからバイト列を取得する。最大3回までリトライ。失敗時はNone。
+
+    retry_on_404=True で404も一時障害とみなしリトライする。
+    """
+    return _http_request(url, headers=headers, timeout=timeout, retry_on_404=retry_on_404)
 
 
 def http_get_text(url: str, *, encoding: str = "utf-8", headers: dict[str, str] | None = None, timeout: int = DEFAULT_TIMEOUT) -> str | None:

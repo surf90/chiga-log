@@ -14,7 +14,7 @@ URL = "https://www.data.jma.go.jp/waveinf/data/Guid/csv/wave_guid_20.csv"
 
 def fetch_csv(url: str) -> str | None:
     """CSVデータをURLから取得してデコードする。"""
-    raw = http_get_bytes(url)
+    raw = http_get_bytes(url, retry_on_404=True)
     if raw is None:
         return None
     try:
