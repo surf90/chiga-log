@@ -63,7 +63,7 @@ python -m http.server 8000        # raw 配信: 設定は反映されず本家�
 
 - `_config.yml` の `url` / `baseurl` / `google_analytics`（公開先・解析ID）。
 - `site.webmanifest`（PWA 名称・説明）。
-- `ogp.png` / `ogp.webp`（OGP 画像）。
+- `assets/og/ogp.png` / `assets/og/ogp.webp`（OGP 画像）。
 - ロゴ用フォントサブセット（`index.html` の `&text=ちがログ` 部分）。
 - フッターの外部 SNS リンク（例: ライフセービングの Instagram）。
 - 潮汐/警報の出力ファイル名 `data/warning_chigasaki.json`・`data/tidedata.json` は

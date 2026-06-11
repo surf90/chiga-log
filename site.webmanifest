@@ -10,7 +10,7 @@
   "lang": "ja",
   "icons": [
     {
-      "src": "/chiga-log/apple-touch-icon.png",
+      "src": "/chiga-log/assets/icons/apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
