@@ -41,28 +41,6 @@ def extract_moon_today() -> dict | None:
     return result
 
 
-def extract_tide_today(all_tides: dict) -> bool:
-    """気象庁の年間潮汐JSONから当日のエントリを抽出する。"""
-    date_str = now_jst().strftime("%Y-%m-%d")
-    today_tides = all_tides.get(date_str, [])
-    save_json("data/tide_today.json", {"date": date_str, "tides": today_tides})
-    print(f"[tide] {date_str} {len(today_tides)} エントリを保存しました。")
-    return True
-
-
-def extract_tide_3day(all_tides: dict) -> bool:
-    """気象庁の年間潮汐JSONから本日〜翌々日のエントリを出力する。"""
-    n = now_jst()
-    days = []
-    for delta in range(3):
-        d = n + timedelta(days=delta)
-        ds = d.strftime("%Y-%m-%d")
-        days.append({"date": ds, "tides": all_tides.get(ds, [])})
-    save_json("data/tide_3day.json", {"generated": n.isoformat(), "days": days})
-    print(f"[tide3day] {days[0]['date']}〜{days[-1]['date']} を保存しました。")
-    return True
-
-
 def fetch_stormglass_tides() -> list[dict] | None:
     """気象庁データ欠損時のフォールバック: Stormglass APIから3日分の潮汐を取得する。"""
     api_key = os.environ.get("STORMGLASS_API_KEY")
@@ -146,11 +124,7 @@ def build_tide_widget(all_tides: dict | None, moon_result: dict | None) -> None:
 if __name__ == "__main__":
     moon_result = extract_moon_today()
     tide_data = load_json("data/tidedata.json")
-
-    if tide_data is not None:
-        ok_tide = extract_tide_today(tide_data) and extract_tide_3day(tide_data)
-    else:
-        ok_tide = False
+    ok_tide = tide_data is not None
 
     build_tide_widget(tide_data, moon_result)
 
