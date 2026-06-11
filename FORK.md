@@ -21,7 +21,7 @@ JS・Python・HTML（Jekyll）の3者がここを参照するため、基本は 
 | `jma.city_warning_code` | 市区町村の警報コード（`selected_code`） | 1420700 | 同上 |
 | `jma.city_warning_name` | 警報JSON出力の地域名 | 茅ヶ崎市 | 任意 |
 | `jma.warning_office` | VPWS50 県官署署名 | JPTF | 下記 |
-| `jma.amedas_code` | アメダス官署コード（観測値取得） | 46091 | アメダス地点表 |
+| `jma.amedas_code` | アメダス官署コード（観測値取得） | 46141（辻堂） | アメダス地点表 |
 | `jma.amedas_link_no` | アメダス画面リンクの `amdno` | 46141 | アメダスURL |
 | `jma.tide_station` | 気象庁潮汐テキストの観測点コード | D8 | 下記 |
 | `jma.wave_guid_area` | 波浪ガイダンスのエリア番号 | 20 | 下記 |
