@@ -6,11 +6,14 @@ bosaiの警報JSON(140000.json)は神奈川で更新停止が確認されたた�
 同一オリジンの極小JSONに整形してフロントへ供給する。
 """
 
-from _common import http_get_json, now_jst, save_json, load_json
+from _common import http_get_json, load_site_config, now_jst, save_json, load_json
 
+_jma = load_site_config().get("jma", {})
 # 神奈川県の発表官署署名(JPTF)。県ID 14 -> JPTF。
-WARNING_URL = "https://www.data.jma.go.jp/multi/data/VPWS50/JPTF_jp.json"
-CHIGASAKI_CODE = "1420700"
+_WARNING_OFFICE = _jma.get("warning_office", "JPTF")
+WARNING_URL = f"https://www.data.jma.go.jp/multi/data/VPWS50/{_WARNING_OFFICE}_jp.json"
+CHIGASAKI_CODE = _jma.get("city_warning_code", "1420700")
+CHIGASAKI_NAME = _jma.get("city_warning_name", "茅ヶ崎市")
 OUTPUT_PATH = "data/warning_chigasaki.json"
 
 
@@ -49,7 +52,7 @@ def main() -> None:
         "reportDateTime": feed.get("reportDateTime", ""),
         "fetchedAt": now_jst().isoformat(timespec="seconds"),
         "source": WARNING_URL,
-        "area": "茅ヶ崎市",
+        "area": CHIGASAKI_NAME,
         "areaCode": CHIGASAKI_CODE,
         "warnings": warnings,
     }

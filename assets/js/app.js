@@ -17,8 +17,14 @@
 // ============================================================
 
 // ─── 0. 定数 / モジュール状態 ───────────────────────────────
-const LAT = 35.3175;
-const LON = 139.4151;
+// 地点設定: Jekyll が site-config.js に展開した window.SITE_CONFIG を参照。
+// 未定義（生配信・CSP遮断・読込失敗）時は現行リテラルにフォールバックする。
+const _cfg = window.SITE_CONFIG || {};
+const _cfgLoc = _cfg.location || {};
+const _cfgJma = _cfg.jma || {};
+const LAT = _cfgLoc.lat ?? 35.3175;
+const LON = _cfgLoc.lon ?? 139.4151;
+const WAVE_GUID_AREA = _cfgJma.wave_guid_area ?? "20";
 const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const STORAGE_PREFIX = "chigalog:v6:";
 const _reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -535,8 +541,8 @@ function drawTideChart(extremes, hasHeightData) {
 async function fetchWaveGuidance() {
   try {
     const hour3Buster = Math.floor(Date.now() / (3 * 60 * 60 * 1000));
-    const resp = await fetch(`data/wave_guid_20.json?t=${hour3Buster}`);
-    if (!resp.ok) throw new Error("wave_guid_20.json の読み込みに失敗");
+    const resp = await fetch(`data/wave_guid_${WAVE_GUID_AREA}.json?t=${hour3Buster}`);
+    if (!resp.ok) throw new Error(`wave_guid_${WAVE_GUID_AREA}.json の読み込みに失敗`);
     const json = await resp.json();
 
     const todayJst = new Date(
@@ -855,7 +861,7 @@ async function fetchJmaWarning() {
 // ─── 6.5 津波注意報・警報（相模湾・三浦半島） ──────────────────
 // 注: 気象庁 bosai 津波フィードはCORS対応のためクライアントから直接取得する。
 // 相模湾・三浦半島(予報区コード330)に津波注意報/警報が出ている時だけカード表示。
-const TSUNAMI_AREA_CODE = "330"; // 相模湾・三浦半島
+const TSUNAMI_AREA_CODE = _cfgJma.tsunami_area_code ?? "330"; // 相模湾・三浦半島
 const TSUNAMI_LIST_URL = "https://www.jma.go.jp/bosai/tsunami/data/list.json";
 const TSUNAMI_BASE_URL = "https://www.jma.go.jp/bosai/tsunami/data/";
 

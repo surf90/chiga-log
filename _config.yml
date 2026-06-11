@@ -16,6 +16,7 @@ exclude:
   - progress.md
   - CLAUDE.md
   - README.md
+  - FORK.md
   - reports/
 
 google_analytics: G-L922RQ9G6R
