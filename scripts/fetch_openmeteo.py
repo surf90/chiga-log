@@ -40,8 +40,8 @@ def _add_jst_tz(value):
         return value
     return value + _JST_SUFFIX
 
-# 茅ヶ崎ヘッドランド最寄り官署: 辻堂 (46091)
-JMA_AMEDAS_CODE = _cfg.get("jma", {}).get("amedas_code", "46091")
+# 茅ヶ崎ヘッドランド最寄り官署: 辻堂 (46141)
+JMA_AMEDAS_CODE = _cfg.get("jma", {}).get("amedas_code", "46141")
 JMA_LATEST_TIME_URL = "https://www.jma.go.jp/bosai/amedas/data/latest_time.txt"
 JMA_AMEDAS_MAP_URL = "https://www.jma.go.jp/bosai/amedas/data/map/{ymdhns}.json"
 

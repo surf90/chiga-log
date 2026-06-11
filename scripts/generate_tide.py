@@ -5,7 +5,7 @@ from datetime import datetime
 
 from _common import http_get_bytes, load_site_config, save_json
 
-# 観測所コードD8 = 江の島。フォーク時は _data/site.json の jma.tide_station を変更。
+# 観測所コードD8 = 湘南港。フォーク時は _data/site.json の jma.tide_station を変更。
 TIDE_STATION = load_site_config().get("jma", {}).get("tide_station", "D8")
 JMA_TIDE_URL = "https://www.data.jma.go.jp/kaiyou/data/db/tide/suisan/txt/{year}/{station}.txt"
 
