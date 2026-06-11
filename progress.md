@@ -94,6 +94,9 @@ updated: 2026-06-18
   - **改名保留**: `mooninfo_2026.json`（`extract_daily_data.py`の`f"data/mooninfo_{year}.json"`動的参照＝年サフィックス意味的）/ `wave_guid_20.json`（`_20`は気象庁エリアコード）。
   - 連動更新: scripts(書) / app.js+app.min.js再生成(読) / workflowのgit add / README・FORK / `sw.js` CACHE_NAME v7→v8。
 - **検証**: `pytest` 35件通過、リネームJSON妥当、全ソースで旧名0ヒット（履歴ログ・reports除く）。bundler未導入のためJekyllビルド検証は未実施（要・公開前確認）。
+- **再検証で判明した残課題の修正（第2フェーズ）**:
+  - `README.md` 本文の旧名 `fetch_openmeteo.yml` → `fetch-openmeteo.yml`（CLAUDE.md表は済だが本文を見落としていた）。
+  - スクリプト改名 `scripts/dl_wave-guid.py` → `scripts/fetch_wave_guidance.py`（ハイフン入りでPython識別子として不正だった）。workflow `run:` とテストを連動更新し、`tests/test_fetch_wave_guidance.py` の `importlib` 回避策を通常 `from fetch_wave_guidance import parse_csv` に簡素化。出力データ名 `wave_guid_20.json` は不変。
 
 ### リポジトリ構成整理・未使用ファイル/死パイプライン撤去 (main マージ)
 
