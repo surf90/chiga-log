@@ -8,6 +8,26 @@ updated: 2026-06-11
 
 ## 完了済み（2026-06-11）
 
+### リポジトリ構成整理・未使用ファイル/死パイプライン撤去 (main マージ)
+
+- **背景**: フォルダ/ファイル構成の妥当性検証を実施。生成元・参照元のないファイルや、誰にも消費されないデータ取得パイプラインが残存していた。
+- **削除（孤児ファイル）**: `data/tide_2day.json`（横スクロール同期機能の旧仕様、現在は未参照）。
+- **Stormglass 定期取得パイプライン撤去（Actions cron -1本）**:
+  - `scripts/fetch_tide.py` / `data/tide_data.json` / `.github/workflows/update-tide-data.yml` を削除。
+  - `tide_data.json` はフロント・他スクリプトのどこからも読まれておらず完全に死んでいた。
+  - Stormglassフォールバック自体は `scripts/extract_daily_data.py` の `fetch_stormglass_tides()`（気象庁データ欠損時のみライブHTTP取得）として存続。挙動・`STORMGLASS_API_KEY` の用途は不変。
+- **未消費の中間生成物撤去**: `data/tide_today.json` / `data/tide_3day.json` とその生成関数（`extract_tide_today` / `extract_tide_3day`）を `scripts/extract_daily_data.py` から削除。フロントは `tide_widget.json` に一本化済みのため影響なし。
+- **git衛生**: 誤って追跡されていた `.claude/worktrees/` 配下を追跡解除し、`.gitignore` に `.claude/worktrees/` `.pytest_cache/` `.claude/settings.local.json` を追加。
+- **ドキュメント追従**: `CLAUDE.md` の Actions 一覧表から `update-tide-data.yml` を削除。`README.md` の `tide_data.json` 参照を `tide_widget.json` に修正、Stormglassシークレット説明・データ構成例・使用技術欄を実態に合わせて更新。
+- 検証: `python scripts/extract_daily_data.py` 正常実行（tide_widget.json/moon_today.json生成、tide_today/3dayは再生成されず）/ pytest 35件通過。
+
+**関連ファイル**
+- `.gitignore` / `CLAUDE.md` / `README.md`
+- `scripts/extract_daily_data.py`
+- 削除: `data/tide_2day.json` / `data/tide_data.json` / `data/tide_today.json` / `data/tide_3day.json` / `scripts/fetch_tide.py` / `.github/workflows/update-tide-data.yml`
+
+---
+
 ### 地点設定を `_data/site.json` に一元化（フォーク対応） (PR #103 → main マージ)
 
 - **目的**: 別の海岸へフォークしやすくする。茅ヶ崎固有の値（緯度経度・JMA各種コード・地名）が JS/Python/HTML の15箇所以上に散在していたため、単一ソースに集約。

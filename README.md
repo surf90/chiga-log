@@ -8,7 +8,7 @@
 - **ホーム画面アプリ化**: iOS/Androidのブラウザから「ホーム画面に追加」するとスタンドアロンアプリとして起動。バックグラウンド復帰時に自動でデータを最新化します。
 - **レスポンシブ対応**: スマートフォンでの閲覧に最適化された、屋外でも見やすいレイアウトを採用しています。
 - **視覚的な潮汐グラフ**: Chart.jsを用いた滑らかな曲線により、満潮・干潮のタイミングを直感的に把握できます。
-- **自動データ更新**: GitHub Actionsを利用して定期的にデータを取得・生成することで、APIの制限を回避しつつ、最新の天気予報（forecast_data.json）や潮汐情報（tide_data.json）を安定して配信しています。
+- **自動データ更新**: GitHub Actionsを利用して定期的にデータを取得・生成することで、APIの制限を回避しつつ、最新の天気予報（forecast_data.json）や潮汐情報（tide_widget.json）を安定して配信しています。
 
 ## 使い方（WEBでの確認方法：推奨）
 
@@ -63,7 +63,7 @@ https://surf90.github.io/chiga-log/
 
 | 名前 | 用途 | 必須 |
 |---|---|:-:|
-| `STORMGLASS_API_KEY` | 気象庁潮汐データ欠損時のフォールバック（`scripts/fetch_tide.py`, `scripts/extract_daily_data.py`） | 任意 |
+| `STORMGLASS_API_KEY` | 気象庁潮汐データ欠損時のフォールバック（`scripts/extract_daily_data.py`） | 任意 |
 
 未設定の場合、Stormglassフォールバックはスキップされ、気象庁データが取得できなければ「取得失敗」が表示されます（誤読防止のためダミー潮汐は表示しません）。
 
@@ -91,7 +91,7 @@ https://surf90.github.io/chiga-log/
 
 ## 使い方（ローカルでの開発・確認方法）
 
-本アプリは静的なHTML/JavaScriptで構築されていますが、潮汐データ（tide_data.json）の読み込みに fetch APIを使用しています。
+本アプリは静的なHTML/JavaScriptで構築されていますが、潮汐データ（tide_widget.json）の読み込みに fetch APIを使用しています。
 そのため、HTMLファイルを直接ブラウザで開いた場合（file:// プロトコル）、セキュリティ制限により実際のデータが読み込めず、プレビュー用のダミー波形が表示されます。
 
 実際のデータを含めてローカルで動作確認をしたい場合:
@@ -135,8 +135,7 @@ https://svs.gsfc.nasa.gov/vis/a000000/a005500/a005587/mooninfo_2026.json
 ```
 data/
 ├── mooninfo_2026.json  ← 配置するファイル
-├── tidedata.json
-└── tide_data.json
+└── tidedata.json
 ```
 
 **4. コミット・プッシュ**
@@ -237,4 +236,4 @@ npx --yes clean-css-cli -o assets/css/style.min.css assets/css/style.css
 - **気象庁データ (天気予報・注意報・潮汐)**: 気象庁公式データ (GitHub ActionsによるJSON定期取得、および年次更新データを利用)
 - **月齢データ**: NASA SVS (年次更新のJSONデータを利用)
 - **海面・現在の気象データ**: Open-Meteo API (登録不要・無料で利用可能)
-- **潮汐データ (サブ)**: Stormglass API (GitHub ActionsによりJSONとして定期更新)
+- **潮汐データ (サブ)**: Stormglass API (気象庁データ欠損時のみ日次バッチ内でフォールバック取得)
