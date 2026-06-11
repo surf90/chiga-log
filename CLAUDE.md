@@ -33,9 +33,9 @@
 ## GitHub Actions（`.github/workflows/`）
 | ファイル | 役割 | cron (UTC) |
 |---|---|---|
-| `fetch_openmeteo.yml` | Open-Meteo（海面・風）＋警報BFF（主力） | `*/30 * * * *` |
-| `fetch_forecast.yml` | 気象庁 天気予報 | `5 20,2,8 * * *` |
-| `dl_wave-guid.yml` | 気象庁 波浪ガイダンス | `5 0,6,12 * * *` |
+| `fetch-openmeteo.yml` | Open-Meteo（海面・風）＋警報BFF（主力） | `*/30 * * * *` |
+| `fetch-forecast.yml` | 気象庁 天気予報 | `5 20,2,8 * * *` |
+| `fetch-wave-guidance.yml` | 気象庁 波浪ガイダンス | `5 0,6,12 * * *` |
 | `update-daily-data.yml` | 日次（月齢・潮汐抽出） | `5 15 * * *` |
 | `update-jma-tide.yml` | 気象庁 年次潮汐 | 年2回（1/1・7/1） |
 | `minify.yml` | CSS/JS minify | push トリガ |

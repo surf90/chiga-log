@@ -78,8 +78,8 @@ def main() -> None:
     if not result:
         print("データの取得・解析に失敗しました。", file=sys.stderr)
         sys.exit(1)
-    save_json("data/tidedata.json", result, indent=2)
-    print(f"正常に data/tidedata.json を生成しました（{len(result)}日分）。")
+    save_json("data/tide_data.json", result, indent=2)
+    print(f"正常に data/tide_data.json を生成しました（{len(result)}日分）。")
 
 
 if __name__ == "__main__":

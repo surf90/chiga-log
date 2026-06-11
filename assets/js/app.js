@@ -251,7 +251,7 @@ async function calculateTide() {
 
   try {
     const dayKey = new Date().toISOString().slice(0, 10);
-    const resp = await fetch(`data/moon_today.json?d=${dayKey}`);
+    const resp = await fetch(`data/moon_daily.json?d=${dayKey}`);
     if (resp.ok) {
       const moonToday = await resp.json();
       if (moonToday.age !== undefined) {
@@ -963,8 +963,8 @@ async function fetchTsunami() {
 async function fetchJmaForecast() {
   const hour8Buster = Math.floor(Date.now() / (8 * 60 * 60 * 1000));
   try {
-    const res = await fetch(`data/forecast_data.json?t=${hour8Buster}`);
-    if (!res.ok) throw new Error("forecast_data.json fetch failed");
+    const res = await fetch(`data/forecast.json?t=${hour8Buster}`);
+    if (!res.ok) throw new Error("forecast.json fetch failed");
     const data = await res.json();
 
     const shortTerm = data?.forecast?.[0];
@@ -972,7 +972,7 @@ async function fetchJmaForecast() {
     const timeSeries1 = shortTerm?.timeSeries?.[1];
     const timeSeries2 = shortTerm?.timeSeries?.[2];
     if (!timeSeries0 || !timeSeries1 || !timeSeries2) {
-      throw new Error("forecast_data.json の構造が不正です");
+      throw new Error("forecast.json の構造が不正です");
     }
     const areaWeather =
       timeSeries0.areas?.find((a) => a.area?.code === "140010") ||
@@ -984,7 +984,7 @@ async function fetchJmaForecast() {
       timeSeries2.areas?.find((a) => a.area?.code === "46106") ||
       timeSeries2.areas?.[0];
     if (!areaWeather || !areaPop || !areaTemp) {
-      throw new Error("forecast_data.json に対象エリアがありません");
+      throw new Error("forecast.json に対象エリアがありません");
     }
 
     document.getElementById("jma-weather").textContent =

@@ -8,6 +8,19 @@ updated: 2026-06-11
 
 ## 完了済み（2026-06-11）
 
+### 構成校正: 命名統一・アセット集約（ブランチ `chore/restructure-naming`）
+
+- **背景**: GitHub Pages/PWAベストプラクティスに基づく構成レビュー。命名がsnake/kebab/略語で混在、ルート直下にアイコン/OGPが散在していた。
+- **A群（低リスク）**:
+  - workflowをkebab統一: `fetch_openmeteo→fetch-openmeteo` / `fetch_forecast→fetch-forecast` / `dl_wave-guid→fetch-wave-guidance`（内部参照・job名・cron不変）。
+  - 画像集約: `favicon.svg`/`favicon-48.png`/`apple-touch-icon.png`→`assets/icons/`、`ogp.*`→`assets/og/`。`favicon.ico`はルート慣例で残置。`index.html`/`site.webmanifest`/`FORK.md`追従。
+- **B群（dataをsnake_case統一）**:
+  - `forecast_data.json→forecast.json`（_data冗長解消）/ `tidedata.json→tide_data.json` / `moon_today.json→moon_daily.json`。
+  - 既にsnake_caseの `tide_widget`/`warning_chigasaki`/`weather_marine`/`wind_forecast` は変更なし。
+  - **改名保留**: `mooninfo_2026.json`（`extract_daily_data.py`の`f"data/mooninfo_{year}.json"`動的参照＝年サフィックス意味的）/ `wave_guid_20.json`（`_20`は気象庁エリアコード）。
+  - 連動更新: scripts(書) / app.js+app.min.js再生成(読) / workflowのgit add / README・FORK / `sw.js` CACHE_NAME v7→v8。
+- **検証**: `pytest` 35件通過、リネームJSON妥当、全ソースで旧名0ヒット（履歴ログ・reports除く）。bundler未導入のためJekyllビルド検証は未実施（要・公開前確認）。
+
 ### リポジトリ構成整理・未使用ファイル/死パイプライン撤去 (main マージ)
 
 - **背景**: フォルダ/ファイル構成の妥当性検証を実施。生成元・参照元のないファイルや、誰にも消費されないデータ取得パイプラインが残存していた。
