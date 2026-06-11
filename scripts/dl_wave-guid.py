@@ -5,11 +5,13 @@ import io
 import os
 from datetime import datetime
 
-from _common import JST, http_get_bytes, now_jst, save_json
+from _common import JST, http_get_bytes, load_site_config, now_jst, save_json
 
 # 注: 気象庁サイト側の不具合により wave_guid.html?area=19 がエリア20（関東地方南部）のデータを配信している。
 # 正しいエリアコードは20のため、CSVは wave_guid_20.csv を使用する。
-URL = "https://www.data.jma.go.jp/waveinf/data/Guid/csv/wave_guid_20.csv"
+# フォーク時は _data/site.json の jma.wave_guid_area を変更（URL・出力名・areaフィールドに伝播）。
+WAVE_AREA = str(load_site_config().get("jma", {}).get("wave_guid_area", "20"))
+URL = f"https://www.data.jma.go.jp/waveinf/data/Guid/csv/wave_guid_{WAVE_AREA}.csv"
 
 
 def fetch_csv(url: str) -> str | None:
@@ -45,16 +47,16 @@ def parse_csv(csv_text: str) -> list[dict]:
 
 
 def main() -> None:
-    print("気象庁 波浪ガイダンス（area=20）の取得を開始します...")
+    print(f"気象庁 波浪ガイダンス（area={WAVE_AREA}）の取得を開始します...")
     csv_text = fetch_csv(URL)
     if csv_text is None:
         raise RuntimeError("波浪CSVの取得に失敗しました。")
     data = parse_csv(csv_text)
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    output_path = os.path.join(repo_root, "data", "wave_guid_20.json")
+    output_path = os.path.join(repo_root, "data", f"wave_guid_{WAVE_AREA}.json")
     save_json(output_path, {
         "updated_at": now_jst().isoformat(),
-        "area": 20,
+        "area": int(WAVE_AREA) if WAVE_AREA.isdigit() else WAVE_AREA,
         "data": data,
     }, indent=2)
     print(f"保存完了: {output_path}（{len(data)}件）")

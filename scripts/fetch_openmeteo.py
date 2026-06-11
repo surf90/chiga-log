@@ -2,10 +2,13 @@
 
 from datetime import datetime
 
-from _common import http_get_json, http_get_text, now_jst, require_keys, save_json
+from _common import http_get_json, http_get_text, load_site_config, now_jst, require_keys, save_json
 
-LAT = 35.3175
-LON = 139.4151
+_cfg = load_site_config()
+_loc = _cfg.get("location", {})
+LAT = _loc.get("lat", 35.3175)
+LON = _loc.get("lon", 139.4151)
+LOCATION_NAME = _loc.get("display_name", "茅ヶ崎ヘッドランド")
 
 WEATHER_URL = (
     f"https://api.open-meteo.com/v1/forecast"
@@ -38,7 +41,7 @@ def _add_jst_tz(value):
     return value + _JST_SUFFIX
 
 # 茅ヶ崎ヘッドランド最寄り官署: 辻堂 (46091)
-JMA_AMEDAS_CODE = "46091"
+JMA_AMEDAS_CODE = _cfg.get("jma", {}).get("amedas_code", "46091")
 JMA_LATEST_TIME_URL = "https://www.jma.go.jp/bosai/amedas/data/latest_time.txt"
 JMA_AMEDAS_MAP_URL = "https://www.jma.go.jp/bosai/amedas/data/map/{ymdhns}.json"
 
@@ -163,7 +166,7 @@ def main() -> None:
 
     save_json("data/wind_forecast.json", {
         "source": "Open-Meteo",
-        "location": {"name": "茅ヶ崎ヘッドランド", "lat": LAT, "lon": LON},
+        "location": {"name": LOCATION_NAME, "lat": LAT, "lon": LON},
         "updated_at": updated_at,
         "interval": "1h",
         "items": _build_wind_items(wind_fc.get("hourly", {})),

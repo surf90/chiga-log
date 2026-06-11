@@ -3,9 +3,10 @@
 import sys
 from datetime import datetime
 
-from _common import http_get_bytes, save_json
+from _common import http_get_bytes, load_site_config, save_json
 
-# 観測所コードD8 = 江の島
+# 観測所コードD8 = 江の島。フォーク時は _data/site.json の jma.tide_station を変更。
+TIDE_STATION = load_site_config().get("jma", {}).get("tide_station", "D8")
 JMA_TIDE_URL = "https://www.data.jma.go.jp/kaiyou/data/db/tide/suisan/txt/{year}/{station}.txt"
 
 
@@ -56,7 +57,7 @@ def parse_jma_tide_text(text_data: str) -> dict:
     return tide_dict
 
 
-def fetch_and_parse(year: int, station_code: str = "D8") -> dict | None:
+def fetch_and_parse(year: int, station_code: str = TIDE_STATION) -> dict | None:
     """気象庁のサイトから1年分のテキストを取得してパースする。"""
     url = JMA_TIDE_URL.format(year=year, station=station_code)
     raw = http_get_bytes(url, timeout=30)

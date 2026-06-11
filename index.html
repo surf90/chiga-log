@@ -1,9 +1,8 @@
 ---
 layout: null
-title: ちがログ｜茅ヶ崎の海情報（天気・波・水温・潮汐・気温）
-description: 茅ヶ崎の海情報をログするデータサイト。天気、波、水温、タイドグラフ、気温をリアルタイムで網羅。マリンレジャーやビーチチェックに。一番使いやすい茅ヶ崎専用の海情報ツール。
 lang: ja
 ---
+<!-- タイトル・説明・地名・各種コードは _data/site.json で一元管理（フォーク時はそこを編集）。 -->
 
 <!doctype html>
 <html lang="{{ page.lang }}">
@@ -11,9 +10,9 @@ lang: ja
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>{{ page.title }}</title>
+    <title>{{ site.data.site.title }}</title>
 
-    <meta name="description" content="{{ page.description }}" />
+    <meta name="description" content="{{ site.data.site.description }}" />
 
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="favicon-48.png" type="image/png" sizes="48x48" />
@@ -30,7 +29,7 @@ lang: ja
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
     />
-    <meta name="apple-mobile-web-app-title" content="ちがログ" />
+    <meta name="apple-mobile-web-app-title" content="{{ site.data.site.short_name }}" />
     <meta
       name="theme-color"
       media="(prefers-color-scheme: light)"
@@ -42,8 +41,8 @@ lang: ja
       content="#121212"
     />
 
-    <meta property="og:title" content="{{ page.title }}" />
-    <meta property="og:description" content="{{ page.description }}" />
+    <meta property="og:title" content="{{ site.data.site.title }}" />
+    <meta property="og:description" content="{{ site.data.site.description }}" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
 
@@ -51,7 +50,7 @@ lang: ja
 
     <meta property="og:url" content="{{ site.url }}{{ site.baseurl }}/" />
     <meta property="og:locale" content="ja_JP" />
-    <meta property="og:site_name" content="ちがログ" />
+    <meta property="og:site_name" content="{{ site.data.site.name }}" />
     <meta property="fb:app_id" content="1225249939823906" />
     <!-- PNG を先頭に置き、WebP 非対応の旧プレビューエンジン(Slack/Discord旧版)でも確実にサムネ表示 -->
     <meta
@@ -61,7 +60,7 @@ lang: ja
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="ちがログ OGP画像" />
+    <meta property="og:image:alt" content="{{ site.data.site.name }} OGP画像" />
     <meta
       property="og:image"
       content="{{ site.url }}{{ site.baseurl }}/ogp.webp"
@@ -70,8 +69,8 @@ lang: ja
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
 
-    <meta name="twitter:title" content="{{ page.title }} | ちがログ" />
-    <meta name="twitter:description" content="{{ page.description }}" />
+    <meta name="twitter:title" content="{{ site.data.site.title }} | {{ site.data.site.name }}" />
+    <meta name="twitter:description" content="{{ site.data.site.description }}" />
     <meta
       name="twitter:image"
       content="{{ site.url }}{{ site.baseurl }}/ogp.png"
@@ -85,25 +84,25 @@ lang: ja
             "@type": "WebSite",
             "@id": "{{ site.url }}{{ site.baseurl }}/#website",
             "url": "{{ site.url }}{{ site.baseurl }}/",
-            "name": "ちがログ",
-            "description": "{{ page.description }}",
+            "name": "{{ site.data.site.name }}",
+            "description": "{{ site.data.site.description }}",
             "inLanguage": "ja"
           },
           {
             "@type": "WebPage",
             "@id": "{{ site.url }}{{ site.baseurl }}/#webpage",
             "url": "{{ site.url }}{{ site.baseurl }}/",
-            "name": "{{ page.title }}",
-            "description": "{{ page.description }}",
+            "name": "{{ site.data.site.title }}",
+            "description": "{{ site.data.site.description }}",
             "isPartOf": { "@id": "{{ site.url }}{{ site.baseurl }}/#website" },
             "inLanguage": "ja",
             "about": {
               "@type": "Place",
-              "name": "茅ヶ崎ヘッドランド",
+              "name": "{{ site.data.site.location.display_name }}",
               "geo": {
                 "@type": "GeoCoordinates",
-                "latitude": 35.3175,
-                "longitude": 139.4151
+                "latitude": {{ site.data.site.location.lat }},
+                "longitude": {{ site.data.site.location.lon }}
               }
             }
           }
@@ -132,6 +131,8 @@ lang: ja
       crossorigin="anonymous"
       defer
     ></script>
+    <!-- 地点設定（_data/site.json から Jekyll が生成）。app.min.js より前に読む。 -->
+    <script src="{{ site.baseurl }}/assets/js/site-config.js" defer></script>
     <script src="{{ site.baseurl }}/assets/js/app.min.js" defer></script>
     <script
       src="{{ site.baseurl }}/assets/js/sw-register.js"
@@ -143,11 +144,11 @@ lang: ja
   <body>
     <div class="container">
       <h1>
-        <span class="logo-text">ちがログ</span>
+        <span class="logo-text">{{ site.data.site.name }}</span>
         <span class="title-divider">|</span>
-        <span class="title-sub">茅ヶ崎の海情報</span>
+        <span class="title-sub">{{ site.data.site.area_label }}</span>
       </h1>
-      <span class="subtitle">茅ヶ崎の海のログが、５秒でわかる。</span>
+      <span class="subtitle">{{ site.data.site.tagline }}</span>
 
       <div id="skeleton-loading">
         <div class="hero-cards hero-cards-skeleton">
@@ -360,7 +361,7 @@ lang: ja
               href="https://www.data.jma.go.jp/kaiyou/db/tide/suisan/index.php"
               target="_blank"
               rel="noopener noreferrer"
-              >気象庁の潮位表（湘南港）</a
+              >気象庁の潮位表（{{ site.data.site.location.tide_table_label }}）</a
             >等をご確認ください。
           </p>
         </div>
@@ -407,7 +408,7 @@ lang: ja
             </div>
             <p class="note note-z">
               ※<a
-                href="https://www.data.jma.go.jp/waveinf/guid/wave_guid.html?area=19"
+                href="https://www.data.jma.go.jp/waveinf/guid/wave_guid.html?area={{ site.data.site.jma.wave_guid_link_area }}"
                 target="_blank"
                 rel="noopener noreferrer"
                 >気象庁が提供している（関東地方南部全域の）予想値</a
@@ -486,7 +487,7 @@ lang: ja
             <p class="note">
               <strong
                 >※必ず<a
-                  href="https://www.data.jma.go.jp/multi/warn/warn_detail.html?code=140010&selected_code=1420700&warning=all&lang=jp"
+                  href="https://www.data.jma.go.jp/multi/warn/warn_detail.html?code={{ site.data.site.jma.forecast_area_code }}&selected_code={{ site.data.site.jma.city_warning_code }}&warning=all&lang=jp"
                   target="_blank"
                   rel="noopener noreferrer"
                   >気象庁HP</a
@@ -608,7 +609,7 @@ lang: ja
             風予報の取得に失敗しました。
           </div>
           <p class="note">
-            ※茅ヶ崎ヘッドランド付近の予測値です。局所風とは異なる場合があります。
+            ※{{ site.data.site.location.display_name }}付近の予測値です。局所風とは異なる場合があります。
           </p>
         </div>
 
@@ -659,7 +660,7 @@ lang: ja
           </dl>
           <p class="note">
             ※<a
-              href="https://www.jma.go.jp/bosai/amedas/#amdno=46141&area_type=offices&area_code=140000&format=table1h&elems=53410"
+              href="https://www.jma.go.jp/bosai/amedas/#amdno={{ site.data.site.jma.amedas_link_no }}&area_type=offices&area_code={{ site.data.site.jma.pref_code }}&format=table1h&elems=53410"
               target="_blank"
               rel="noopener noreferrer"
               >アメダス（辻堂）</a

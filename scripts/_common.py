@@ -99,6 +99,29 @@ def load_json(filepath: str) -> dict | list | None:
         return None
 
 
+_SITE_CONFIG_CACHE: dict | None = None
+
+
+def load_site_config() -> dict:
+    """フォーク用の地点設定 `_data/site.json` を読み込む。
+
+    リポジトリルート（このファイルの2階層上）基準で解決するため、
+    実行時のカレントディレクトリに依存しない。ファイルが無い・壊れている
+    場合は空dictを返し、呼び出し側が現行リテラルへフォールバックできる。
+
+    Returns:
+        設定dict。読み込み失敗時は空dict。
+    """
+    global _SITE_CONFIG_CACHE
+    if _SITE_CONFIG_CACHE is not None:
+        return _SITE_CONFIG_CACHE
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    cfg_path = os.path.join(repo_root, "_data", "site.json")
+    cfg = load_json(cfg_path) if os.path.exists(cfg_path) else None
+    _SITE_CONFIG_CACHE = cfg if isinstance(cfg, dict) else {}
+    return _SITE_CONFIG_CACHE
+
+
 def save_json(filepath: str, data, *, indent: int | None = None) -> None:
     """JSONファイルとして保存する。親ディレクトリは自動作成。
 

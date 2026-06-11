@@ -4,7 +4,12 @@ import os
 import sys
 from datetime import datetime, timedelta, timezone
 
-from _common import JST, http_get_json, load_json, now_jst, save_json
+from _common import JST, http_get_json, load_json, load_site_config, now_jst, save_json
+
+_loc = load_site_config().get("location", {})
+# 潮汐フォールバック(Stormglass)用座標。表示基準とは別値（現状維持）。
+TIDE_LAT = _loc.get("tide_lat", 35.318)
+TIDE_LON = _loc.get("tide_lon", 139.410)
 
 
 def extract_moon_today() -> dict | None:
@@ -65,7 +70,7 @@ def fetch_stormglass_tides() -> list[dict] | None:
         print("[stormglass] STORMGLASS_API_KEY が未設定のためスキップします。", file=sys.stderr)
         return None
 
-    lat, lon = 35.318, 139.410
+    lat, lon = TIDE_LAT, TIDE_LON
     n = now_jst()
     start = int(n.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
     end = int((n.replace(hour=23, minute=59, second=59, microsecond=0) + timedelta(days=2)).timestamp())

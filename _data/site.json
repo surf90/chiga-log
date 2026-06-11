@@ -1,0 +1,30 @@
+{
+  "name": "ちがログ",
+  "short_name": "ちがログ",
+  "title": "ちがログ｜茅ヶ崎の海情報（天気・波・水温・潮汐・気温）",
+  "description": "茅ヶ崎の海情報をログするデータサイト。天気、波、水温、タイドグラフ、気温をリアルタイムで網羅。マリンレジャーやビーチチェックに。一番使いやすい茅ヶ崎専用の海情報ツール。",
+  "tagline": "茅ヶ崎の海のログが、５秒でわかる。",
+  "area_label": "茅ヶ崎の海情報",
+  "location": {
+    "display_name": "茅ヶ崎ヘッドランド",
+    "lat": 35.3175,
+    "lon": 139.4151,
+    "tide_lat": 35.318,
+    "tide_lon": 139.41,
+    "tide_table_label": "湘南港"
+  },
+  "jma": {
+    "forecast_code": "140000",
+    "forecast_area_code": "140010",
+    "pref_code": "140000",
+    "city_warning_code": "1420700",
+    "city_warning_name": "茅ヶ崎市",
+    "warning_office": "JPTF",
+    "amedas_code": "46091",
+    "amedas_link_no": "46141",
+    "tide_station": "D8",
+    "wave_guid_area": "20",
+    "wave_guid_link_area": "19",
+    "tsunami_area_code": "330"
+  }
+}
