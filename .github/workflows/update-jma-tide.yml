@@ -36,7 +36,7 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add data/tidedata.json
+        git add data/tide_data.json
         if ! git diff --quiet || ! git diff --staged --quiet; then
           git commit -m "Auto-update JMA tide data"
           for i in 1 2 3; do

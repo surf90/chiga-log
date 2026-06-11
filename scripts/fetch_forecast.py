@@ -9,12 +9,12 @@ FORECAST_CODE = load_site_config().get("jma", {}).get("forecast_code", "140000")
 def main() -> None:
     print("気象庁 天気予報データの取得を開始します...")
 
-    save_json("data/forecast_data.json", {
+    save_json("data/forecast.json", {
         "updated_at": now_jst().isoformat(),
         "forecast": http_get_json(f"https://www.jma.go.jp/bosai/forecast/data/forecast/{FORECAST_CODE}.json"),
         "overview": http_get_json(f"https://www.jma.go.jp/bosai/forecast/data/overview_forecast/{FORECAST_CODE}.json"),
     }, indent=2)
-    print("保存完了: data/forecast_data.json")
+    print("保存完了: data/forecast.json")
 
 
 if __name__ == "__main__":

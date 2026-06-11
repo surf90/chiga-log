@@ -36,7 +36,7 @@ def extract_moon_today() -> dict | None:
         "age": round(entry["age"], 3),
         "phase": round(entry["phase"], 1),
     }
-    save_json("data/moon_today.json", result)
+    save_json("data/moon_daily.json", result)
     print(f"[moon] {result['date']} age={result['age']} phase={result['phase']}")
     return result
 
@@ -106,7 +106,7 @@ def build_tide_widget(all_tides: dict | None, moon_result: dict | None) -> None:
     if moon_result:
         moon_entry = {"age": moon_result["age"], "phase": moon_result["phase"]}
     else:
-        existing = load_json("data/moon_today.json")
+        existing = load_json("data/moon_daily.json")
         if existing:
             moon_entry = {"age": existing.get("age"), "phase": existing.get("phase")}
 
@@ -123,7 +123,7 @@ def build_tide_widget(all_tides: dict | None, moon_result: dict | None) -> None:
 
 if __name__ == "__main__":
     moon_result = extract_moon_today()
-    tide_data = load_json("data/tidedata.json")
+    tide_data = load_json("data/tide_data.json")
     ok_tide = tide_data is not None
 
     build_tide_widget(tide_data, moon_result)
