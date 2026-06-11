@@ -1,10 +1,29 @@
 ---
-updated: 2026-06-11
+updated: 2026-06-12
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-06-12）
+
+### スマホUX・表示速度・容量の改善 (PR #109 → main マージ)
+
+- **背景**: スマホ閲覧主体サイトとしての要修正箇所レビュー。構成/PWA/ダークモード/エラー表示は良好な一方、初期表示の直列待ち・iOSスクロール挙動・小型端末の可読性・配信容量に改善余地があった。三原則を守る範囲で軽微修正を1コミットに集約。
+- **🔴 初期表示高速化**: `assets/js/app.js` `fetchWeatherData` の直列 await（潮汐計算→警報群→波→風→海況）を単一 `Promise.allSettled` に統合し全fetch並行化。`wmData` は fulfilled 判定で安全取得。部分失敗は既存のセクション単位エラーUIで吸収。`calculateTide` は月齢ラベル描画のみで潮汐極値と独立＝並行化安全。
+- **🔴 iOSスクロール**: `assets/css/style.css` `.chart-scroll` に `overscroll-behavior-x: contain`（チャート横スクロール端でのページ連動バウンス抑止）。
+- **🟠 可読性**: 補足ラベル（`.section-label`/`.section-source`/`.section-sub`）の `font-size 10px→11px`。`DESIGN.md` のサイズ階層表も「補足・キャプション 11px（最小11px）」に追従。
+- **🟠 容量削減**: `_config.yml` `exclude:` に `data/mooninfo_2026.json`（約2MB）/ `data/tide_data.json`（約150KB）を追加。クライアント未参照（フロントは `moon_daily.json`/`tide_widget.json` 参照）で Actions はリポジトリ直読みのため影響なし。`README.md` の両更新手順に除外注記を追加。
+- **🟡 API/Actions節約**: 警報キャッシュバスターを1分→15分粒度に緩和（`fetchJmaWarning`、データ更新は30分cron）。
+- **SEO**: `index.html` にフォールバック用 `<noscript>` 文を追加。
+- **見送り（記録）**: Chart.js `responsive:false`（横スクロール固定幅設計＝意図的）/ 3時間自動更新（cron整合・三原則3）/ skeleton shimmer（表示完了で消滅・実害小）。
+- 検証: CSS/JS は merge 後 `minify.yml` が自動再生成。
+
+**関連ファイル**
+- `assets/js/app.js` / `assets/css/style.css` / `_config.yml` / `index.html` / `DESIGN.md` / `README.md`
+
+---
 
 ## 完了済み（2026-06-11）
 
