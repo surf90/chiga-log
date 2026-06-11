@@ -225,7 +225,7 @@ h1 .title-sub {
 }
 .section-label {
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: #0e7490;
@@ -237,7 +237,7 @@ h1 .title-sub {
   flex-shrink: 0;
 }
 .section-source {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 400;
   color: var(--text-sub);
   letter-spacing: -0.2px;
@@ -625,6 +625,7 @@ p.note strong a {
 .chart-scroll {
   overflow-x: scroll;
   overflow-y: hidden;
+  overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
 }
 .tide-chart-scroll-wrap {
@@ -650,5 +651,5 @@ p.note strong a {
 .section-sub {
   font-weight: 400;
   color: #aaaaaa;
-  font-size: 10px;
+  font-size: 11px;
 }
