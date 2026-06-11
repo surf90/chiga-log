@@ -26,7 +26,9 @@
       "Bash(curl -s -I -H \"Origin: https://example.github.io\" \"https://www.jma.go.jp/bosai/tsunami/data/list.json\")",
       "Bash(findstr /I \"access-control cache-control content-type HTTP\")",
       "Bash(curl -s -D - -o NUL -H \"Origin: https://example.github.io\" \"https://www.jma.go.jp/bosai/tsunami/data/list.json\")",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(Get-ChildItem -Force)",
+      "Bash(Select-Object -Property Name, PSIsContainer)"
     ]
   }
 }

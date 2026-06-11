@@ -162,7 +162,9 @@ lang: ja
         <div class="skeleton skeleton-line wide skeleton-line-spacer"></div>
         <div class="skeleton skeleton-line mid"></div>
       </div>
-      <div id="error" class="error hidden">データの取得に失敗しました。</div>
+      <div id="error" class="error hidden" data-nosnippet>
+        データの取得に失敗しました。
+      </div>
 
       <div id="weather-content" class="hidden">
         <div
@@ -239,7 +241,9 @@ lang: ja
               >SEA</span
             >
             <div class="hero-value-group">
-              <span class="hero-card-value" id="hero-sea-temp">--</span>
+              <span class="hero-card-value" id="hero-sea-temp"
+                ><span data-nosnippet>--</span></span
+              >
               <span class="hero-card-unit">℃</span>
             </div>
           </button>
@@ -273,7 +277,9 @@ lang: ja
               >AIR</span
             >
             <div class="hero-value-group">
-              <span class="hero-card-value" id="hero-temp">--</span>
+              <span class="hero-card-value" id="hero-temp"
+                ><span data-nosnippet>--</span></span
+              >
               <span class="hero-card-unit">℃</span>
             </div>
           </button>
@@ -302,7 +308,9 @@ lang: ja
               >WIND</span
             >
             <div class="hero-value-group">
-              <span class="hero-card-value" id="hero-wind">--</span>
+              <span class="hero-card-value" id="hero-wind"
+                ><span data-nosnippet>--</span></span
+              >
               <span class="hero-card-unit">&nbsp;m/s</span>
             </div>
           </button>
@@ -327,19 +335,19 @@ lang: ja
             ><span class="section-label">TIDE</span>潮汐情報<span
               class="section-source"
               id="tide-source-label"
-              >--</span
+              ><span data-nosnippet>--</span></span
             >
           </h2>
           <dl class="data-list">
             <div class="data-row">
               <dt>潮回り:</dt>
-              <dd id="tide-type">--</dd>
+              <dd id="tide-type"><span data-nosnippet>--</span></dd>
             </div>
           </dl>
           <dl class="data-list" id="tide-extremes-container">
             <div class="data-row">
               <dt>満潮・干潮:</dt>
-              <dd id="tide-status">読み込み中...</dd>
+              <dd id="tide-status"><span data-nosnippet>読み込み中...</span></dd>
             </div>
           </dl>
 
@@ -395,7 +403,9 @@ lang: ja
               >気象庁</span
             >
           </h2>
-          <div id="wave-guid-loading" class="section-loading">取得中...</div>
+          <div id="wave-guid-loading" class="section-loading" data-nosnippet>
+            取得中...
+          </div>
           <div id="wave-guid-content" class="hidden">
             <div id="wave-chart-scroll" class="chart-scroll">
               <div id="wave-chart-container" class="wave-chart-area">
@@ -415,7 +425,7 @@ lang: ja
               >です。
             </p>
           </div>
-          <div id="wave-guid-error" class="section-error">
+          <div id="wave-guid-error" class="section-error" data-nosnippet>
             波情報の取得に失敗しました。
           </div>
         </div>
@@ -446,11 +456,11 @@ lang: ja
           <dl class="data-list">
             <div class="data-row">
               <dt>平均波高:</dt>
-              <dd id="wave-height">-- m</dd>
+              <dd id="wave-height"><span data-nosnippet>-- m</span></dd>
             </div>
             <div class="data-row">
               <dt>海水温:</dt>
-              <dd id="sea-temp">--℃</dd>
+              <dd id="sea-temp"><span data-nosnippet>--℃</span></dd>
             </div>
           </dl>
           <p class="note">※波と海水温のデータは沖合の予測値ベースです。</p>
@@ -481,7 +491,9 @@ lang: ja
               >気象庁</span
             >
           </h2>
-          <div id="jma-warning-loading" class="section-loading">取得中...</div>
+          <div id="jma-warning-loading" class="section-loading" data-nosnippet>
+            取得中...
+          </div>
           <div id="jma-warning-content" class="hidden">
             <div id="jma-warning-list"></div>
             <p class="note">
@@ -495,7 +507,7 @@ lang: ja
               >
             </p>
           </div>
-          <div id="jma-warning-error" class="section-error">
+          <div id="jma-warning-error" class="section-error" data-nosnippet>
             注意報情報の取得に失敗しました。
           </div>
         </div>
@@ -528,20 +540,22 @@ lang: ja
               >気象庁</span
             >
           </h2>
-          <div id="jma-loading" class="section-loading">取得中...</div>
+          <div id="jma-loading" class="section-loading" data-nosnippet>
+            取得中...
+          </div>
           <div id="jma-forecast-content" class="hidden">
             <dl class="data-list">
               <div class="data-row">
                 <dt>天 気:</dt>
-                <dd id="jma-weather">--</dd>
+                <dd id="jma-weather"><span data-nosnippet>--</span></dd>
               </div>
               <div class="data-row">
                 <dt>降水確率:</dt>
-                <dd id="jma-pop">--</dd>
+                <dd id="jma-pop"><span data-nosnippet>--</span></dd>
               </div>
               <div class="data-row">
                 <dt>最高/最低:</dt>
-                <dd id="jma-temp">-- / --</dd>
+                <dd id="jma-temp"><span data-nosnippet>-- / --</span></dd>
               </div>
             </dl>
             <div class="data-row typhoon-notice" id="jma-typhoon-notice">
@@ -554,13 +568,13 @@ lang: ja
               <dl class="data-list">
                 <div class="data-row" id="jma-wind-row">
                   <dt>風:</dt>
-                  <dd id="jma-wind">--</dd>
+                  <dd id="jma-wind"><span data-nosnippet>--</span></dd>
                 </div>
               </dl>
               <div id="jma-overview-body"></div>
             </div>
           </div>
-          <div id="jma-error" class="section-error">
+          <div id="jma-error" class="section-error" data-nosnippet>
             天気予報の取得に失敗しました。
           </div>
           <p class="note">
@@ -596,7 +610,7 @@ lang: ja
               >&nbsp;1時間ごと</small
             ><span class="section-source">Open-Meteo</span>
           </h2>
-          <div id="wind-forecast-loading" class="section-loading">
+          <div id="wind-forecast-loading" class="section-loading" data-nosnippet>
             取得中...
           </div>
           <div id="wind-forecast-content" class="hidden">
@@ -605,7 +619,7 @@ lang: ja
             </button>
             <div class="wind-grid" id="wind-forecast-list"></div>
           </div>
-          <div id="wind-forecast-error" class="section-error">
+          <div id="wind-forecast-error" class="section-error" data-nosnippet>
             風予報の取得に失敗しました。
           </div>
           <p class="note">
@@ -639,23 +653,23 @@ lang: ja
           <dl class="data-list">
             <div class="data-row">
               <dt>気 温:</dt>
-              <dd id="temp">--℃</dd>
+              <dd id="temp"><span data-nosnippet>--℃</span></dd>
             </div>
             <div class="data-row">
               <dt>湿 度:</dt>
-              <dd id="humidity">-- %</dd>
+              <dd id="humidity"><span data-nosnippet>-- %</span></dd>
             </div>
             <div class="data-row">
               <dt>風 速:</dt>
-              <dd id="wind">-- m/s</dd>
+              <dd id="wind"><span data-nosnippet>-- m/s</span></dd>
             </div>
             <div class="data-row">
               <dt>風 向:</dt>
-              <dd id="wind-dir">-- °</dd>
+              <dd id="wind-dir"><span data-nosnippet>-- °</span></dd>
             </div>
             <div class="data-row">
               <dt>降水量(1h):</dt>
-              <dd id="precip-1h">-- mm</dd>
+              <dd id="precip-1h"><span data-nosnippet>-- mm</span></dd>
             </div>
           </dl>
           <p class="note">
