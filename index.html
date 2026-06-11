@@ -105,7 +105,26 @@ lang: ja
                 "longitude": {{ site.data.site.location.lon }}
               }
             }
-          }
+          },
+      {
+  "@type": "WebApplication",
+  "@id": "{{ site.url }}{{ site.baseurl }}/#app",
+  "name": "{{ site.data.site.name }}",
+  "alternateName": "Chiga Log",
+  "url": "{{ site.url }}{{ site.baseurl }}/",
+  "applicationCategory": "WeatherApplication",
+  "operatingSystem": "Web",
+  "description": "{{ site.data.site.description }}",
+  "areaServed": {
+    "@type": "City",
+    "name": "神奈川県茅ヶ崎市"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "JPY"
+  }
+}
         ]
       }
     </script>
