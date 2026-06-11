@@ -764,7 +764,7 @@ function warningLevelFromName(name) {
 
 async function fetchJmaWarning() {
   try {
-    const bust = Math.floor(Date.now() / 60000);
+    const bust = Math.floor(Date.now() / (15 * 60000));
     const res = await fetch(`data/warning_chigasaki.json?t=${bust}`);
     if (!res.ok) throw new Error("warning_chigasaki.json fetch failed");
     const data = await res.json();
@@ -1184,20 +1184,19 @@ async function fetchWeatherData(isManual = false) {
     }
   }
   try {
-    await calculateTide();
-    await Promise.allSettled([
+    // 各セクションは相互依存がないため全fetchを並行実行（初期表示を高速化）。
+    // 部分失敗はセクション単位のエラーUIで吸収する。
+    const [, , , , , , , wmResult] = await Promise.allSettled([
+      calculateTide(),
       fetchTideExtremes(),
       fetchJmaForecast(),
       fetchJmaWarning(),
       fetchTsunami(),
+      fetchWaveGuidance(),
+      fetchWindForecast(),
+      fetchCached("data/weather_marine.json", "cache_weather_marine"),
     ]);
-    await fetchWaveGuidance();
-    await fetchWindForecast();
-
-    const wmData = await fetchCached(
-      "data/weather_marine.json",
-      "cache_weather_marine",
-    );
+    const wmData = wmResult.status === "fulfilled" ? wmResult.value : null;
     const jma = wmData?.jma_amedas;
     const cw = wmData?.current_weather;
     const tempEl = document.getElementById("temp");
