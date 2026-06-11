@@ -1,10 +1,48 @@
 ---
-updated: 2026-06-08
+updated: 2026-06-11
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-06-11）
+
+### 地点設定を `_data/site.json` に一元化（フォーク対応） (PR #103 → main マージ)
+
+- **目的**: 別の海岸へフォークしやすくする。茅ヶ崎固有の値（緯度経度・JMA各種コード・地名）が JS/Python/HTML の15箇所以上に散在していたため、単一ソースに集約。
+- **仕組み**: `_data/site.json`（Jekyll データフォルダ）を3者が参照。
+  - JS: Jekyll が `assets/js/site-config.js` に `window.SITE_CONFIG` を展開（インラインは CSP `script-src 'self'` で遮断されるため**外部JS**として供給）。
+  - Python: `scripts/_common.py` に `load_site_config()`（CWD非依存）を追加し各スクリプトが参照。
+  - HTML: `{{ site.data.site.* }}` で title/OGP/JSON-LD/JMAリンクを展開。
+- **安全策**: 全消費側に**現行リテラルへのフォールバック**（`.get(k,既定)` / `?? 既定`）。設定読込・Jekyll展開が失敗しても本家挙動は不変。値そのものは変更せず（座標の不一致も別フィールドで現状維持）。
+- `.github/workflows/dl_wave-guid.yml`：波浪エリア変更に追従するよう `git add data/wave_guid_*.json` にグロブ化。
+- `FORK.md`（新規）：フォーク手順書（各フィールドの意味・JMAコードの調べ方）。
+- 検証: pytest 35件通過 / Jekyll描画シミュレートで元と完全一致 / minify後もフォールバック保持。
+
+**関連ファイル**
+- `_data/site.json`（新規）/ `assets/js/site-config.js`（新規）/ `FORK.md`（新規）
+- `index.html` / `assets/js/app.js`・`app.min.js`
+- `scripts/_common.py` ほか fetch/generate 系7本
+- `_config.yml` / `.github/workflows/dl_wave-guid.yml`
+
+---
+
+### 参照数値の再検証＋アメダス取得元修正（海老名→辻堂） (PR #104 → main マージ)
+
+- **背景**: `_data/site.json` の全参照値を気象庁の権威データ（area.json / amedastable.json / 津波予報区データセット / 潮位表）と突き合わせて再検証。
+- **発見した誤り**: 観測値取得用 `amedas_code=46091` は実は**海老名（海老名市・内陸）**。コードのコメントが意図する「辻堂」でも、UIリンク（`amedas_link_no=46141`）とも不一致だった（番号の取り違え）。
+- **修正**: `amedas_code` を **46141（辻堂・海岸）** へ。amedastable の `elems` 上も辻堂は同要素（気温・湿度・風・降水）を観測。ライブ取得で全4要素配信（temp/humidity/wind/precip）を確認＝データ欠落なし。
+  - `scripts/fetch_openmeteo.py`：フォールバック既定値とコメントを 46141 に修正。
+  - `scripts/generate_tide.py`：コメント「D8 = 江の島」→「D8 = 湘南港」（D8の正式名に修正）。
+  - `README.md` / `FORK.md`：アメダス番号・潮汐観測所名を実態に合わせて更新。
+- **その他の値は全て正しいことを確認**: forecast 140000(神奈川県) / area 140010(東部) / 警報 1420700(茅ヶ崎市)・JPTF / 潮汐 D8(湘南港) / 波浪 20・19 / 津波 330(相模湾・三浦半島) / 座標 35.3175,139.4151。
+
+**関連ファイル**
+- `_data/site.json` / `scripts/fetch_openmeteo.py` / `scripts/generate_tide.py`
+- `README.md` / `FORK.md`
+
+---
 
 ## 完了済み（2026-06-08）
 
