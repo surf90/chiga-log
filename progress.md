@@ -8,6 +8,18 @@ updated: 2026-06-12
 
 ## 完了済み（2026-06-12）
 
+### SEO検証と改善（404ページ追加・デッドGA設定削除）
+
+- **背景**: SEO観点での全面検証。title/description/OGP/Twitter Card/canonical/JSON-LD(@graph 3種+GeoCoordinates)/robots.txt/jekyll-sitemap/PWAマニフェスト/h1構造/Search Console 検証ファイルはすべて良好（評価B+）。不足は2点のみ。
+- **404.html 新規作成**: ルート直下に軽量・自己完結ページ（JSなし、`style.min.css` 流用、`noindex`、`sitemap: false`、トップへの導線付き）。GitHub Pages が自動利用。
+- **GA設定削除**: `_config.yml` の `google_analytics: G-L922RQ9G6R` を削除。gtagスニペットがどこにも存在せず CSP（script-src 'self'）でもブロックされる未使用設定だった。GA4導入時は CSP 緩和込みで別途実施。
+- **見送り（記録）**: jekyll-seo-tag 導入（手動実装で全要素カバー済み・冗長）/ img alt（img要素なし、SVGは aria-hidden 済み）。
+
+**関連ファイル**
+- `404.html`（新規） / `_config.yml`
+
+---
+
 ### スマホUX・表示速度・容量の改善 (PR #109 → main マージ)
 
 - **背景**: スマホ閲覧主体サイトとしての要修正箇所レビュー。構成/PWA/ダークモード/エラー表示は良好な一方、初期表示の直列待ち・iOSスクロール挙動・小型端末の可読性・配信容量に改善余地があった。三原則を守る範囲で軽微修正を1コミットに集約。
