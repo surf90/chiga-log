@@ -1,0 +1,47 @@
+---
+layout: null
+lang: ja
+permalink: /404.html
+sitemap: false
+---
+<!doctype html>
+<html lang="{{ page.lang }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>ページが見つかりません | {{ site.data.site.name }}</title>
+    <link rel="icon" href="{{ site.baseurl }}/assets/icons/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="{{ site.baseurl }}/assets/css/style.min.css" />
+    <style>
+      .nf-wrap {
+        min-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        text-align: center;
+        padding: 1.5rem;
+      }
+      .nf-code {
+        font-size: 4rem;
+        font-weight: 700;
+        color: var(--text-sub);
+        line-height: 1;
+      }
+      .nf-link {
+        color: var(--text-main);
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="nf-wrap">
+      <p class="nf-code">404</p>
+      <h1>ページが見つかりません</h1>
+      <p>お探しのページは移動または削除された可能性があります。</p>
+      <p><a class="nf-link" href="{{ site.baseurl }}/">{{ site.data.site.name }} トップへ戻る</a></p>
+    </main>
+  </body>
+</html>

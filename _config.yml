@@ -21,5 +21,3 @@ exclude:
   # クライアント未参照の元データ（Actions専用）。公開不要・容量削減のため除外。
   - data/mooninfo_2026.json
   - data/tide_data.json
-
-google_analytics: G-L922RQ9G6R
