@@ -61,7 +61,8 @@ def fetch_jma_amedas() -> dict | None:
 
     ガイドライン遵守のため latest_time.txt を必ず参照してから map JSON を取得する。
     """
-    latest = http_get_text(JMA_LATEST_TIME_URL)
+    # JMAは latest_time.txt 再生成中に一時的に404を返すため404もリトライ対象にする。
+    latest = http_get_text(JMA_LATEST_TIME_URL, retry_on_404=True)
     if not latest:
         return None
     latest = latest.strip().lstrip("﻿")
@@ -75,7 +76,7 @@ def fetch_jma_amedas() -> dict | None:
     # スロットで失敗した場合は1つ前の10分スロットでも再試行する。
     for slot_dt in (observed_dt, observed_dt - timedelta(minutes=10)):
         ymdhns = slot_dt.strftime("%Y%m%d%H%M%S")
-        data = http_get_json(JMA_AMEDAS_MAP_URL.format(ymdhns=ymdhns))
+        data = http_get_json(JMA_AMEDAS_MAP_URL.format(ymdhns=ymdhns), retry_on_404=True)
         if not data:
             continue
         point = data.get(JMA_AMEDAS_CODE)
