@@ -1206,7 +1206,9 @@ async function fetchWeatherData(isManual = false) {
     const precipEl = document.getElementById("precip-1h");
     const heroTempEl = document.getElementById("hero-temp");
     const heroWindEl = document.getElementById("hero-wind");
+    const staleEl = document.getElementById("amedas-stale");
 
+    staleEl.hidden = !(jma && jma.stale === true);
     if (jma) {
       tempEl.textContent = jma.temp != null ? `${jma.temp}℃` : "--℃";
       humEl.textContent = jma.humidity != null ? `${jma.humidity} %` : "-- %";

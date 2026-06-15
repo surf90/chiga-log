@@ -2,9 +2,11 @@
 
 import pytest
 
+import fetch_openmeteo
 from fetch_openmeteo import (
     _add_jst_tz,
     _build_wind_items,
+    _carry_forward_amedas,
     _normalize_current_weather,
     _normalize_marine,
     _qc_value,
@@ -123,3 +125,29 @@ def test_normalize_marine_missing_subkeys():
 
 def test_normalize_marine_non_dict_passthrough():
     assert _normalize_marine(None) is None
+
+
+# ─── _carry_forward_amedas ─────────────────────────────────────
+def test_carry_forward_returns_fresh_when_available(monkeypatch):
+    fresh = {"temp": 22.5, "humidity": 69}
+    # 取得成功時は load_json を呼ばずそのまま返す
+    monkeypatch.setattr(
+        fetch_openmeteo, "load_json", lambda *_: pytest.fail("不要な読込")
+    )
+    assert _carry_forward_amedas(fresh) is fresh
+
+
+def test_carry_forward_uses_previous_with_stale_flag(monkeypatch):
+    prev = {"observed_at": "2026-06-15T15:00:00+09:00", "temp": 22.5, "humidity": 69}
+    monkeypatch.setattr(
+        fetch_openmeteo, "load_json", lambda *_: {"jma_amedas": prev}
+    )
+    result = _carry_forward_amedas(None)
+    assert result == {**prev, "stale": True}
+
+
+def test_carry_forward_returns_none_when_no_previous(monkeypatch):
+    monkeypatch.setattr(fetch_openmeteo, "load_json", lambda *_: {"jma_amedas": None})
+    assert _carry_forward_amedas(None) is None
+    monkeypatch.setattr(fetch_openmeteo, "load_json", lambda *_: None)
+    assert _carry_forward_amedas(None) is None

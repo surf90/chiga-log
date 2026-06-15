@@ -1,8 +1,8 @@
 """Open-MeteoとMarine API、JMAアメダスからデータを取得する。"""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from _common import http_get_json, http_get_text, load_site_config, now_jst, require_keys, save_json
+from _common import http_get_json, http_get_text, load_json, load_site_config, now_jst, require_keys, save_json
 
 _cfg = load_site_config()
 _loc = _cfg.get("location", {})
@@ -71,24 +71,51 @@ def fetch_jma_amedas() -> dict | None:
         print(f"[error] latest_time parse: {e}")
         return None
 
-    ymdhns = observed_dt.strftime("%Y%m%d%H%M%S")
-    data = http_get_json(JMA_AMEDAS_MAP_URL.format(ymdhns=ymdhns))
-    if not data:
-        return None
-    point = data.get(JMA_AMEDAS_CODE)
-    if not point:
-        print(f"[error] amedas code {JMA_AMEDAS_CODE} not found")
-        return None
+    # map JSON のスロット生成タイミングずれ(404等)に備え、latest_time の
+    # スロットで失敗した場合は1つ前の10分スロットでも再試行する。
+    for slot_dt in (observed_dt, observed_dt - timedelta(minutes=10)):
+        ymdhns = slot_dt.strftime("%Y%m%d%H%M%S")
+        data = http_get_json(JMA_AMEDAS_MAP_URL.format(ymdhns=ymdhns))
+        if not data:
+            continue
+        point = data.get(JMA_AMEDAS_CODE)
+        if not point:
+            print(f"[error] amedas code {JMA_AMEDAS_CODE} not found")
+            continue
+        return {
+            "observed_at": slot_dt.isoformat(),
+            "amedas_code": JMA_AMEDAS_CODE,
+            "temp": _qc_value(point.get("temp")),
+            "wind": _qc_value(point.get("wind")),
+            "windDirection": _qc_value(point.get("windDirection")),
+            "humidity": _qc_value(point.get("humidity")),
+            "precipitation1h": _qc_value(point.get("precipitation1h")),
+        }
+    return None
 
-    return {
-        "observed_at": observed_dt.isoformat(),
-        "amedas_code": JMA_AMEDAS_CODE,
-        "temp": _qc_value(point.get("temp")),
-        "wind": _qc_value(point.get("wind")),
-        "windDirection": _qc_value(point.get("windDirection")),
-        "humidity": _qc_value(point.get("humidity")),
-        "precipitation1h": _qc_value(point.get("precipitation1h")),
-    }
+
+def _carry_forward_amedas(fresh: dict | None) -> dict | None:
+    """アメダス取得失敗時に前回値を引き継ぐ。
+
+    取得成功(fresh が非None)時はそのまま返す。失敗(None)時は既存の
+    data/weather_marine.json から前回の jma_amedas を読み、stale 印を
+    付けて返す(観測時刻 observed_at は実値を保持し誤読を防ぐ)。前回値も
+    無ければ None。
+
+    Args:
+        fresh: 今回取得した jma_amedas 辞書。失敗時は None。
+
+    Returns:
+        引き継ぎ後の jma_amedas 辞書。利用可能な値が無ければ None。
+    """
+    if fresh is not None:
+        return fresh
+    prev = load_json("data/weather_marine.json")
+    prev_amedas = prev.get("jma_amedas") if isinstance(prev, dict) else None
+    if not isinstance(prev_amedas, dict):
+        return None
+    print("[warn] アメダス取得失敗。前回値を引き継ぎます。")
+    return {**prev_amedas, "stale": True}
 
 
 def _build_wind_items(hourly: dict) -> list[dict]:
@@ -142,7 +169,7 @@ def main() -> None:
 
     weather = http_get_json(WEATHER_URL)
     marine = http_get_json(MARINE_URL)
-    jma_amedas = fetch_jma_amedas()
+    jma_amedas = _carry_forward_amedas(fetch_jma_amedas())
     wind_fc = http_get_json(WIND_FORECAST_URL)
 
     failed = [k for k, v in {"weather": weather, "marine": marine, "wind_fc": wind_fc}.items() if v is None]
