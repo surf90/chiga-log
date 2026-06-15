@@ -66,17 +66,25 @@ def http_get_bytes(url: str, *, headers: dict[str, str] | None = None, timeout: 
     return _http_request(url, headers=headers, timeout=timeout, retry_on_404=retry_on_404)
 
 
-def http_get_text(url: str, *, encoding: str = "utf-8", headers: dict[str, str] | None = None, timeout: int = DEFAULT_TIMEOUT) -> str | None:
-    """URLからテキストデータを取得する。"""
-    raw = http_get_bytes(url, headers=headers, timeout=timeout)
+def http_get_text(url: str, *, encoding: str = "utf-8", headers: dict[str, str] | None = None, timeout: int = DEFAULT_TIMEOUT, retry_on_404: bool = False) -> str | None:
+    """URLからテキストデータを取得する。
+
+    retry_on_404=True で404も一時障害とみなしリトライする
+    (JMAエンドポイントの再生成時の瞬断対策)。
+    """
+    raw = http_get_bytes(url, headers=headers, timeout=timeout, retry_on_404=retry_on_404)
     if raw is None:
         return None
     return raw.decode(encoding)
 
 
-def http_get_json(url: str, *, headers: dict[str, str] | None = None, timeout: int = DEFAULT_TIMEOUT) -> dict | list | None:
-    """URLからJSONデータを取得する。"""
-    text = http_get_text(url, headers=headers, timeout=timeout)
+def http_get_json(url: str, *, headers: dict[str, str] | None = None, timeout: int = DEFAULT_TIMEOUT, retry_on_404: bool = False) -> dict | list | None:
+    """URLからJSONデータを取得する。
+
+    retry_on_404=True で404も一時障害とみなしリトライする
+    (JMAエンドポイントの再生成時の瞬断対策)。
+    """
+    text = http_get_text(url, headers=headers, timeout=timeout, retry_on_404=retry_on_404)
     if text is None:
         return None
     try:

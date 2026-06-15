@@ -6,7 +6,8 @@ import tempfile
 
 import pytest
 
-from _common import require_keys, save_json
+import _common
+from _common import http_get_json, http_get_text, require_keys, save_json
 
 
 def test_save_json_writes_file_and_no_tempfile_leftover(tmp_path):
@@ -54,3 +55,42 @@ def test_require_keys_default_label():
     with pytest.raises(ValueError) as ei:
         require_keys({}, ["x"])
     assert "data" in str(ei.value)
+
+
+# ─── retry_on_404 透過 ─────────────────────────────────────────
+def test_http_get_text_passes_retry_on_404(monkeypatch):
+    """http_get_text が retry_on_404 を http_get_bytes へ透過すること。"""
+    captured = {}
+
+    def fake_bytes(url, *, headers=None, timeout=None, retry_on_404=False):
+        captured["retry_on_404"] = retry_on_404
+        return b"ok"
+
+    monkeypatch.setattr(_common, "http_get_bytes", fake_bytes)
+    assert http_get_text("http://x", retry_on_404=True) == "ok"
+    assert captured["retry_on_404"] is True
+
+
+def test_http_get_text_defaults_retry_on_404_false(monkeypatch):
+    captured = {}
+
+    def fake_bytes(url, *, headers=None, timeout=None, retry_on_404=False):
+        captured["retry_on_404"] = retry_on_404
+        return b"ok"
+
+    monkeypatch.setattr(_common, "http_get_bytes", fake_bytes)
+    http_get_text("http://x")
+    assert captured["retry_on_404"] is False
+
+
+def test_http_get_json_passes_retry_on_404(monkeypatch):
+    """http_get_json が retry_on_404 を http_get_text 経由で透過すること。"""
+    captured = {}
+
+    def fake_text(url, *, encoding="utf-8", headers=None, timeout=None, retry_on_404=False):
+        captured["retry_on_404"] = retry_on_404
+        return '{"a": 1}'
+
+    monkeypatch.setattr(_common, "http_get_text", fake_text)
+    assert http_get_json("http://x", retry_on_404=True) == {"a": 1}
+    assert captured["retry_on_404"] is True
