@@ -92,14 +92,7 @@ lang: ja
             "@id": "{{ site.url }}{{ site.baseurl }}/#website",
             "url": "{{ site.url }}{{ site.baseurl }}/",
             "name": "{{ site.data.site.name }}",
-            "alternateName": [
-              "ちがろぐ",
-              "チガログ",
-              "ちがろぐ茅ヶ崎",
-              "Chiga Log",
-              "ChigaLog",
-              "chigalog"
-            ],
+            "alternateName": {{ site.data.site.alt_names | jsonify }},
             "description": "{{ site.data.site.description }}",
             "inLanguage": "ja",
             "publisher": { "@id": "{{ site.url }}{{ site.baseurl }}/#author" }
@@ -138,14 +131,7 @@ lang: ja
             "@type": "WebApplication",
             "@id": "{{ site.url }}{{ site.baseurl }}/#app",
             "name": "{{ site.data.site.name }}",
-            "alternateName": [
-              "ちがろぐ",
-              "チガログ",
-              "ちがろぐ茅ヶ崎",
-              "Chiga Log",
-              "ChigaLog",
-              "chigalog"
-            ],
+            "alternateName": {{ site.data.site.alt_names | jsonify }},
             "url": "{{ site.url }}{{ site.baseurl }}/",
             "applicationCategory": "WeatherApplication",
             "operatingSystem": "Web",
@@ -200,17 +186,21 @@ lang: ja
     ></script>
   </head>
   <body>
+    <a href="#main-content" class="skip-link">メインコンテンツへスキップ</a>
     <noscript>
       ちがログは、茅ヶ崎ヘッドランド周辺の波・潮汐・海水温・天気を確認できるWebツールです。利用にはJavaScriptを有効にしてください。
     </noscript>
     <div class="container">
-      <h1>
-        <span class="logo-text">{{ site.data.site.name }}</span>
-        <span class="title-divider">|</span>
-        <span class="title-sub">{{ site.data.site.area_label }}</span>
-      </h1>
-      <span class="subtitle">{{ site.data.site.tagline }}</span>
+      <header>
+        <h1>
+          <span class="logo-text">{{ site.data.site.name }}</span>
+          <span class="title-divider">|</span>
+          <span class="title-sub">{{ site.data.site.area_label }}</span>
+        </h1>
+        <span class="subtitle">{{ site.data.site.tagline }}</span>
+      </header>
 
+      <main id="main-content">
       <div id="skeleton-loading">
         <div class="hero-cards hero-cards-skeleton">
           <div class="skeleton skeleton-hero-card"></div>
@@ -235,29 +225,7 @@ lang: ja
           aria-live="assertive"
         >
           <h2>
-            <span class="section-icon"
-              ><svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path
-                  d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"
-                />
-                <path
-                  d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"
-                />
-                <path
-                  d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"
-                /></svg></span
-            ><span class="section-label">TSUNAMI</span
+            {% include icons/waves.svg %}<span class="section-label">TSUNAMI</span
             ><span id="tsunami-title">津波注意報</span
             ><span class="section-source">気象庁</span>
           </h2>
@@ -379,21 +347,7 @@ lang: ja
 
         <div class="weather-box" id="tide-info-box">
           <h2>
-            <span class="section-icon"
-              ><svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg></span
-            ><span class="section-label">TIDE</span>潮汐情報<span
+            {% include icons/moon.svg %}<span class="section-label">TIDE</span>潮汐情報<span
               class="section-source"
               id="tide-source-label"
               ><span data-nosnippet>--</span></span
@@ -437,29 +391,7 @@ lang: ja
 
         <div class="weather-box" id="wave-guid-box">
           <h2>
-            <span class="section-icon"
-              ><svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path
-                  d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"
-                />
-                <path
-                  d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"
-                />
-                <path
-                  d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"
-                /></svg></span
-            ><span class="section-label">WAVE</span>波高･周期<span
+            {% include icons/waves.svg %}<span class="section-label">WAVE</span>波高･周期<span
               class="section-source"
               >気象庁</span
             >
@@ -493,23 +425,7 @@ lang: ja
 
         <div class="weather-box" id="marine-box">
           <h2>
-            <span class="section-icon"
-              ><svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <polyline
-                  points="22 12 18 12 15 21 9 3 6 12 2 12"
-                /></svg></span
-            ><span class="section-label">MARINE</span>水温･波高<small
+            {% include icons/activity.svg %}<span class="section-label">MARINE</span>水温･波高<small
               class="section-sub"
               >&nbsp;予測</small
             ><span class="section-source">Open-Meteo</span>
@@ -529,25 +445,7 @@ lang: ja
 
         <div class="weather-box" id="jma-warning-box">
           <h2>
-            <span class="section-icon"
-              ><svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path
-                  d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"
-                />
-                <path d="M12 9v4" />
-                <path d="M12 17h.01" /></svg></span
-            ><span class="section-label">ALERT</span>注意報・警報<span
+            {% include icons/alert.svg %}<span class="section-label">ALERT</span>注意報・警報<span
               class="section-source"
               >気象庁</span
             >
@@ -575,28 +473,7 @@ lang: ja
 
         <div class="weather-box" id="jma-forecast-box">
           <h2>
-            <span class="section-icon"
-              ><svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M12 2v2" />
-                <path d="m4.93 4.93 1.41 1.41" />
-                <path d="M20 12h2" />
-                <path d="m19.07 4.93-1.41 1.41" />
-                <path d="M15.947 12.65a4 4 0 0 0-5.925-4.128" />
-                <path d="M3 20a5 5 0 1 1 8.9-4H13a3 3 0 0 1 2 5.24" />
-                <path d="M11 20v2" />
-                <path d="M7 19v2" /></svg></span
-            ><span class="section-label">WEATHER</span>天気予報<span
+            {% include icons/weather.svg %}<span class="section-label">WEATHER</span>天気予報<span
               class="section-source"
               >気象庁</span
             >
@@ -622,7 +499,13 @@ lang: ja
             <div class="data-row typhoon-notice" id="jma-typhoon-notice">
               ⚠ 台風情報あり
             </div>
-            <button class="toggle-btn" id="jma-overview-toggle" type="button">
+            <button
+              class="toggle-btn"
+              id="jma-overview-toggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="jma-overview-text"
+            >
               概況を表示 ▼
             </button>
             <div class="jma-overview" id="jma-overview-text">
@@ -650,23 +533,7 @@ lang: ja
 
         <div class="weather-box" id="wind-forecast-box">
           <h2>
-            <span class="section-icon"
-              ><svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M12 2v20" />
-                <path d="m5 9 7-7 7 7" />
-                <path d="M6 14h12" /></svg></span
-            ><span class="section-label">WIND</span>風予報<small
+            {% include icons/wind.svg %}<span class="section-label">WIND</span>風予報<small
               class="section-sub"
               >&nbsp;1時間ごと</small
             ><span class="section-source">Open-Meteo</span>
@@ -675,7 +542,13 @@ lang: ja
             取得中...
           </div>
           <div id="wind-forecast-content" class="hidden">
-            <button class="toggle-btn" id="wind-forecast-toggle" type="button">
+            <button
+              class="toggle-btn"
+              id="wind-forecast-toggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="wind-forecast-list"
+            >
               予想風を表示 ▼
             </button>
             <div class="wind-grid" id="wind-forecast-list"></div>
@@ -690,23 +563,7 @@ lang: ja
 
         <div class="weather-box" id="weather-current-box">
           <h2>
-            <span class="section-icon"
-              ><svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path
-                  d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"
-                /></svg></span
-            ><span class="section-label">NOW</span>現在の気温･風<span
+            {% include icons/thermometer.svg %}<span class="section-label">NOW</span>現在の気温･風<span
               class="section-source"
               >気象庁</span
             >
@@ -755,8 +612,9 @@ lang: ja
           aria-label="データを手動で更新"
         ></button>
       </div>
+      </main>
 
-      <div class="footer">
+      <footer class="footer">
         <div class="footer-data">
           データ提供元:
           <a
@@ -822,7 +680,7 @@ lang: ja
             >MIT License</a
           >
         </div>
-      </div>
+      </footer>
     </div>
 
     <button type="button" id="toast" aria-live="polite">

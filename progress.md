@@ -237,3 +237,18 @@ updated: 2026-06-17
 - `index.html`
 - `scripts/extract_daily_data.py`
 - `data/tide_2day.json`
+
+## 完了済み（2026-06-17）
+
+### 品質改善（アクセシビリティ・エラー耐性・軽量化・構成）
+
+- **アクセシビリティ**: `<header>`/`<main id="main-content">`/`<footer>` ランドマーク化、スキップリンク追加（`.skip-link`）、概況・予想風トグルに `aria-expanded`/`aria-controls`（JS側で開閉状態同期）
+- **エラー耐性**: `window` の `error`/`unhandledrejection` グローバルエラー境界（`_showGlobalError()`）で白画面防止。最上位 catch を null 安全化
+- **軽量化**: JSON-LD 重複 `alternateName` を `_data/site.json` の `alt_names` に一元化（`{{ ... | jsonify }}`）
+- **構成**: 8個のセクションアイコンSVGを `_includes/icons/*.svg` に抽出（TSUNAMI/WAVE は `waves.svg` 共用）。index.html 839→666行。ビルド出力の等価性を検証済み
+- **ローカル環境**: `Gemfile`（github-pages + webrick + tzinfo-data）追加。`bundle exec jekyll serve` でプレビュー可（Ruby 3.3 + DevKit/MSYS2 導入）
+- CSP は変更せず（同一オリジン fetch のみで現状正しい）。GitHub Actions cron も不変
+
+**関連ファイル**
+- `index.html` / `assets/js/app.js` / `assets/css/style.css` / `_data/site.json`
+- `_includes/icons/` / `Gemfile` / `_config.yml` / `.gitignore`
