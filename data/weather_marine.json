@@ -1,18 +1,18 @@
 {
-  "updated_at": "2026-06-17T16:34:58.252254+09:00",
+  "updated_at": "2026-06-17T21:19:55.795233+09:00",
   "current_weather": {
-    "time": "2026-06-17T16:30+09:00",
+    "time": "2026-06-17T21:15+09:00",
     "interval": 900,
-    "temperature": 22.3,
-    "windspeed": 4.95,
-    "winddirection": 172,
-    "is_day": 1,
+    "temperature": 21.9,
+    "windspeed": 3.64,
+    "winddirection": 148,
+    "is_day": 0,
     "weathercode": 3
   },
   "marine": {
     "latitude": 35.291664,
     "longitude": 139.37502,
-    "generationtime_ms": 0.16617774963378906,
+    "generationtime_ms": 0.16438961029052734,
     "utc_offset_seconds": 32400,
     "timezone": "Asia/Tokyo",
     "timezone_abbreviation": "GMT+9",
@@ -24,9 +24,9 @@
       "sea_surface_temperature": "°C"
     },
     "current": {
-      "time": "2026-06-17T16:30+09:00",
+      "time": "2026-06-17T21:15+09:00",
       "interval": 900,
-      "wave_height": 0.38,
+      "wave_height": 0.48,
       "sea_surface_temperature": 23.2
     }
   },
@@ -37,6 +37,7 @@
     "wind": 2.6,
     "windDirection": 7,
     "humidity": 78,
-    "precipitation1h": 0.0
+    "precipitation1h": 0.0,
+    "stale": true
   }
 }
