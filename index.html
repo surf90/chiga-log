@@ -75,18 +75,26 @@ lang: ja
       name="twitter:image"
       content="{{ site.url }}{{ site.baseurl }}/assets/og/ogp.png"
     />
+    <meta name="twitter:image:alt" content="{{ site.data.site.name }} OGP画像" />
 
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@graph": [
           {
+            "@type": "Person",
+            "@id": "{{ site.url }}{{ site.baseurl }}/#author",
+            "name": "ISHIKAWA, Natsuki",
+            "url": "https://github.com/surf90"
+          },
+          {
             "@type": "WebSite",
             "@id": "{{ site.url }}{{ site.baseurl }}/#website",
             "url": "{{ site.url }}{{ site.baseurl }}/",
             "name": "{{ site.data.site.name }}",
             "description": "{{ site.data.site.description }}",
-            "inLanguage": "ja"
+            "inLanguage": "ja",
+            "publisher": { "@id": "{{ site.url }}{{ site.baseurl }}/#author" }
           },
           {
             "@type": "WebPage",
@@ -96,9 +104,21 @@ lang: ja
             "description": "{{ site.data.site.description }}",
             "isPartOf": { "@id": "{{ site.url }}{{ site.baseurl }}/#website" },
             "inLanguage": "ja",
+            "image": "{{ site.url }}{{ site.baseurl }}/assets/og/ogp.png",
+            "primaryImageOfPage": "{{ site.url }}{{ site.baseurl }}/assets/og/ogp.png",
+            "datePublished": "2026-04-13T16:38:45+09:00",
+            "dateModified": "{{ site.time | date_to_xmlschema }}",
+            "author": { "@id": "{{ site.url }}{{ site.baseurl }}/#author" },
+            "publisher": { "@id": "{{ site.url }}{{ site.baseurl }}/#author" },
             "about": {
               "@type": "Place",
               "name": "{{ site.data.site.location.display_name }}",
+              "address": {
+                "@type": "PostalAddress",
+                "addressCountry": "JP",
+                "addressRegion": "神奈川県",
+                "addressLocality": "茅ヶ崎市"
+              },
               "geo": {
                 "@type": "GeoCoordinates",
                 "latitude": {{ site.data.site.location.lat }},
@@ -106,25 +126,29 @@ lang: ja
               }
             }
           },
-      {
-  "@type": "WebApplication",
-  "@id": "{{ site.url }}{{ site.baseurl }}/#app",
-  "name": "{{ site.data.site.name }}",
-  "alternateName": "Chiga Log",
-  "url": "{{ site.url }}{{ site.baseurl }}/",
-  "applicationCategory": "WeatherApplication",
-  "operatingSystem": "Web",
-  "description": "{{ site.data.site.description }}",
-  "areaServed": {
-    "@type": "City",
-    "name": "神奈川県茅ヶ崎市"
-  },
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "JPY"
-  }
-}
+          {
+            "@type": "WebApplication",
+            "@id": "{{ site.url }}{{ site.baseurl }}/#app",
+            "name": "{{ site.data.site.name }}",
+            "alternateName": "Chiga Log",
+            "url": "{{ site.url }}{{ site.baseurl }}/",
+            "applicationCategory": "WeatherApplication",
+            "operatingSystem": "Web",
+            "description": "{{ site.data.site.description }}",
+            "inLanguage": "ja",
+            "image": "{{ site.url }}{{ site.baseurl }}/assets/og/ogp.png",
+            "author": { "@id": "{{ site.url }}{{ site.baseurl }}/#author" },
+            "publisher": { "@id": "{{ site.url }}{{ site.baseurl }}/#author" },
+            "areaServed": {
+              "@type": "City",
+              "name": "神奈川県茅ヶ崎市"
+            },
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "JPY"
+            }
+          }
         ]
       }
     </script>

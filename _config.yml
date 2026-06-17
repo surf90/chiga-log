@@ -4,6 +4,9 @@ baseurl: "/chiga-log"
 title: "ちがログ"
 description: "茅ヶ崎の海情報をログするデータサイト。天気、波、水温、タイドグラフ、気温をリアルタイムで網羅。"
 lang: "ja"
+author: "ISHIKAWA, Natsuki"
+timezone: "Asia/Tokyo"
+future: false
 
 # ─── プラグイン ───────────────────────────────────────────────
 plugins:
