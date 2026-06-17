@@ -541,8 +541,11 @@ function drawTideChart(extremes, hasHeightData) {
 async function fetchWaveGuidance() {
   try {
     const hour3Buster = Math.floor(Date.now() / (3 * 60 * 60 * 1000));
-    const resp = await fetch(`data/wave_guid_${WAVE_GUID_AREA}.json?t=${hour3Buster}`);
-    if (!resp.ok) throw new Error(`wave_guid_${WAVE_GUID_AREA}.json の読み込みに失敗`);
+    const resp = await fetch(
+      `data/wave_guid_${WAVE_GUID_AREA}.json?t=${hour3Buster}`,
+    );
+    if (!resp.ok)
+      throw new Error(`wave_guid_${WAVE_GUID_AREA}.json の読み込みに失敗`);
     const json = await resp.json();
 
     const todayJst = new Date(
@@ -1039,6 +1042,7 @@ function toggleOverview() {
   const isHidden = el.style.display === "none" || !el.style.display;
   el.style.display = isHidden ? "block" : "none";
   btn.textContent = isHidden ? "概況を閉じる ▲" : "概況を表示 ▼";
+  btn.setAttribute("aria-expanded", String(isHidden));
 }
 
 // ─── 8. 風予報 ──────────────────────────────────────────────
@@ -1086,6 +1090,7 @@ function updateWindForecastToggleLabel(isOpen) {
   btn.textContent = isOpen
     ? `予想風（${range}）を閉じる ▲`
     : `予想風（${range}）を表示 ▼`;
+  btn.setAttribute("aria-expanded", String(isOpen));
 }
 
 function toggleWindForecast() {
@@ -1256,10 +1261,10 @@ async function fetchWeatherData(isManual = false) {
     displayFetchTime();
   } catch (error) {
     console.error("Fetch error:", error);
-    document.getElementById("skeleton-loading").style.display = "none";
-    document.getElementById("error").style.display = "block";
-    document.getElementById("weather-content").classList.remove("is-updating");
-    if (timeEl.textContent.includes("更新中")) displayFetchTime();
+    _showGlobalError();
+    const wc = document.getElementById("weather-content");
+    if (wc) wc.classList.remove("is-updating");
+    if (timeEl && timeEl.textContent.includes("更新中")) displayFetchTime();
   } finally {
     _isFetching = false;
   }
@@ -1373,3 +1378,18 @@ document.addEventListener("visibilitychange", () => {
 window.addEventListener("pageshow", (e) => {
   if (e.persisted) fetchWeatherData();
 });
+
+// ─── グローバルエラー境界 ───────────────────────────────────
+// 想定外の例外・未処理Promiseでも、骨組み残り/白画面を避けてエラーUIを表示する。
+function _showGlobalError() {
+  const sk = document.getElementById("skeleton-loading");
+  if (sk) sk.style.display = "none";
+  const err = document.getElementById("error");
+  if (err) {
+    err.classList.remove("hidden");
+    err.style.display = "block";
+  }
+}
+
+window.addEventListener("error", _showGlobalError);
+window.addEventListener("unhandledrejection", _showGlobalError);

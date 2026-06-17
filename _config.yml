@@ -24,3 +24,8 @@ exclude:
   # クライアント未参照の元データ（Actions専用）。公開不要・容量削減のため除外。
   - data/mooninfo_2026.json
   - data/tide_data.json
+  # ローカルビルド用（独自 exclude は既定値を上書きするため明示）
+  - Gemfile
+  - Gemfile.lock
+  - vendor/
+  - .bundle/
