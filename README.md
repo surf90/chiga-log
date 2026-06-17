@@ -234,6 +234,7 @@ npx --yes clean-css-cli -o assets/css/style.min.css assets/css/style.css
 ## 使用技術・API
 
 - **フロントエンド**: HTML5 / CSS3 / JavaScript (ES6+)
+- **SEO・構造化データ**: OGP / Twitter Card / canonical に加え、JSON-LD（`@graph`: Person・WebSite・WebPage・WebApplication）で著者・地理情報・公開/更新日を宣言。サイト名の表記ゆれ（ちがろぐ／チガログ／chigalog 等）は `alternateName` で網羅。`jekyll-sitemap` で sitemap.xml 自動生成。
 - **グラフ描画**: Chart.js（自ホスト版 `assets/vendor/chart.umd.min.js`。CDN通信を排除し、サードパーティ依存を最小化）
 - **自動化・ホスティング**: GitHub Actions / GitHub Pages
 - **気象庁データ (天気予報・注意報・潮汐)**: 気象庁公式データ (GitHub ActionsによるJSON定期取得、および年次更新データを利用)

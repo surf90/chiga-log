@@ -1,10 +1,27 @@
 ---
-updated: 2026-06-12
+updated: 2026-06-17
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-06-17）
+
+### SEO再検証: JSON-LD 強化・表記ゆれ対策（main マージ）
+
+- **背景**: SEO観点での再検証。メタ/OGP/ファビコン/PWA/robots/sitemap は高品質な一方、構造化データ（JSON-LD）に評価上有効なフィールドが欠落していた。可視UI・本文は変更せず `<head>` と `_config.yml` のメタ/JSON-LDのみ強化（本文がJSレンダリング依存のため可視テキスト拡充はユーザー選択で見送り）。
+- **JSON-LD 強化** (`index.html`): `@graph` に **Person ノード（著者）** を新設し WebSite/WebPage/WebApplication から `author`/`publisher` を `@id` 参照。WebPage に `image`/`primaryImageOfPage`/`datePublished`(2026-04-13・初コミット日)/`dateModified`(`site.time` で自動更新) を追加。about の Place に `PostalAddress`（神奈川県/茅ヶ崎市）を追加。WebApplication に `image`/`inLanguage` 追加＋インデント整形。
+- **表記ゆれ対策**: WebSite・WebApplication に `alternateName` 配列（ちがろぐ/チガログ/ちがろぐ茅ヶ崎/Chiga Log/ChigaLog/chigalog）を追加。Google のエンティティ理解にブランド別表記を宣言（不可視・低リスク。順位反映は再クロール後に漸進）。
+- **Twitter Card 補完**: `twitter:image:alt` 追加（og:image:alt と対）。
+- **`_config.yml` 補完**: `author` / `timezone: Asia/Tokyo`（`date_to_xmlschema` のJST出力）/ `future: false` を追加。
+- **見送り（記録）**: 可視テキスト/FAQ追加・`meta keywords`（Google無視）・CSP `unsafe-inline` 除去（セキュリティ別件）・RSS導入。
+- **検証**: Python で ld+json 抽出→Liquid擬似展開→`json.loads` 成功・未解決変数ゼロを確認（bundler未導入のため実Jekyllビルド検証は未実施＝要・公開前確認）。
+
+**関連ファイル**
+- `index.html`（head限定）/ `_config.yml`
+
+---
 
 ## 完了済み（2026-06-12）
 
