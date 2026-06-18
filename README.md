@@ -229,6 +229,26 @@ npx --yes terser assets/js/app.js -c -m -o assets/js/app.min.js
 npx --yes clean-css-cli -o assets/css/style.min.css assets/css/style.css
 ```
 
+---
+
+## ✅ フロントエンド品質チェック（ESLint / Prettier / pa11y）
+
+JS/CSS/HTML には自動品質ゲートを用意しています。設定は公開ビルドに含めません（`eslint.config.js` は `_config.yml` の `exclude:`、`.prettierignore`/`.pa11yci` は dotfile のため Jekyll 既定除外）。
+
+**ローカル実行:**
+```bash
+# 静的検査（手書きソース assets/js/app.js のみ。*.min.js は対象外）
+npx --yes eslint assets/js/app.js
+# 整形チェック（生成物・data・vendor は .prettierignore で除外）
+npx --yes prettier --check "**/*.{html,css,js,json}"
+# アクセシビリティ（WCAG2AA）。要ローカルサーバー
+bundle exec jekyll build
+npx --yes http-server _site -p 4000 &
+npx --yes pa11y-ci
+```
+
+**CI:** `.github/workflows/frontend-ci.yml` が `assets/js`・`assets/css`・`*.html` 変更時の push/PR で `lint`（ESLint+Prettier）と `a11y`（Jekyll build → pa11y-ci）を自動実行します。**cron は追加していません**（三原則3: API/Actions節約）。
+
 </details>
 
 ## 使用技術・API
@@ -236,6 +256,7 @@ npx --yes clean-css-cli -o assets/css/style.min.css assets/css/style.css
 - **フロントエンド**: HTML5 / CSS3 / JavaScript (ES6+)
 - **SEO・構造化データ**: OGP / Twitter Card / canonical に加え、JSON-LD（`@graph`: Person・WebSite・WebPage・WebApplication）で著者・地理情報・公開/更新日を宣言。サイト名の表記ゆれ（ちがろぐ／チガログ／chigalog 等）は `alternateName` で網羅。`jekyll-sitemap` で sitemap.xml 自動生成。
 - **グラフ描画**: Chart.js（自ホスト版 `assets/vendor/chart.umd.min.js`。CDN通信を排除し、サードパーティ依存を最小化）
+- **品質ゲート**: ESLint（`eslint.config.js`）/ Prettier / pa11y-ci（WCAG2AA）を `frontend-ci.yml` で push・PR 時に自動実行
 - **自動化・ホスティング**: GitHub Actions / GitHub Pages
 - **気象庁データ (天気予報・注意報・潮汐)**: 気象庁公式データ (GitHub ActionsによるJSON定期取得、および年次更新データを利用)
 - **月齢データ**: NASA SVS (年次更新のJSONデータを利用)

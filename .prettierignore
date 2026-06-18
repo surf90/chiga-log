@@ -1,0 +1,11 @@
+# 生成物・外部ベンダ・取得データは整形対象外
+_site/
+data/
+reports/
+assets/css/*.min.css
+assets/js/*.min.js
+assets/vendor/
+# Jekyll が Liquid テンプレートから生成（生ファイルは整形不可）
+assets/js/site-config.js
+# Google サイト認証トークン（改変禁止）
+google*.html

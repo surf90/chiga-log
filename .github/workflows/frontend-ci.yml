@@ -1,0 +1,58 @@
+name: Frontend CI
+
+# フロントエンドのソース変更時のみ実行（cron 追加なし＝三原則3順守）。
+on:
+  push:
+    branches: [main]
+    paths:
+      - "assets/js/**"
+      - "assets/css/**"
+      - "**/*.html"
+      - "eslint.config.js"
+      - ".pa11yci"
+      - ".github/workflows/frontend-ci.yml"
+  pull_request:
+    paths:
+      - "assets/js/**"
+      - "assets/css/**"
+      - "**/*.html"
+      - "eslint.config.js"
+      - ".pa11yci"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: ESLint + Prettier
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: ESLint (source JS)
+        run: npx --yes eslint assets/js/app.js
+      - name: Prettier check
+        run: npx --yes prettier --check "**/*.{html,css,js,json}"
+
+  a11y:
+    name: pa11y (WCAG2AA)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+      - name: Build site (Liquid 解決)
+        run: bundle exec jekyll build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Serve built site
+        run: npx --yes http-server _site -p 4000 --silent &
+      - name: Wait for server
+        run: npx --yes wait-on http://localhost:4000/chiga-log/
+      - name: pa11y-ci
+        run: npx --yes pa11y-ci

@@ -1,10 +1,36 @@
 ---
-updated: 2026-06-17
+updated: 2026-06-18
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-06-18）
+
+### 高度品質検証: Perf/PWA/SEO最適化＋ランタイム堅牢化＋FE品質ゲートCI（main マージ）
+
+- **背景**: モバイル基礎検証完了後の上位検証（Core Web Vitals / a11y / PWA運用 / SEO・OGP）。コード精査で「成熟Webアプリ」観点の残課題を抽出し、三原則準拠の範囲で実装。canonical/JSON-LD/OGP/CSP/aria/skip-link/可変フォント等は既に高品質で、対象は最適化・堅牢化に限定。
+- **ステージ1（Perf/PWA/SEO 最適化4点）**:
+  - **SW Cache-First化** (`sw.js`): App Shell（CSS/JS/Chart.js/HTML）を Cache-First に変更し即時描画。`data/` JSON は Network優先（鮮度・原則1）、navigation はオフライン時 `index.html` フォールバック。`CACHE_NAME` v8→**v9**。
+  - **Google Fonts 非ブロッキング化** (`index.html`): 2本の font `<link>` を `media="print" onload="this.media='all'"` 化＋`<noscript>` フォールバック。レンダリングブロック解消（LCP改善）。
+  - **theme-color 統一**: ライト時 `#FFFBEB`→**`#0e7490`**（manifest `theme_color` と一致）。
+  - **OGP PNG単独化**: `og:image` の WebP 重複を削除（一部スクレイパのサムネ欠落回避・互換優先）。
+- **ステージ2（堅牢性＋品質ゲート）**:
+  - **fetchタイムアウト** (`assets/js/app.js`): `fetchWithTimeout`（`AbortSignal.timeout(10000)`）を追加し `fetchCached`＋直接fetch全8箇所を集約置換。回線ハング時に10秒で AbortError→既存セクション別エラーUIへ（永久ローディング解消）。
+  - **DOM null安全化**: `setText()` ヘルパー追加。`displayFetchTime`/`fetchWeatherData` を setText 化、`showTideError`/`fetchJmaWarning` 冒頭に null ガード（要素欠落での全画面エラー化を防止・フォーク耐性）。
+  - **JS品質ゲートCI**: 自己完結型 `eslint.config.js`（flat config・依存追加なし・対象は手書き `app.js` のみ）＋ `.prettierignore`（生成物/data/vendor/Liquid生成 site-config.js/google認証HTML を除外）。`frontend-ci.yml` の `lint` ジョブで ESLint+Prettier を push/PR 自動実行。
+  - **a11y自動検査**: `.pa11yci`（WCAG2AA）＋ `frontend-ci.yml` の `a11y` ジョブ（Jekyll build→http-server→pa11y-ci）。配色変更の回帰安全網。
+  - **CI方針**: `frontend-ci.yml` は `test.yml` 同様 push/PR・paths限定で **cron非追加**（三原則3順守）。`_config.yml` exclude に `eslint.config.js` を追加（公開ビルド除外）。整形未済だった `404.html`/`_data/site.json`/`style.css`/`sw-register.js` を prettier 整形。
+- **検証**: `node --check`（app.js/sw.js/sw-register.js）exit0 / `eslint` error0・warn3（未使用 LAT・LON・catch e=温存）/ `prettier --check` 全clean / `pytest` 41件通過。
+- **見送り（記録）**: フォント woff2 自ホスト化（作業量大・今回は非ブロッキング化で代替）/ DOM null 全40箇所一括化（高リスク4関数に限定）/ LAT・LON 死定数の削除（フォーク時 lat/lon 参照ドキュメントを兼ね温存）。
+
+**関連ファイル**
+- `index.html` / `sw.js` / `assets/js/app.js` / `assets/css/style.css`
+- `eslint.config.js`（新規）/ `.prettierignore`（新規）/ `.pa11yci`（新規）/ `.github/workflows/frontend-ci.yml`（新規）
+- `_config.yml` / `README.md` / `404.html` / `_data/site.json` / `assets/js/sw-register.js`
+
+---
 
 ## 完了済み（2026-06-17）
 

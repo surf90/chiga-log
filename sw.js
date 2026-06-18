@@ -1,4 +1,4 @@
-const CACHE_NAME = "chigalog-v8";
+const CACHE_NAME = "chigalog-v9";
 const BASE = self.location.pathname.replace(/sw\.js$/, "");
 const ASSETS = [
   BASE,
@@ -33,21 +33,48 @@ self.addEventListener("fetch", (e) => {
   )
     return;
   const url = new URL(e.request.url);
-  // データJSON(?t=, ?d= 等のキャッシュバスター付き)は Cache Storage 肥大化を避けるため put しない。
-  const isDataJson = url.pathname.startsWith(BASE + "data/");
-  e.respondWith(
-    fetch(e.request)
-      .then((res) => {
-        if (isDataJson) return res;
-        if (!res || res.status !== 200 || res.type !== "basic") return res;
-        const copy = res.clone();
-        caches.open(CACHE_NAME).then((c) => c.put(e.request, copy));
-        return res;
-      })
-      .catch(
+
+  // データJSON(?t=, ?d= 等のキャッシュバスター付き)は鮮度最優先。
+  // Cache Storage 肥大化を避けるため put せず、オフライン時のみキャッシュ退避を試す。
+  if (url.pathname.startsWith(BASE + "data/")) {
+    e.respondWith(
+      fetch(e.request).catch(
         async () =>
           (await caches.match(e.request)) ||
           new Response("", { status: 504, statusText: "offline" }),
       ),
+    );
+    return;
+  }
+
+  // ナビゲーション要求：オフライン時は App Shell(index.html) を返す。
+  if (e.request.mode === "navigate") {
+    e.respondWith(
+      fetch(e.request).catch(
+        async () =>
+          (await caches.match(BASE + "index.html")) ||
+          new Response("", { status: 504, statusText: "offline" }),
+      ),
+    );
+    return;
+  }
+
+  // 静的アセット：Cache-First（即時描画）。未キャッシュ時は取得して保存。
+  e.respondWith(
+    caches.match(e.request).then(
+      (hit) =>
+        hit ||
+        fetch(e.request)
+          .then((res) => {
+            if (res && res.status === 200 && res.type === "basic") {
+              const copy = res.clone();
+              caches.open(CACHE_NAME).then((c) => c.put(e.request, copy));
+            }
+            return res;
+          })
+          .catch(
+            () => new Response("", { status: 504, statusText: "offline" }),
+          ),
+    ),
   );
 });

@@ -2,22 +2,38 @@
 layout: null
 lang: ja
 ---
+
 <!-- タイトル・説明・地名・各種コードは _data/site.json で一元管理（フォーク時はそこを編集）。 -->
 
 <!doctype html>
 <html lang="{{ page.lang }}">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
 
     <title>{{ site.data.site.title }}</title>
 
     <meta name="description" content="{{ site.data.site.description }}" />
 
-    <link rel="icon" href="{{ site.baseurl }}/assets/icons/favicon.svg" type="image/svg+xml" />
-    <link rel="icon" href="{{ site.baseurl }}/assets/icons/favicon-48.png" type="image/png" sizes="48x48" />
+    <link
+      rel="icon"
+      href="{{ site.baseurl }}/assets/icons/favicon.svg"
+      type="image/svg+xml"
+    />
+    <link
+      rel="icon"
+      href="{{ site.baseurl }}/assets/icons/favicon-48.png"
+      type="image/png"
+      sizes="48x48"
+    />
     <link rel="icon" href="favicon.ico" sizes="any" />
-    <link rel="apple-touch-icon" href="{{ site.baseurl }}/assets/icons/apple-touch-icon.png" />
+    <link
+      rel="apple-touch-icon"
+      href="{{ site.baseurl }}/assets/icons/apple-touch-icon.png"
+    />
     <link rel="manifest" href="{{ site.baseurl }}/site.webmanifest" />
     <meta
       http-equiv="Content-Security-Policy"
@@ -29,11 +45,14 @@ lang: ja
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
     />
-    <meta name="apple-mobile-web-app-title" content="{{ site.data.site.short_name }}" />
+    <meta
+      name="apple-mobile-web-app-title"
+      content="{{ site.data.site.short_name }}"
+    />
     <meta
       name="theme-color"
       media="(prefers-color-scheme: light)"
-      content="#FFFBEB"
+      content="#0e7490"
     />
     <meta
       name="theme-color"
@@ -42,7 +61,10 @@ lang: ja
     />
 
     <meta property="og:title" content="{{ site.data.site.title }}" />
-    <meta property="og:description" content="{{ site.data.site.description }}" />
+    <meta
+      property="og:description"
+      content="{{ site.data.site.description }}"
+    />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
 
@@ -61,21 +83,23 @@ lang: ja
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="{{ site.data.site.name }} OGP画像" />
-    <meta
-      property="og:image"
-      content="{{ site.url }}{{ site.baseurl }}/assets/og/ogp.webp"
-    />
-    <meta property="og:image:type" content="image/webp" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
 
-    <meta name="twitter:title" content="{{ site.data.site.title }} | {{ site.data.site.name }}" />
-    <meta name="twitter:description" content="{{ site.data.site.description }}" />
+    <meta
+      name="twitter:title"
+      content="{{ site.data.site.title }} | {{ site.data.site.name }}"
+    />
+    <meta
+      name="twitter:description"
+      content="{{ site.data.site.description }}"
+    />
     <meta
       name="twitter:image"
       content="{{ site.url }}{{ site.baseurl }}/assets/og/ogp.png"
     />
-    <meta name="twitter:image:alt" content="{{ site.data.site.name }} OGP画像" />
+    <meta
+      name="twitter:image:alt"
+      content="{{ site.data.site.name }} OGP画像"
+    />
 
     <script type="application/ld+json">
       {
@@ -156,16 +180,27 @@ lang: ja
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Inter (variable 400-700) + Zen Kaku 本文用 (400/500/700) -->
+    <!-- Inter (variable 400-700) + Zen Kaku 本文用 (400/500/700)。
+         media=print + onload でレンダリングをブロックせず後追い適用（FOUTはdisplay=swapで吸収）。 -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media = 'all'"
     />
     <!-- Zen Kaku 900：ロゴ文字のみサブセット -->
     <link
       href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@900&text=ちがログ&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media = 'all'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
 
     <link rel="stylesheet" href="{{ site.baseurl }}/assets/css/style.min.css" />
 
@@ -201,417 +236,424 @@ lang: ja
       </header>
 
       <main id="main-content">
-      <div id="skeleton-loading">
-        <div class="hero-cards hero-cards-skeleton">
-          <div class="skeleton skeleton-hero-card"></div>
-          <div class="skeleton skeleton-hero-card"></div>
-          <div class="skeleton skeleton-hero-card"></div>
-        </div>
-        <div class="skeleton skeleton-line wide"></div>
-        <div class="skeleton skeleton-line mid"></div>
-        <div class="skeleton skeleton-line short"></div>
-        <div class="skeleton skeleton-line wide skeleton-line-spacer"></div>
-        <div class="skeleton skeleton-line mid"></div>
-      </div>
-      <div id="error" class="error hidden" data-nosnippet>
-        データの取得に失敗しました。
-      </div>
-
-      <div id="weather-content" class="hidden">
-        <div
-          class="weather-box warning-active hidden"
-          id="tsunami-box"
-          role="alert"
-          aria-live="assertive"
-        >
-          <h2>
-            {% include icons/waves.svg %}<span class="section-label">TSUNAMI</span
-            ><span id="tsunami-title">津波注意報</span
-            ><span class="section-source">気象庁</span>
-          </h2>
-          <div id="tsunami-content">
-            <div id="tsunami-list"></div>
-            <p class="note">
-              <strong
-                >※必ず<a
-                  href="https://www.data.jma.go.jp/multi/tsunami/index.html?lang=jp"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  >気象庁HP</a
-                >で最新の情報を確認してください！</strong
-              >
-            </p>
+        <div id="skeleton-loading">
+          <div class="hero-cards hero-cards-skeleton">
+            <div class="skeleton skeleton-hero-card"></div>
+            <div class="skeleton skeleton-hero-card"></div>
+            <div class="skeleton skeleton-hero-card"></div>
           </div>
+          <div class="skeleton skeleton-line wide"></div>
+          <div class="skeleton skeleton-line mid"></div>
+          <div class="skeleton skeleton-line short"></div>
+          <div class="skeleton skeleton-line wide skeleton-line-spacer"></div>
+          <div class="skeleton skeleton-line mid"></div>
+        </div>
+        <div id="error" class="error hidden" data-nosnippet>
+          データの取得に失敗しました。
         </div>
 
-        <div class="hero-cards">
-          <button
-            type="button"
-            class="hero-card"
-            data-scroll-to="marine-box"
-            aria-label="海水温セクションへ移動"
-          >
-            <span class="hero-card-label"
-              ><svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path
-                  d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"
-                /></svg
-              >SEA</span
-            >
-            <div class="hero-value-group">
-              <span class="hero-card-value" id="hero-sea-temp"
-                ><span data-nosnippet>--</span></span
-              >
-              <span class="hero-card-unit">℃</span>
-            </div>
-          </button>
-          <button
-            type="button"
-            class="hero-card"
-            data-scroll-to="weather-current-box"
-            aria-label="気温セクションへ移動"
-          >
-            <span class="hero-card-label"
-              ><svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path
-                  d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"
-                />
-                <path d="M20 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
-                <path d="M20 3v2" />
-                <path d="M20 9v2" />
-                <path d="M23 6h-2" />
-                <path d="M17 6h-2" /></svg
-              >AIR</span
-            >
-            <div class="hero-value-group">
-              <span class="hero-card-value" id="hero-temp"
-                ><span data-nosnippet>--</span></span
-              >
-              <span class="hero-card-unit">℃</span>
-            </div>
-          </button>
-          <button
-            type="button"
-            class="hero-card"
-            data-scroll-to="weather-current-box"
-            aria-label="風速セクションへ移動"
-          >
-            <span class="hero-card-label"
-              ><svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2" />
-                <path d="M9.6 4.6A2 2 0 1 1 11 8H2" />
-                <path d="M12.6 19.4A2 2 0 1 0 14 16H2" /></svg
-              >WIND</span
-            >
-            <div class="hero-value-group">
-              <span class="hero-card-value" id="hero-wind"
-                ><span data-nosnippet>--</span></span
-              >
-              <span class="hero-card-unit">&nbsp;m/s</span>
-            </div>
-          </button>
-        </div>
-
-        <div class="weather-box" id="tide-info-box">
-          <h2>
-            {% include icons/moon.svg %}<span class="section-label">TIDE</span>潮汐情報<span
-              class="section-source"
-              id="tide-source-label"
-              ><span data-nosnippet>--</span></span
-            >
-          </h2>
-          <dl class="data-list">
-            <div class="data-row">
-              <dt>潮回り:</dt>
-              <dd id="tide-type"><span data-nosnippet>--</span></dd>
-            </div>
-          </dl>
-          <dl class="data-list" id="tide-extremes-container">
-            <div class="data-row">
-              <dt>満潮・干潮:</dt>
-              <dd id="tide-status"><span data-nosnippet>読み込み中...</span></dd>
-            </div>
-          </dl>
-
+        <div id="weather-content" class="hidden">
           <div
-            id="tide-chart-scroll"
-            class="chart-scroll tide-chart-scroll-wrap"
+            class="weather-box warning-active hidden"
+            id="tsunami-box"
+            role="alert"
+            aria-live="assertive"
           >
-            <div id="tide-chart-container" class="tide-chart-area">
-              <canvas
-                id="tideChart"
-                role="img"
-                aria-label="潮汐タイドグラフ"
-              ></canvas>
+            <h2>
+              {% include icons/waves.svg %}<span class="section-label"
+                >TSUNAMI</span
+              ><span id="tsunami-title">津波注意報</span
+              ><span class="section-source">気象庁</span>
+            </h2>
+            <div id="tsunami-content">
+              <div id="tsunami-list"></div>
+              <p class="note">
+                <strong
+                  >※必ず<a
+                    href="https://www.data.jma.go.jp/multi/tsunami/index.html?lang=jp"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >気象庁HP</a
+                  >で最新の情報を確認してください！</strong
+                >
+              </p>
             </div>
           </div>
 
-          <p class="note">
-            ※正確な潮位は<a
-              href="https://www.data.jma.go.jp/kaiyou/db/tide/suisan/index.php"
-              target="_blank"
-              rel="noopener noreferrer"
-              >気象庁の潮位表（{{ site.data.site.location.tide_table_label }}）</a
-            >等をご確認ください。
-          </p>
-        </div>
-
-        <div class="weather-box" id="wave-guid-box">
-          <h2>
-            {% include icons/waves.svg %}<span class="section-label">WAVE</span>波高･周期<span
-              class="section-source"
-              >気象庁</span
+          <div class="hero-cards">
+            <button
+              type="button"
+              class="hero-card"
+              data-scroll-to="marine-box"
+              aria-label="海水温セクションへ移動"
             >
-          </h2>
-          <div id="wave-guid-loading" class="section-loading" data-nosnippet>
-            取得中...
+              <span class="hero-card-label"
+                ><svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"
+                  /></svg
+                >SEA</span
+              >
+              <div class="hero-value-group">
+                <span class="hero-card-value" id="hero-sea-temp"
+                  ><span data-nosnippet>--</span></span
+                >
+                <span class="hero-card-unit">℃</span>
+              </div>
+            </button>
+            <button
+              type="button"
+              class="hero-card"
+              data-scroll-to="weather-current-box"
+              aria-label="気温セクションへ移動"
+            >
+              <span class="hero-card-label"
+                ><svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"
+                  />
+                  <path d="M20 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
+                  <path d="M20 3v2" />
+                  <path d="M20 9v2" />
+                  <path d="M23 6h-2" />
+                  <path d="M17 6h-2" /></svg
+                >AIR</span
+              >
+              <div class="hero-value-group">
+                <span class="hero-card-value" id="hero-temp"
+                  ><span data-nosnippet>--</span></span
+                >
+                <span class="hero-card-unit">℃</span>
+              </div>
+            </button>
+            <button
+              type="button"
+              class="hero-card"
+              data-scroll-to="weather-current-box"
+              aria-label="風速セクションへ移動"
+            >
+              <span class="hero-card-label"
+                ><svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2" />
+                  <path d="M9.6 4.6A2 2 0 1 1 11 8H2" />
+                  <path d="M12.6 19.4A2 2 0 1 0 14 16H2" /></svg
+                >WIND</span
+              >
+              <div class="hero-value-group">
+                <span class="hero-card-value" id="hero-wind"
+                  ><span data-nosnippet>--</span></span
+                >
+                <span class="hero-card-unit">&nbsp;m/s</span>
+              </div>
+            </button>
           </div>
-          <div id="wave-guid-content" class="hidden">
-            <div id="wave-chart-scroll" class="chart-scroll">
-              <div id="wave-chart-container" class="wave-chart-area">
+
+          <div class="weather-box" id="tide-info-box">
+            <h2>
+              {% include icons/moon.svg %}<span class="section-label">TIDE</span
+              >潮汐情報<span class="section-source" id="tide-source-label"
+                ><span data-nosnippet>--</span></span
+              >
+            </h2>
+            <dl class="data-list">
+              <div class="data-row">
+                <dt>潮回り:</dt>
+                <dd id="tide-type"><span data-nosnippet>--</span></dd>
+              </div>
+            </dl>
+            <dl class="data-list" id="tide-extremes-container">
+              <div class="data-row">
+                <dt>満潮・干潮:</dt>
+                <dd id="tide-status">
+                  <span data-nosnippet>読み込み中...</span>
+                </dd>
+              </div>
+            </dl>
+
+            <div
+              id="tide-chart-scroll"
+              class="chart-scroll tide-chart-scroll-wrap"
+            >
+              <div id="tide-chart-container" class="tide-chart-area">
                 <canvas
-                  id="waveChart"
+                  id="tideChart"
                   role="img"
-                  aria-label="波高と周期の予測グラフ"
+                  aria-label="潮汐タイドグラフ"
                 ></canvas>
               </div>
             </div>
-            <p class="note note-z">
-              ※<a
-                href="https://www.data.jma.go.jp/waveinf/guid/wave_guid.html?area={{ site.data.site.jma.wave_guid_link_area }}"
+
+            <p class="note">
+              ※正確な潮位は<a
+                href="https://www.data.jma.go.jp/kaiyou/db/tide/suisan/index.php"
                 target="_blank"
                 rel="noopener noreferrer"
-                >気象庁が提供している（関東地方南部全域の）予想値</a
-              >です。
+                >気象庁の潮位表（{{ site.data.site.location.tide_table_label
+                }}）</a
+              >等をご確認ください。
             </p>
           </div>
-          <div id="wave-guid-error" class="section-error" data-nosnippet>
-            波情報の取得に失敗しました。
-          </div>
-        </div>
 
-        <div class="weather-box" id="marine-box">
-          <h2>
-            {% include icons/activity.svg %}<span class="section-label">MARINE</span>水温･波高<small
-              class="section-sub"
-              >&nbsp;予測</small
-            ><span class="section-source">Open-Meteo</span>
-          </h2>
-          <dl class="data-list">
-            <div class="data-row">
-              <dt>平均波高:</dt>
-              <dd id="wave-height"><span data-nosnippet>-- m</span></dd>
+          <div class="weather-box" id="wave-guid-box">
+            <h2>
+              {% include icons/waves.svg %}<span class="section-label"
+                >WAVE</span
+              >波高･周期<span class="section-source">気象庁</span>
+            </h2>
+            <div id="wave-guid-loading" class="section-loading" data-nosnippet>
+              取得中...
             </div>
-            <div class="data-row">
-              <dt>海水温:</dt>
-              <dd id="sea-temp"><span data-nosnippet>--℃</span></dd>
-            </div>
-          </dl>
-          <p class="note">※波と海水温のデータは沖合の予測値ベースです。</p>
-        </div>
-
-        <div class="weather-box" id="jma-warning-box">
-          <h2>
-            {% include icons/alert.svg %}<span class="section-label">ALERT</span>注意報・警報<span
-              class="section-source"
-              >気象庁</span
-            >
-          </h2>
-          <div id="jma-warning-loading" class="section-loading" data-nosnippet>
-            取得中...
-          </div>
-          <div id="jma-warning-content" class="hidden">
-            <div id="jma-warning-list"></div>
-            <p class="note">
-              <strong
-                >※必ず<a
-                  href="https://www.data.jma.go.jp/multi/warn/warn_detail.html?code={{ site.data.site.jma.forecast_area_code }}&selected_code={{ site.data.site.jma.city_warning_code }}&warning=all&lang=jp"
+            <div id="wave-guid-content" class="hidden">
+              <div id="wave-chart-scroll" class="chart-scroll">
+                <div id="wave-chart-container" class="wave-chart-area">
+                  <canvas
+                    id="waveChart"
+                    role="img"
+                    aria-label="波高と周期の予測グラフ"
+                  ></canvas>
+                </div>
+              </div>
+              <p class="note note-z">
+                ※<a
+                  href="https://www.data.jma.go.jp/waveinf/guid/wave_guid.html?area={{ site.data.site.jma.wave_guid_link_area }}"
                   target="_blank"
                   rel="noopener noreferrer"
-                  >気象庁HP</a
-                >で最新の情報を確認してください！</strong
+                  >気象庁が提供している（関東地方南部全域の）予想値</a
+                >です。
+              </p>
+            </div>
+            <div id="wave-guid-error" class="section-error" data-nosnippet>
+              波情報の取得に失敗しました。
+            </div>
+          </div>
+
+          <div class="weather-box" id="marine-box">
+            <h2>
+              {% include icons/activity.svg %}<span class="section-label"
+                >MARINE</span
+              >水温･波高<small class="section-sub">&nbsp;予測</small
+              ><span class="section-source">Open-Meteo</span>
+            </h2>
+            <dl class="data-list">
+              <div class="data-row">
+                <dt>平均波高:</dt>
+                <dd id="wave-height"><span data-nosnippet>-- m</span></dd>
+              </div>
+              <div class="data-row">
+                <dt>海水温:</dt>
+                <dd id="sea-temp"><span data-nosnippet>--℃</span></dd>
+              </div>
+            </dl>
+            <p class="note">※波と海水温のデータは沖合の予測値ベースです。</p>
+          </div>
+
+          <div class="weather-box" id="jma-warning-box">
+            <h2>
+              {% include icons/alert.svg %}<span class="section-label"
+                >ALERT</span
+              >注意報・警報<span class="section-source">気象庁</span>
+            </h2>
+            <div
+              id="jma-warning-loading"
+              class="section-loading"
+              data-nosnippet
+            >
+              取得中...
+            </div>
+            <div id="jma-warning-content" class="hidden">
+              <div id="jma-warning-list"></div>
+              <p class="note">
+                <strong
+                  >※必ず<a
+                    href="https://www.data.jma.go.jp/multi/warn/warn_detail.html?code={{ site.data.site.jma.forecast_area_code }}&selected_code={{ site.data.site.jma.city_warning_code }}&warning=all&lang=jp"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >気象庁HP</a
+                  >で最新の情報を確認してください！</strong
+                >
+              </p>
+            </div>
+            <div id="jma-warning-error" class="section-error" data-nosnippet>
+              注意報情報の取得に失敗しました。
+            </div>
+          </div>
+
+          <div class="weather-box" id="jma-forecast-box">
+            <h2>
+              {% include icons/weather.svg %}<span class="section-label"
+                >WEATHER</span
+              >天気予報<span class="section-source">気象庁</span>
+            </h2>
+            <div id="jma-loading" class="section-loading" data-nosnippet>
+              取得中...
+            </div>
+            <div id="jma-forecast-content" class="hidden">
+              <dl class="data-list">
+                <div class="data-row">
+                  <dt>天 気:</dt>
+                  <dd id="jma-weather"><span data-nosnippet>--</span></dd>
+                </div>
+                <div class="data-row">
+                  <dt>降水確率:</dt>
+                  <dd id="jma-pop"><span data-nosnippet>--</span></dd>
+                </div>
+                <div class="data-row">
+                  <dt>最高/最低:</dt>
+                  <dd id="jma-temp"><span data-nosnippet>-- / --</span></dd>
+                </div>
+              </dl>
+              <div class="data-row typhoon-notice" id="jma-typhoon-notice">
+                ⚠ 台風情報あり
+              </div>
+              <button
+                class="toggle-btn"
+                id="jma-overview-toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="jma-overview-text"
+              >
+                概況を表示 ▼
+              </button>
+              <div class="jma-overview" id="jma-overview-text">
+                <dl class="data-list">
+                  <div class="data-row" id="jma-wind-row">
+                    <dt>風:</dt>
+                    <dd id="jma-wind"><span data-nosnippet>--</span></dd>
+                  </div>
+                </dl>
+                <div id="jma-overview-body"></div>
+              </div>
+            </div>
+            <div id="jma-error" class="section-error" data-nosnippet>
+              天気予報の取得に失敗しました。
+            </div>
+            <p class="note">
+              ※気候の予測には、<a
+                href="https://www.jma.go.jp/bosai/weather_map/"
+                target="_blank"
+                rel="noopener noreferrer"
+                >気象庁の天気図</a
+              >等もご確認ください。
+            </p>
+          </div>
+
+          <div class="weather-box" id="wind-forecast-box">
+            <h2>
+              {% include icons/wind.svg %}<span class="section-label">WIND</span
+              >風予報<small class="section-sub">&nbsp;1時間ごと</small
+              ><span class="section-source">Open-Meteo</span>
+            </h2>
+            <div
+              id="wind-forecast-loading"
+              class="section-loading"
+              data-nosnippet
+            >
+              取得中...
+            </div>
+            <div id="wind-forecast-content" class="hidden">
+              <button
+                class="toggle-btn"
+                id="wind-forecast-toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="wind-forecast-list"
+              >
+                予想風を表示 ▼
+              </button>
+              <div class="wind-grid" id="wind-forecast-list"></div>
+            </div>
+            <div id="wind-forecast-error" class="section-error" data-nosnippet>
+              風予報の取得に失敗しました。
+            </div>
+            <p class="note">
+              ※{{ site.data.site.location.display_name
+              }}付近の予測値です。局所風とは異なる場合があります。
+            </p>
+          </div>
+
+          <div class="weather-box" id="weather-current-box">
+            <h2>
+              {% include icons/thermometer.svg %}<span class="section-label"
+                >NOW</span
+              >現在の気温･風<span class="section-source">気象庁</span>
+            </h2>
+            <dl class="data-list">
+              <div class="data-row">
+                <dt>気 温:</dt>
+                <dd id="temp"><span data-nosnippet>--℃</span></dd>
+              </div>
+              <div class="data-row">
+                <dt>湿 度:</dt>
+                <dd id="humidity"><span data-nosnippet>-- %</span></dd>
+              </div>
+              <div class="data-row">
+                <dt>風 速:</dt>
+                <dd id="wind"><span data-nosnippet>-- m/s</span></dd>
+              </div>
+              <div class="data-row">
+                <dt>風 向:</dt>
+                <dd id="wind-dir"><span data-nosnippet>-- °</span></dd>
+              </div>
+              <div class="data-row">
+                <dt>降水量(1h):</dt>
+                <dd id="precip-1h"><span data-nosnippet>-- mm</span></dd>
+              </div>
+            </dl>
+            <p class="note">
+              ※<a
+                href="https://www.jma.go.jp/bosai/amedas/#amdno={{ site.data.site.jma.amedas_link_no }}&area_type=offices&area_code={{ site.data.site.jma.pref_code }}&format=table1h&elems=53410"
+                target="_blank"
+                rel="noopener noreferrer"
+                >アメダス（辻堂）</a
+              >の観測値です。<span id="amedas-stale" hidden
+                >（取得失敗のため前回の観測値を表示中）</span
               >
             </p>
           </div>
-          <div id="jma-warning-error" class="section-error" data-nosnippet>
-            注意報情報の取得に失敗しました。
-          </div>
         </div>
 
-        <div class="weather-box" id="jma-forecast-box">
-          <h2>
-            {% include icons/weather.svg %}<span class="section-label">WEATHER</span>天気予報<span
-              class="section-source"
-              >気象庁</span
-            >
-          </h2>
-          <div id="jma-loading" class="section-loading" data-nosnippet>
-            取得中...
-          </div>
-          <div id="jma-forecast-content" class="hidden">
-            <dl class="data-list">
-              <div class="data-row">
-                <dt>天 気:</dt>
-                <dd id="jma-weather"><span data-nosnippet>--</span></dd>
-              </div>
-              <div class="data-row">
-                <dt>降水確率:</dt>
-                <dd id="jma-pop"><span data-nosnippet>--</span></dd>
-              </div>
-              <div class="data-row">
-                <dt>最高/最低:</dt>
-                <dd id="jma-temp"><span data-nosnippet>-- / --</span></dd>
-              </div>
-            </dl>
-            <div class="data-row typhoon-notice" id="jma-typhoon-notice">
-              ⚠ 台風情報あり
-            </div>
-            <button
-              class="toggle-btn"
-              id="jma-overview-toggle"
-              type="button"
-              aria-expanded="false"
-              aria-controls="jma-overview-text"
-            >
-              概況を表示 ▼
-            </button>
-            <div class="jma-overview" id="jma-overview-text">
-              <dl class="data-list">
-                <div class="data-row" id="jma-wind-row">
-                  <dt>風:</dt>
-                  <dd id="jma-wind"><span data-nosnippet>--</span></dd>
-                </div>
-              </dl>
-              <div id="jma-overview-body"></div>
-            </div>
-          </div>
-          <div id="jma-error" class="section-error" data-nosnippet>
-            天気予報の取得に失敗しました。
-          </div>
-          <p class="note">
-            ※気候の予測には、<a
-              href="https://www.jma.go.jp/bosai/weather_map/"
-              target="_blank"
-              rel="noopener noreferrer"
-              >気象庁の天気図</a
-            >等もご確認ください。
-          </p>
+        <div class="float-alert-wrap">
+          <button
+            type="button"
+            id="current-time"
+            class="current-time"
+            aria-live="polite"
+            aria-label="データを手動で更新"
+          ></button>
         </div>
-
-        <div class="weather-box" id="wind-forecast-box">
-          <h2>
-            {% include icons/wind.svg %}<span class="section-label">WIND</span>風予報<small
-              class="section-sub"
-              >&nbsp;1時間ごと</small
-            ><span class="section-source">Open-Meteo</span>
-          </h2>
-          <div id="wind-forecast-loading" class="section-loading" data-nosnippet>
-            取得中...
-          </div>
-          <div id="wind-forecast-content" class="hidden">
-            <button
-              class="toggle-btn"
-              id="wind-forecast-toggle"
-              type="button"
-              aria-expanded="false"
-              aria-controls="wind-forecast-list"
-            >
-              予想風を表示 ▼
-            </button>
-            <div class="wind-grid" id="wind-forecast-list"></div>
-          </div>
-          <div id="wind-forecast-error" class="section-error" data-nosnippet>
-            風予報の取得に失敗しました。
-          </div>
-          <p class="note">
-            ※{{ site.data.site.location.display_name }}付近の予測値です。局所風とは異なる場合があります。
-          </p>
-        </div>
-
-        <div class="weather-box" id="weather-current-box">
-          <h2>
-            {% include icons/thermometer.svg %}<span class="section-label">NOW</span>現在の気温･風<span
-              class="section-source"
-              >気象庁</span
-            >
-          </h2>
-          <dl class="data-list">
-            <div class="data-row">
-              <dt>気 温:</dt>
-              <dd id="temp"><span data-nosnippet>--℃</span></dd>
-            </div>
-            <div class="data-row">
-              <dt>湿 度:</dt>
-              <dd id="humidity"><span data-nosnippet>-- %</span></dd>
-            </div>
-            <div class="data-row">
-              <dt>風 速:</dt>
-              <dd id="wind"><span data-nosnippet>-- m/s</span></dd>
-            </div>
-            <div class="data-row">
-              <dt>風 向:</dt>
-              <dd id="wind-dir"><span data-nosnippet>-- °</span></dd>
-            </div>
-            <div class="data-row">
-              <dt>降水量(1h):</dt>
-              <dd id="precip-1h"><span data-nosnippet>-- mm</span></dd>
-            </div>
-          </dl>
-          <p class="note">
-            ※<a
-              href="https://www.jma.go.jp/bosai/amedas/#amdno={{ site.data.site.jma.amedas_link_no }}&area_type=offices&area_code={{ site.data.site.jma.pref_code }}&format=table1h&elems=53410"
-              target="_blank"
-              rel="noopener noreferrer"
-              >アメダス（辻堂）</a
-            >の観測値です。<span id="amedas-stale" hidden
-              >（取得失敗のため前回の観測値を表示中）</span
-            >
-          </p>
-        </div>
-      </div>
-
-      <div class="float-alert-wrap">
-        <button
-          type="button"
-          id="current-time"
-          class="current-time"
-          aria-live="polite"
-          aria-label="データを手動で更新"
-        ></button>
-      </div>
       </main>
 
       <footer class="footer">

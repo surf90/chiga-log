@@ -66,7 +66,7 @@ async function fetchCached(
       storage.removeItem(key);
     }
   }
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url);
   if (!res.ok) throw new Error(`fetch failed: ${url}`);
   const data = await res.json();
   try {
@@ -85,6 +85,27 @@ function formatJstHm(ms) {
 }
 
 // ─── 2. ユーティリティ ──────────────────────────────────────
+/**
+ * タイムアウト付き fetch。既定10秒を超えると AbortError を投げる。
+ * 回線ハング時にローディング表示が固着するのを防ぐ。
+ * @param {string} url
+ * @param {{timeoutMs?: number}} [opts]
+ * @returns {Promise<Response>}
+ */
+function fetchWithTimeout(url, { timeoutMs = 10000 } = {}) {
+  return fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+}
+
+/**
+ * id要素が存在すれば textContent を設定する（無ければ何もしない）。
+ * @param {string} id
+ * @param {string} text
+ */
+function setText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
 function getWindDirection16(degree) {
   const directions = [
     "北",
@@ -146,8 +167,10 @@ function displayFetchTime() {
     hour: "2-digit",
     minute: "2-digit",
   };
-  const el = document.getElementById("current-time");
-  el.textContent = `更新日時: ${now.toLocaleString("ja-JP", options)} 🔄`;
+  setText(
+    "current-time",
+    `更新日時: ${now.toLocaleString("ja-JP", options)} 🔄`,
+  );
 }
 
 // ─── 3. チャート共通 ────────────────────────────────────────
@@ -251,7 +274,7 @@ async function calculateTide() {
 
   try {
     const dayKey = new Date().toISOString().slice(0, 10);
-    const resp = await fetch(`data/moon_daily.json?d=${dayKey}`);
+    const resp = await fetchWithTimeout(`data/moon_daily.json?d=${dayKey}`);
     if (resp.ok) {
       const moonToday = await resp.json();
       if (moonToday.age !== undefined) {
@@ -299,6 +322,7 @@ function updateTideSource(sourceName) {
 function showTideError() {
   // 三原則1: 取得失敗時はダミー値を出さず、UI上で明示する。
   const container = document.getElementById("tide-extremes-container");
+  if (!container) return;
   container.innerHTML = "";
   const row = document.createElement("div");
   row.className = "data-row tide-error";
@@ -319,7 +343,7 @@ async function fetchTideExtremes() {
 
   try {
     const dayKey = new Date().toISOString().slice(0, 10);
-    const res = await fetch(`data/tide_widget.json?d=${dayKey}`);
+    const res = await fetchWithTimeout(`data/tide_widget.json?d=${dayKey}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
@@ -541,7 +565,7 @@ function drawTideChart(extremes, hasHeightData) {
 async function fetchWaveGuidance() {
   try {
     const hour3Buster = Math.floor(Date.now() / (3 * 60 * 60 * 1000));
-    const resp = await fetch(
+    const resp = await fetchWithTimeout(
       `data/wave_guid_${WAVE_GUID_AREA}.json?t=${hour3Buster}`,
     );
     if (!resp.ok)
@@ -768,17 +792,18 @@ function warningLevelFromName(name) {
 async function fetchJmaWarning() {
   try {
     const bust = Math.floor(Date.now() / (15 * 60000));
-    const res = await fetch(`data/warning_chigasaki.json?t=${bust}`);
+    const res = await fetchWithTimeout(`data/warning_chigasaki.json?t=${bust}`);
     if (!res.ok) throw new Error("warning_chigasaki.json fetch failed");
     const data = await res.json();
 
     const listEl = document.getElementById("jma-warning-list");
+    const warningBox = document.getElementById("jma-warning-box");
+    const floatingBar = document.getElementById("floating-alert-bar");
+    if (!listEl || !warningBox || !floatingBar) return;
     listEl.innerHTML = "";
 
     const activeWarnings = (data.warnings ?? []).filter((w) => w && w.name);
 
-    const warningBox = document.getElementById("jma-warning-box");
-    const floatingBar = document.getElementById("floating-alert-bar");
     if (activeWarnings.length === 0) {
       const none = document.createElement("div");
       none.className = "warning-none";
@@ -888,7 +913,7 @@ async function fetchTsunami() {
   const box = document.getElementById("tsunami-box");
   try {
     const bust = Math.floor(Date.now() / 60000);
-    const listRes = await fetch(`${TSUNAMI_LIST_URL}?t=${bust}`);
+    const listRes = await fetchWithTimeout(`${TSUNAMI_LIST_URL}?t=${bust}`);
     if (!listRes.ok) throw new Error("tsunami list.json fetch failed");
     const list = await listRes.json();
 
@@ -907,7 +932,7 @@ async function fetchTsunami() {
       return;
     }
 
-    const detRes = await fetch(`${TSUNAMI_BASE_URL}${latest.json}`);
+    const detRes = await fetchWithTimeout(`${TSUNAMI_BASE_URL}${latest.json}`);
     if (!detRes.ok) throw new Error("tsunami detail fetch failed");
     const det = await detRes.json();
 
@@ -966,7 +991,7 @@ async function fetchTsunami() {
 async function fetchJmaForecast() {
   const hour8Buster = Math.floor(Date.now() / (8 * 60 * 60 * 1000));
   try {
-    const res = await fetch(`data/forecast.json?t=${hour8Buster}`);
+    const res = await fetchWithTimeout(`data/forecast.json?t=${hour8Buster}`);
     if (!res.ok) throw new Error("forecast.json fetch failed");
     const data = await res.json();
 
@@ -1103,7 +1128,9 @@ function toggleWindForecast() {
 async function fetchWindForecast() {
   try {
     const hourBuster = Math.floor(Date.now() / (60 * 60 * 1000));
-    const res = await fetch(`data/wind_forecast.json?t=${hourBuster}`);
+    const res = await fetchWithTimeout(
+      `data/wind_forecast.json?t=${hourBuster}`,
+    );
     if (!res.ok) throw new Error("wind_forecast.json fetch failed");
     const data = await res.json();
     const now = new Date();
@@ -1204,59 +1231,58 @@ async function fetchWeatherData(isManual = false) {
     const wmData = wmResult.status === "fulfilled" ? wmResult.value : null;
     const jma = wmData?.jma_amedas;
     const cw = wmData?.current_weather;
-    const tempEl = document.getElementById("temp");
-    const humEl = document.getElementById("humidity");
-    const windEl = document.getElementById("wind");
-    const windDirEl = document.getElementById("wind-dir");
-    const precipEl = document.getElementById("precip-1h");
-    const heroTempEl = document.getElementById("hero-temp");
-    const heroWindEl = document.getElementById("hero-wind");
     const staleEl = document.getElementById("amedas-stale");
+    if (staleEl) staleEl.hidden = !(jma && jma.stale === true);
 
-    staleEl.hidden = !(jma && jma.stale === true);
     if (jma) {
-      tempEl.textContent = jma.temp != null ? `${jma.temp}℃` : "--℃";
-      humEl.textContent = jma.humidity != null ? `${jma.humidity} %` : "-- %";
-      windEl.textContent = jma.wind != null ? `${jma.wind} m/s` : "-- m/s";
-      windDirEl.textContent = getWindDirectionJma(jma.windDirection);
-      precipEl.textContent =
-        jma.precipitation1h != null ? `${jma.precipitation1h} mm` : "0 mm";
-      heroTempEl.textContent = jma.temp != null ? jma.temp : "--";
-      heroWindEl.textContent = jma.wind != null ? jma.wind : "--";
+      setText("temp", jma.temp != null ? `${jma.temp}℃` : "--℃");
+      setText("humidity", jma.humidity != null ? `${jma.humidity} %` : "-- %");
+      setText("wind", jma.wind != null ? `${jma.wind} m/s` : "-- m/s");
+      setText("wind-dir", getWindDirectionJma(jma.windDirection));
+      setText(
+        "precip-1h",
+        jma.precipitation1h != null ? `${jma.precipitation1h} mm` : "0 mm",
+      );
+      setText("hero-temp", jma.temp != null ? jma.temp : "--");
+      setText("hero-wind", jma.wind != null ? jma.wind : "--");
     } else if (cw) {
-      tempEl.textContent = `${cw.temperature}℃`;
-      humEl.textContent = "-- %";
-      windEl.textContent = `${cw.windspeed} m/s`;
-      windDirEl.textContent = getWindDirection16(cw.winddirection);
-      precipEl.textContent = "-- mm";
-      heroTempEl.textContent = cw.temperature;
-      heroWindEl.textContent = cw.windspeed;
+      setText("temp", `${cw.temperature}℃`);
+      setText("humidity", "-- %");
+      setText("wind", `${cw.windspeed} m/s`);
+      setText("wind-dir", getWindDirection16(cw.winddirection));
+      setText("precip-1h", "-- mm");
+      setText("hero-temp", cw.temperature);
+      setText("hero-wind", cw.windspeed);
     } else {
-      tempEl.textContent = "データなし";
-      humEl.textContent = "--";
-      windEl.textContent = "データなし";
-      windDirEl.textContent = "--";
-      precipEl.textContent = "--";
-      heroTempEl.textContent = "--";
-      heroWindEl.textContent = "--";
+      setText("temp", "データなし");
+      setText("humidity", "--");
+      setText("wind", "データなし");
+      setText("wind-dir", "--");
+      setText("precip-1h", "--");
+      setText("hero-temp", "--");
+      setText("hero-wind", "--");
     }
 
     const cur = wmData?.marine?.current;
-    document.getElementById("wave-height").textContent =
-      cur?.wave_height != null ? `${cur.wave_height} m` : "データなし";
+    setText(
+      "wave-height",
+      cur?.wave_height != null ? `${cur.wave_height} m` : "データなし",
+    );
     if (cur?.sea_surface_temperature != null) {
-      document.getElementById("sea-temp").textContent =
-        `${cur.sea_surface_temperature}℃`;
-      document.getElementById("hero-sea-temp").textContent =
-        cur.sea_surface_temperature;
+      setText("sea-temp", `${cur.sea_surface_temperature}℃`);
+      setText("hero-sea-temp", cur.sea_surface_temperature);
     } else {
-      document.getElementById("sea-temp").textContent = "データなし";
-      document.getElementById("hero-sea-temp").textContent = "--";
+      setText("sea-temp", "データなし");
+      setText("hero-sea-temp", "--");
     }
 
-    document.getElementById("skeleton-loading").style.display = "none";
-    document.getElementById("weather-content").style.display = "block";
-    document.getElementById("weather-content").classList.remove("is-updating");
+    const skeletonEl = document.getElementById("skeleton-loading");
+    if (skeletonEl) skeletonEl.style.display = "none";
+    const contentEl = document.getElementById("weather-content");
+    if (contentEl) {
+      contentEl.style.display = "block";
+      contentEl.classList.remove("is-updating");
+    }
     _lastFetchTime = Date.now();
     displayFetchTime();
   } catch (error) {
