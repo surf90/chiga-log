@@ -44,12 +44,12 @@ body {
   font-family: Inter, "Zen Kaku Gothic New", sans-serif;
   background: var(--bg-gradient);
   min-height: 100vh;
+  min-height: 100dvh;
   color: var(--text-main);
   margin: 0;
   padding: 24px 16px;
   font-size: 15px;
   line-height: 1.7;
-  word-break: break-all;
   overflow-wrap: break-word;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
@@ -324,7 +324,7 @@ h1 .title-sub {
 #toast {
   display: none;
   position: fixed;
-  bottom: 24px;
+  bottom: max(24px, env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   font: inherit;
