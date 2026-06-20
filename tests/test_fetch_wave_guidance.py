@@ -1,10 +1,6 @@
-"""dl_wave-guid.py の parse_csv の単体テスト。"""
+"""fetch_wave_guidance.py の parse_csv の単体テスト。"""
 
-import importlib
-
-# ファイル名にハイフンが含まれるため動的 import を使う
-dl_wave = importlib.import_module("dl_wave-guid")
-parse_csv = dl_wave.parse_csv
+from fetch_wave_guidance import parse_csv
 
 
 def test_parse_csv_skips_header_and_parses_rows():
