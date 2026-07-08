@@ -333,7 +333,8 @@ h1 .title-sub {
 .current-time:active {
   opacity: 0.4;
 }
-#toast {
+#toast,
+#refresh-toast {
   display: none;
   position: fixed;
   bottom: max(24px, env(safe-area-inset-bottom));
@@ -357,8 +358,12 @@ h1 .title-sub {
   transition: opacity 0.4s;
   white-space: nowrap;
 }
-#toast.show {
+#toast.show,
+#refresh-toast.show {
   opacity: 1;
+}
+#refresh-toast {
+  cursor: default;
 }
 #toast:focus-visible {
   outline: 2px solid #0e7490;
@@ -741,7 +746,8 @@ p.note strong a {
   .skeleton-hero-card {
     background: #2a2a2a;
   }
-  #toast {
+  #toast,
+  #refresh-toast {
     background: rgba(42, 42, 42, 0.92);
     color: #5ebdd8;
     border-color: rgba(94, 189, 216, 0.3);

@@ -52,13 +52,14 @@ let windForecastRange = "";
 async function fetchCached(
   url,
   key,
-  { store = "session", ttlMs = 30 * 60 * 1000 } = {},
+  { store = "session", ttlMs = 30 * 60 * 1000, force = false } = {},
 ) {
   const storage = store === "local" ? localStorage : sessionStorage;
   // 同オリジン内の他コードとのキー衝突を避けるためプレフィックスを付与する
   key = STORAGE_PREFIX + key;
   const cached = storage.getItem(key);
-  if (cached) {
+  // 手動更新(force)時はキャッシュ読み取りをスキップし常に再取得する
+  if (!force && cached) {
     try {
       const { data, ts } = JSON.parse(cached);
       if (Date.now() - ts < ttlMs) return data;
@@ -66,7 +67,7 @@ async function fetchCached(
       storage.removeItem(key);
     }
   }
-  const res = await fetchWithTimeout(url);
+  const res = await fetchWithTimeout(url, { force });
   if (!res.ok) throw new Error(`fetch failed: ${url}`);
   const data = await res.json();
   try {
@@ -176,8 +177,11 @@ function formatJstHm(ms) {
  * @param {{timeoutMs?: number}} [opts]
  * @returns {Promise<Response>}
  */
-function fetchWithTimeout(url, { timeoutMs = 10000 } = {}) {
-  return fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+function fetchWithTimeout(url, { timeoutMs = 10000, force = false } = {}) {
+  const opts = { signal: AbortSignal.timeout(timeoutMs) };
+  // 手動更新時はHTTPキャッシュを迂回しネットワークから再取得する
+  if (force) opts.cache = "reload";
+  return fetch(url, opts);
 }
 
 /**
@@ -360,7 +364,7 @@ function scrollChartsToNow() {
 }
 
 // ─── 4. 潮汐 ────────────────────────────────────────────────
-async function calculateTide() {
+async function calculateTide(force = false) {
   const synodicMonth = 29.530588853;
   const knownNewMoon = new Date("2000-01-06T18:14:00+09:00").getTime();
   const targetDate = new Date();
@@ -374,7 +378,9 @@ async function calculateTide() {
 
   try {
     const dayKey = new Date().toISOString().slice(0, 10);
-    const resp = await fetchWithTimeout(`data/moon_daily.json?d=${dayKey}`);
+    const resp = await fetchWithTimeout(`data/moon_daily.json?d=${dayKey}`, {
+      force,
+    });
     if (resp.ok) {
       const moonToday = await resp.json();
       if (moonToday.age !== undefined) {
@@ -432,7 +438,7 @@ function showTideError() {
   if (chartContainer) chartContainer.style.display = "none";
 }
 
-async function fetchTideExtremes() {
+async function fetchTideExtremes(force = false) {
   document.getElementById("tide-status").textContent = "読み込み中...";
 
   if (!window.location.protocol.startsWith("http")) {
@@ -443,7 +449,9 @@ async function fetchTideExtremes() {
 
   try {
     const dayKey = new Date().toISOString().slice(0, 10);
-    const res = await fetchWithTimeout(`data/tide_widget.json?d=${dayKey}`);
+    const res = await fetchWithTimeout(`data/tide_widget.json?d=${dayKey}`, {
+      force,
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
@@ -663,11 +671,12 @@ function drawTideChart(extremes, hasHeightData) {
 }
 
 // ─── 5. 波 ──────────────────────────────────────────────────
-async function fetchWaveGuidance() {
+async function fetchWaveGuidance(force = false) {
   try {
     const hour3Buster = Math.floor(Date.now() / (3 * 60 * 60 * 1000));
     const resp = await fetchWithTimeout(
       `data/wave_guid_${WAVE_GUID_AREA}.json?t=${hour3Buster}`,
+      { force },
     );
     if (!resp.ok)
       throw new Error(`wave_guid_${WAVE_GUID_AREA}.json の読み込みに失敗`);
@@ -895,10 +904,15 @@ function warningLevelFromName(name) {
   return "chuiho";
 }
 
-async function fetchJmaWarning() {
+async function fetchJmaWarning(force = false) {
   try {
     const bust = Math.floor(Date.now() / (15 * 60000));
-    const res = await fetchWithTimeout(`data/warning_chigasaki.json?t=${bust}`);
+    const res = await fetchWithTimeout(
+      `data/warning_chigasaki.json?t=${bust}`,
+      {
+        force,
+      },
+    );
     if (!res.ok) throw new Error("warning_chigasaki.json fetch failed");
     const data = await res.json();
 
@@ -1016,13 +1030,15 @@ function formatTsunamiTime(iso) {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-async function fetchTsunami() {
+async function fetchTsunami(force = false) {
   const box = document.getElementById("tsunami-box");
   const errEl = document.getElementById("tsunami-error");
   if (errEl) errEl.hidden = true; // 平常時・成功時は失敗注記を消す
   try {
     const bust = Math.floor(Date.now() / 60000);
-    const listRes = await fetchWithTimeout(`${TSUNAMI_LIST_URL}?t=${bust}`);
+    const listRes = await fetchWithTimeout(`${TSUNAMI_LIST_URL}?t=${bust}`, {
+      force,
+    });
     if (!listRes.ok) throw new Error("tsunami list.json fetch failed");
     const list = await listRes.json();
 
@@ -1041,7 +1057,9 @@ async function fetchTsunami() {
       return;
     }
 
-    const detRes = await fetchWithTimeout(`${TSUNAMI_BASE_URL}${latest.json}`);
+    const detRes = await fetchWithTimeout(`${TSUNAMI_BASE_URL}${latest.json}`, {
+      force,
+    });
     if (!detRes.ok) throw new Error("tsunami detail fetch failed");
     const det = await detRes.json();
 
@@ -1100,10 +1118,12 @@ async function fetchTsunami() {
 }
 
 // ─── 7. 天気予報 ────────────────────────────────────────────
-async function fetchJmaForecast() {
+async function fetchJmaForecast(force = false) {
   const hour8Buster = Math.floor(Date.now() / (8 * 60 * 60 * 1000));
   try {
-    const res = await fetchWithTimeout(`data/forecast.json?t=${hour8Buster}`);
+    const res = await fetchWithTimeout(`data/forecast.json?t=${hour8Buster}`, {
+      force,
+    });
     if (!res.ok) throw new Error("forecast.json fetch failed");
     const data = await res.json();
 
@@ -1238,11 +1258,12 @@ function toggleWindForecast() {
   updateWindForecastToggleLabel(isHidden);
 }
 
-async function fetchWindForecast() {
+async function fetchWindForecast(force = false) {
   try {
     const hourBuster = Math.floor(Date.now() / (60 * 60 * 1000));
     const res = await fetchWithTimeout(
       `data/wind_forecast.json?t=${hourBuster}`,
+      { force },
     );
     if (!res.ok) throw new Error("wind_forecast.json fetch failed");
     const data = await res.json();
@@ -1333,14 +1354,16 @@ async function fetchWeatherData(isManual = false) {
     // 各セクションは相互依存がないため全fetchを並行実行（初期表示を高速化）。
     // 部分失敗はセクション単位のエラーUIで吸収する。
     const [, , , , , , , wmResult] = await Promise.allSettled([
-      calculateTide(),
-      fetchTideExtremes(),
-      fetchJmaForecast(),
-      fetchJmaWarning(),
-      fetchTsunami(),
-      fetchWaveGuidance(),
-      fetchWindForecast(),
-      fetchCached("data/weather_marine.json", "cache_weather_marine"),
+      calculateTide(isManual),
+      fetchTideExtremes(isManual),
+      fetchJmaForecast(isManual),
+      fetchJmaWarning(isManual),
+      fetchTsunami(isManual),
+      fetchWaveGuidance(isManual),
+      fetchWindForecast(isManual),
+      fetchCached("data/weather_marine.json", "cache_weather_marine", {
+        force: isManual,
+      }),
     ]);
     const wmData = wmResult.status === "fulfilled" ? wmResult.value : null;
     const jma = wmData?.jma_amedas;
@@ -1418,6 +1441,8 @@ async function fetchWeatherData(isManual = false) {
     }
     _lastFetchTime = Date.now();
     displayFetchTime(pickTimestamp(wmData));
+    // 手動更新時はデータが同一でも完了フィードバックを表示する
+    if (isManual) showRefreshDone();
   } catch (error) {
     console.error("Fetch error:", error);
     _showGlobalError();
@@ -1445,6 +1470,26 @@ function hideToast() {
     t.style.display = "none";
     _toastShown = false;
   }, 400);
+}
+
+let _refreshToastTimer = null;
+/**
+ * 手動更新の完了トーストを約2秒表示する。
+ * 更新プロンプト用 #toast とは別要素のため状態・タイマーが競合しない。
+ */
+function showRefreshDone() {
+  const t = document.getElementById("refresh-toast");
+  if (!t) return;
+  clearTimeout(_refreshToastTimer);
+  t.textContent = "✓ 最新の情報に更新しました";
+  t.style.display = "block";
+  requestAnimationFrame(() => t.classList.add("show"));
+  _refreshToastTimer = setTimeout(() => {
+    t.classList.remove("show");
+    setTimeout(() => {
+      t.style.display = "none";
+    }, 400);
+  }, 2000);
 }
 
 // ─── 10. ダークモード追従 ───────────────────────────────────
