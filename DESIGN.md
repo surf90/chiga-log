@@ -78,7 +78,10 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - 情報ボックス: `background:var(--box-bg)`・`border:1px solid var(--box-border)`・`border-radius:10px`・`padding:20px 24px`。
 
 ### ボタン
-- アウトライン型: `border:1px solid #0e7490` / `color:#0e7490` / 背景透明。
+- アウトライン型（`.toggle-btn`）: `border:1px solid #0e7490` / `color:#0e7490` / 背景透明 / `min-height:44px`。
+- 全ボタン共通: `touch-action:manipulation`・`-webkit-tap-highlight-color:transparent`。押下時は `:active`（`scale(0.97〜0.98)` または opacity 低下）、キーボード時は `:focus-visible`（2px アウトライン）で必ずフィードバックする。
+- タップターゲット: `.toggle-btn` / `#toast` / `.current-time` は `min-height:44px`。`.wave-legend-item`（グラフ凡例トグル、`<button aria-pressed>`）は padding＋負マージンでヒット領域を拡張。
+- セクションへのスクロール移動先（`.weather-box`）は `scroll-margin-top:12px` で上端に余白を確保。
 
 ### 警報バッジ / フローティングアラート
 - `.floating-alert.level-tokubetsu { background:#7c3aed; }`（特別警報）。通常警報は `#c0392b` 系、注意報は橙系。

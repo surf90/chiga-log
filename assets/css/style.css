@@ -40,6 +40,10 @@
 *::after {
   box-sizing: border-box;
 }
+button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
 body {
   font-family: Inter, "Zen Kaku Gothic New", sans-serif;
   background: var(--bg-gradient);
@@ -137,8 +141,13 @@ h1 .title-sub {
   outline: 2px solid #fff;
   outline-offset: 2px;
 }
+.hero-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+}
 .hero-card:active {
   transform: scale(0.98);
+  box-shadow: none;
 }
 .hero-card-label {
   font-size: 12px;
@@ -207,6 +216,7 @@ h1 .title-sub {
   text-align: center;
 }
 .weather-box {
+  scroll-margin-top: 12px;
   background: var(--box-bg);
   border: 1px solid var(--box-border);
   padding: 20px 24px;
@@ -307,9 +317,11 @@ h1 .title-sub {
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
   cursor: pointer;
   transition: opacity 0.2s;
-  display: inline-block;
+  display: inline-flex;
+  align-items: flex-end;
   float: right;
-  padding: 0;
+  padding: 0 0 2px 12px;
+  min-height: 44px;
 }
 .current-time:focus-visible {
   outline: 2px solid #0e7490;
@@ -333,7 +345,8 @@ h1 .title-sub {
   backdrop-filter: blur(8px);
   color: #0e7490;
   font-size: 12px;
-  padding: 8px 16px;
+  padding: 12px 20px;
+  min-height: 44px;
   border-radius: 500px;
   border: 1px solid rgba(14, 116, 144, 0.25);
   box-shadow: 0 1px 6px rgba(0, 86, 120, 0.08);
@@ -346,6 +359,13 @@ h1 .title-sub {
 }
 #toast.show {
   opacity: 1;
+}
+#toast:focus-visible {
+  outline: 2px solid #0e7490;
+  outline-offset: 2px;
+}
+#toast:active {
+  transform: translateX(-50%) scale(0.97);
 }
 
 .floating-alert {
@@ -382,7 +402,8 @@ h1 .title-sub {
   border: 1px solid #0e7490;
   color: #0e7490;
   border-radius: 6px;
-  padding: 8px 16px;
+  padding: 10px 18px;
+  min-height: 44px;
   font-size: 12px;
   font-weight: 500;
   font-family: Inter, "Zen Kaku Gothic New", sans-serif;
@@ -391,11 +412,19 @@ h1 .title-sub {
   letter-spacing: -0.28px;
   transition:
     background 0.15s,
-    color 0.15s;
+    color 0.15s,
+    transform 0.1s;
 }
 .toggle-btn:hover {
   background: #0e7490;
   color: #fff;
+}
+.toggle-btn:focus-visible {
+  outline: 2px solid #0e7490;
+  outline-offset: 2px;
+}
+.toggle-btn:active {
+  transform: scale(0.97);
 }
 
 .wind-grid {
@@ -643,9 +672,19 @@ p.note strong a {
   display: flex;
   align-items: center;
   cursor: pointer;
+  background: none;
+  border: 0;
+  font: inherit;
+  padding: 8px 6px;
+  margin: -8px -6px;
+  border-radius: 6px;
   transition:
     opacity 0.2s,
     text-decoration 0.2s;
+}
+.wave-legend-item:focus-visible {
+  outline: 2px solid #0e7490;
+  outline-offset: 2px;
 }
 .wave-legend-item.disabled {
   opacity: 0.4;
@@ -661,7 +700,7 @@ p.note strong a {
 
 /* チャート横スクロールラッパー */
 .chart-scroll {
-  overflow-x: scroll;
+  overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;

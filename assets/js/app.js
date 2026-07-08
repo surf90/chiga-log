@@ -852,9 +852,12 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
     { color: "#27ae60", label: "周期 [秒]" },
   ];
   legendItems.forEach((meta, idx) => {
-    const item = document.createElement("div");
+    // キーボード操作・支援技術対応のため button 要素で生成
+    const item = document.createElement("button");
+    item.type = "button";
     item.className = "wave-legend-item";
     item.dataset.index = String(idx);
+    item.setAttribute("aria-pressed", "true");
     item.style.color = meta.color;
     const swatch = document.createElement("span");
     swatch.className = "wave-legend-swatch";
@@ -870,6 +873,7 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
       chart.setDatasetVisibility(idx, !isVisible);
       chart.update();
       item.classList.toggle("disabled", isVisible);
+      item.setAttribute("aria-pressed", String(!isVisible));
     });
   });
 
