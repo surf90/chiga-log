@@ -564,6 +564,33 @@ p.note strong a {
   color: #c0392b;
   font-size: 14px;
 }
+/* データ鮮度の警告表示（更新停止・古いデータの明示）。
+   hidden 属性でトグルするため display は指定しない。 */
+.stale-banner {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 2px solid var(--warning-border);
+  border-radius: 8px;
+  background: var(--warning-bg);
+  color: var(--warning-border);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+.stale-note,
+.stale-inline {
+  margin: 0 0 8px;
+  color: var(--warning-border);
+  font-size: 12px;
+  font-weight: 600;
+}
+.stale-inline {
+  margin: 8px 0 0;
+}
+.current-time.is-stale {
+  border-bottom-color: var(--warning-border);
+  color: var(--warning-border);
+}
 .hidden {
   display: none;
 }

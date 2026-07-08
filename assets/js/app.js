@@ -77,6 +77,80 @@ async function fetchCached(
   return data;
 }
 
+// ─── 1.5 データ鮮度（stale）判定 ──────────────────────────────
+// 各データJSONの updated_at / fetchedAt を読み、更新停止や古いデータを
+// UI上で明示する（三原則1: 誤読を誘発しない）。閾値は cron 頻度＋余裕で
+// データ種別ごとに個別設定（数回のスキップは許容）。
+const FRESHNESS = {
+  marine: 3 * 3600e3, // weather_marine: */30 → 3時間で更新停止疑い
+  wind: 3 * 3600e3, // wind_forecast: */30
+  forecast: 18 * 3600e3, // forecast: 1日3回(~8h間隔)
+  wave: 15 * 3600e3, // wave_guid: 1日3回(~6h間隔)
+  warning: 3 * 3600e3, // warning: */30 (fetchedAt基準)
+  tide: 30 * 3600e3, // tide_widget: 日次
+};
+
+/**
+ * ISO日時文字列を epoch ミリ秒へ変換する。解釈不能なら null。
+ * @param {string} s
+ * @returns {number|null}
+ */
+function parseIso(s) {
+  if (!s || typeof s !== "string") return null;
+  const ms = Date.parse(s);
+  return Number.isNaN(ms) ? null : ms;
+}
+
+/**
+ * 経過ミリ秒を「12分前」「3時間前」「2日前」の日本語表記へ整形する。
+ * @param {number} ageMs
+ * @returns {string}
+ */
+function humanAge(ageMs) {
+  const min = Math.max(0, Math.floor(ageMs / 60000));
+  if (min < 60) return `${min}分前`;
+  const hour = Math.floor(min / 60);
+  if (hour < 24) return `${hour}時間前`;
+  return `${Math.floor(hour / 24)}日前`;
+}
+
+/**
+ * updated_at と閾値から鮮度情報を返す。
+ * @param {string} iso 生成時刻のISO文字列
+ * @param {number} thresholdMs 古いと判定する経過ミリ秒
+ * @returns {{ms: number|null, ageMs: number|null, isStale: boolean, label: string}}
+ */
+function freshness(iso, thresholdMs) {
+  const ms = parseIso(iso);
+  if (ms == null) return { ms: null, ageMs: null, isStale: false, label: "" };
+  const ageMs = Date.now() - ms;
+  return {
+    ms,
+    ageMs,
+    isStale: ageMs > thresholdMs,
+    label: humanAge(ageMs),
+  };
+}
+
+/**
+ * セクション別の stale 注記要素を鮮度に応じて出し分ける。
+ * 古い場合のみ「最終更新 X前」を表示、新鮮なら hidden に戻す。
+ * @param {string} noteElId 注記要素のid
+ * @param {string} iso 生成時刻のISO文字列
+ * @param {number} thresholdMs 閾値ミリ秒
+ */
+function markStale(noteElId, iso, thresholdMs) {
+  const el = document.getElementById(noteElId);
+  if (!el) return;
+  const f = freshness(iso, thresholdMs);
+  if (f.isStale) {
+    el.textContent = `⚠ データが古い可能性（最終更新 ${f.label}）`;
+    el.hidden = false;
+  } else {
+    el.hidden = true;
+  }
+}
+
 /** ミリ秒(epoch)を JST の "H:MM" に整形する共通関数。 */
 function formatJstHm(ms) {
   const h = (new Date(ms).getUTCHours() + 9) % 24;
@@ -158,8 +232,16 @@ function toJstDateStr(date) {
   return new Date(date.getTime() + JST_OFFSET_MS).toISOString().slice(0, 10);
 }
 
-function displayFetchTime() {
-  const now = new Date();
+/**
+ * 「更新日時」表示を更新する。
+ * データ生成時刻(iso)が得られればそれを表示し（取得時刻ではなくデータの鮮度を示す）、
+ * 閾値超過なら経過時間を併記して警告スタイルを付ける。iso不明時はfetch時刻で代替。
+ * @param {string|null} [iso] weather_marine 等の updated_at
+ * @param {number} [thresholdMs] 古いと判定する閾値
+ */
+function displayFetchTime(iso = null, thresholdMs = FRESHNESS.marine) {
+  const el = document.getElementById("current-time");
+  if (!el) return;
   const options = {
     month: "short",
     day: "numeric",
@@ -167,10 +249,18 @@ function displayFetchTime() {
     hour: "2-digit",
     minute: "2-digit",
   };
-  setText(
-    "current-time",
-    `更新日時: ${now.toLocaleString("ja-JP", options)} 🔄`,
-  );
+  const f = iso ? freshness(iso, thresholdMs) : null;
+  if (f && f.ms != null) {
+    const dt = new Date(f.ms).toLocaleString("ja-JP", options);
+    el.textContent = f.isStale
+      ? `更新日時: ${dt}（${f.label}）⚠`
+      : `更新日時: ${dt} 🔄`;
+    el.classList.toggle("is-stale", f.isStale);
+  } else {
+    // データ時刻不明時はfetch時刻で代替表示する。
+    el.textContent = `更新日時: ${new Date().toLocaleString("ja-JP", options)} 🔄`;
+    el.classList.remove("is-stale");
+  }
 }
 
 // ─── 3. チャート共通 ────────────────────────────────────────
@@ -353,6 +443,7 @@ async function fetchTideExtremes() {
     if (allTides.length > 0) {
       displayTideData(todayTides, allTides);
       updateTideSource(data.source || "気象庁");
+      markStale("tide-stale", data.updated_at, FRESHNESS.tide);
       return;
     }
     throw new Error("tide_widget.json にデータがありません");
@@ -602,6 +693,7 @@ async function fetchWaveGuidance() {
 
     document.getElementById("wave-guid-loading").style.display = "none";
     document.getElementById("wave-guid-content").style.display = "block";
+    markStale("wave-stale", json.updated_at, FRESHNESS.wave);
   } catch (e) {
     console.error("Wave guidance error:", e);
     document.getElementById("wave-guid-loading").style.display = "none";
@@ -879,6 +971,7 @@ async function fetchJmaWarning() {
 
     document.getElementById("jma-warning-loading").style.display = "none";
     contentEl.style.display = "block";
+    markStale("warning-stale", data.fetchedAt, FRESHNESS.warning);
   } catch (e) {
     console.error("JMA warning error:", e);
     document.getElementById("jma-warning-loading").style.display = "none";
@@ -911,6 +1004,8 @@ function formatTsunamiTime(iso) {
 
 async function fetchTsunami() {
   const box = document.getElementById("tsunami-box");
+  const errEl = document.getElementById("tsunami-error");
+  if (errEl) errEl.hidden = true; // 平常時・成功時は失敗注記を消す
   try {
     const bust = Math.floor(Date.now() / 60000);
     const listRes = await fetchWithTimeout(`${TSUNAMI_LIST_URL}?t=${bust}`);
@@ -983,7 +1078,10 @@ async function fetchTsunami() {
     box.classList.remove("hidden");
   } catch (e) {
     console.error("Tsunami fetch error:", e);
-    box.classList.add("hidden"); // 失敗時はダミーを出さず非表示
+    // 失敗時はダミー(津波警報)を出さず本体は非表示。ただし「取得できていない」
+    // ことは小さく明示し、平常(津波なし)との誤認を避ける。
+    box.classList.add("hidden");
+    if (errEl) errEl.hidden = false;
   }
 }
 
@@ -1054,6 +1152,7 @@ async function fetchJmaForecast() {
 
     document.getElementById("jma-loading").style.display = "none";
     document.getElementById("jma-forecast-content").style.display = "block";
+    markStale("forecast-stale", data.updated_at, FRESHNESS.forecast);
   } catch (e) {
     console.error("JMA forecast error:", e);
     document.getElementById("jma-loading").style.display = "none";
@@ -1182,6 +1281,7 @@ async function fetchWindForecast() {
     updateWindForecastToggleLabel(false);
     document.getElementById("wind-forecast-loading").style.display = "none";
     document.getElementById("wind-forecast-content").style.display = "block";
+    markStale("wind-stale", data.updated_at, FRESHNESS.wind);
   } catch (e) {
     console.error("Wind forecast error:", e);
     document.getElementById("wind-forecast-loading").style.display = "none";
@@ -1231,8 +1331,26 @@ async function fetchWeatherData(isManual = false) {
     const wmData = wmResult.status === "fulfilled" ? wmResult.value : null;
     const jma = wmData?.jma_amedas;
     const cw = wmData?.current_weather;
+
+    // 最頻更新ソース(weather_marine, */30)の鮮度で更新パイプライン停止を検知する。
+    // 取得失敗(wmData=null)も更新停止の可能性が高いためバナーを出す。
+    const marineFresh = freshness(wmData?.updated_at, FRESHNESS.marine);
+    const pipelineStale = wmData == null || marineFresh.isStale;
+    const banner = document.getElementById("stale-banner");
+    if (banner) {
+      if (pipelineStale) {
+        banner.textContent = marineFresh.ms
+          ? `データ更新が停止している可能性があります（最終更新: ${marineFresh.label}）。表示中の情報は古い場合があります。`
+          : "最新データを取得できませんでした。表示中の情報は古い場合があります。";
+        banner.hidden = false;
+      } else {
+        banner.hidden = true;
+      }
+    }
+
+    // アメダスstale(前回値引き継ぎ)またはパイプライン停止時に注記を点灯。
     const staleEl = document.getElementById("amedas-stale");
-    if (staleEl) staleEl.hidden = !(jma && jma.stale === true);
+    if (staleEl) staleEl.hidden = !((jma && jma.stale === true) || pipelineStale);
 
     if (jma) {
       setText("temp", jma.temp != null ? `${jma.temp}℃` : "--℃");
@@ -1284,7 +1402,7 @@ async function fetchWeatherData(isManual = false) {
       contentEl.classList.remove("is-updating");
     }
     _lastFetchTime = Date.now();
-    displayFetchTime();
+    displayFetchTime(wmData?.updated_at);
   } catch (error) {
     console.error("Fetch error:", error);
     _showGlobalError();

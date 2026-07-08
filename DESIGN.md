@@ -87,6 +87,13 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - 相模湾・三浦半島（予報区330）に津波注意報/警報発表時のみ、ページ最上部に表示（通常は `hidden`）。`.warning-active` の赤枠・赤背景を流用。
 - バッジ配色: 大津波警報 `.badge-tsunami-major` `#7c3aed`（紫）／津波警報 `.badge-tsunami-warn` `#c0392b`（赤）／津波注意報 `.badge-tsunami-adv` `#d97706`（橙）。
 
+### データ鮮度の警告表示
+- 目的: 更新停止（Actions 停止・API 障害）や古いデータを閲覧者に明示し、誤読を防ぐ（三原則1）。閾値はデータ種別ごとに個別（`app.js` の `FRESHNESS`）。
+- `.stale-banner`（`#stale-banner`）: 更新パイプライン停止時にコンテンツ最上部へ表示。`--warning-bg`/`--warning-border` を流用、`border-radius:8px`、中央寄せ。通常は `hidden`。
+- `.stale-note`（各セクション見出し直下）/ `.stale-inline`（`#tsunami-error`）: 該当データが閾値超で古い/取得失敗時に小さく赤字（`--warning-border`, 12px）で注記。通常は `hidden`。
+- `.current-time.is-stale`: データが古い場合に「更新日時」の下線・文字色を `--warning-border` に切替（データ生成時刻＋経過時間を表示）。
+- トグルは `hidden` 属性で行うため、これらは `display` を指定しない。
+
 ### 角丸スケール
 | 用途 | radius |
 |------|--------|

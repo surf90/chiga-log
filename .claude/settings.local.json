@@ -29,7 +29,28 @@
       "Bash(node -e ' *)",
       "Bash(Get-ChildItem -Force)",
       "Bash(Select-Object -Property Name, PSIsContainer)",
-      "Bash(Get-ChildItem -Recurse -Include \"*.yml\", \"*.yaml\")"
+      "Bash(Get-ChildItem -Recurse -Include \"*.yml\", \"*.yaml\")",
+      "mcp__claude-in-chrome__tabs_context_mcp",
+      "Bash(curl -s \"https://api.open-meteo.com/v1/forecast?latitude=35.3175&longitude=139.4151&current_weather=true&timezone=Asia%2FTokyo&windspeed_unit=ms\")",
+      "Bash(curl -s \"https://marine-api.open-meteo.com/v1/marine?latitude=35.3175&longitude=139.4151&current=wave_height,sea_surface_temperature&timezone=Asia%2FTokyo\")",
+      "Bash(curl -s \"https://api.open-meteo.com/v1/forecast?latitude=35.3175&longitude=139.4151&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&forecast_days=2&timezone=Asia%2FTokyo&windspeed_unit=ms\")",
+      "Bash(curl -s \"https://www.jma.go.jp/bosai/forecast/data/forecast/140000.json\")",
+      "Bash(curl -s \"https://www.jma.go.jp/bosai/amedas/data/latest_time.txt\")",
+      "mcp__claude-in-chrome__switch_browser",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); a4=d.get\\('itemArea4',[]\\); print\\('itemArea4 count:',len\\(a4\\)\\); print\\('sample:',json.dumps\\(a4[0],ensure_ascii=False\\) if a4 else 'NONE'\\); print\\('has 1420700:', any\\(i.get\\('area',{}\\).get\\('code'\\)=='1420700' for i in a4\\)\\)\")",
+      "Bash(curl -s \"https://www.jma.go.jp/bosai/amedas/data/map/20260707153000.json\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); p=d.get\\('46141'\\); print\\('point keys:', list\\(p.keys\\(\\)\\) if p else 'NONE'\\); print\\('temp:',p.get\\('temp'\\),'wind:',p.get\\('wind'\\)\\)\")",
+      "Bash(curl -s \"https://www.data.jma.go.jp/waveinf/data/Guid/csv/wave_guid_20.csv\")",
+      "Bash(awk -F',' '{print NF\" cols:\"; print $0}')",
+      "Bash(curl -s \"https://www.data.jma.go.jp/kaiyou/data/db/tide/suisan/txt/2026/D8.txt\")",
+      "Bash(awk '{print \"len=\"length\\($0\\); print substr\\($0,1,90\\)}')",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(curl -s https://raw.githubusercontent.com/toyokan/t-pod/main/events/2026-zensanken-37.json -o /tmp/zensanken.json)",
+      "Bash(python -c \"import json;json.load\\(open\\('/tmp/zensanken.json'\\)\\);print\\('VALID JSON'\\)\")",
+      "Read(//tmp/**)",
+      "Bash(curl -s https://raw.githubusercontent.com/toyokan/t-pod/main/events/2026-zensanken-37.json -o z.json)",
+      "Bash(python -c \"import json,sys; d=json.load\\(open\\('z.json',encoding='utf-8'\\)\\); print\\(list\\(d.keys\\(\\)\\)\\); print\\(json.dumps\\(d.get\\('rooms'\\),ensure_ascii=False\\)[:1500]\\)\")",
+      "Bash(cd \"/d/My Documents/GitHub/t-pod\" && grep -n '）\"\"\\\\]' events/2026-zensanken-37.json | wc -l && echo \"---\" && grep -nc '筑波大学附属小）\"\"' events/2026-zensanken-37.json && echo \"---all broken lines---\" && grep -n ', \"[^\"]*筑波大学附属小）\"\"' events/2026-zensanken-37.json)"
     ]
   }
 }

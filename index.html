@@ -251,6 +251,7 @@ lang: ja
         <div id="error" class="error hidden" data-nosnippet>
           データの取得に失敗しました。
         </div>
+        <div id="stale-banner" class="stale-banner" role="alert" hidden></div>
 
         <div id="weather-content" class="hidden">
           <div
@@ -279,6 +280,9 @@ lang: ja
               </p>
             </div>
           </div>
+          <p id="tsunami-error" class="stale-inline" hidden>
+            ※津波情報を取得できませんでした。気象庁HPでご確認ください。
+          </p>
 
           <div class="hero-cards">
             <button
@@ -388,6 +392,7 @@ lang: ja
                 ><span data-nosnippet>--</span></span
               >
             </h2>
+            <p id="tide-stale" class="stale-note" data-nosnippet hidden></p>
             <dl class="data-list">
               <div class="data-row">
                 <dt>潮回り:</dt>
@@ -433,6 +438,7 @@ lang: ja
                 >WAVE</span
               >波高･周期<span class="section-source">気象庁</span>
             </h2>
+            <p id="wave-stale" class="stale-note" data-nosnippet hidden></p>
             <div id="wave-guid-loading" class="section-loading" data-nosnippet>
               取得中...
             </div>
@@ -486,6 +492,7 @@ lang: ja
                 >ALERT</span
               >注意報・警報<span class="section-source">気象庁</span>
             </h2>
+            <p id="warning-stale" class="stale-note" data-nosnippet hidden></p>
             <div
               id="jma-warning-loading"
               class="section-loading"
@@ -517,6 +524,7 @@ lang: ja
                 >WEATHER</span
               >天気予報<span class="section-source">気象庁</span>
             </h2>
+            <p id="forecast-stale" class="stale-note" data-nosnippet hidden></p>
             <div id="jma-loading" class="section-loading" data-nosnippet>
               取得中...
             </div>
@@ -576,6 +584,7 @@ lang: ja
               >風予報<small class="section-sub">&nbsp;1時間ごと</small
               ><span class="section-source">Open-Meteo</span>
             </h2>
+            <p id="wind-stale" class="stale-note" data-nosnippet hidden></p>
             <div
               id="wind-forecast-loading"
               class="section-loading"
