@@ -8,6 +8,23 @@ updated: 2026-07-08
 
 ## 完了済み（2026-07-08）
 
+### コード品質改善: ダークモード整合・タイムスタンプ吸収・表示トグル統一（main 作業）
+
+- **背景**: 「ページ/ソース全体の改善・修正」レビュー。プロジェクトは成熟（onclick/インラインstyle 0件・A11y良好・エラー境界完備）のため、三原則準拠の低リスク修正に限定。min バンドルが直近の鮮度警告機能追加（`803b30b`）以降に未再生成で、本番 min 版に反映されていない点も同時に是正対象。
+- **CSS**（`assets/css/style.css`）:
+  - ハードコード色（`.jma-overview`/`.section-loading`/`.tide-age-label` の `#707070`、`.section-sub` の `#aaaaaa`）を既存 `var(--text-sub)`（ライト/ダーク追従）へ置換。
+  - `skeleton`/`skeleton-hero-card`/`#toast` の固定ライト色を `@media (prefers-color-scheme: dark)` で上書き追加（ダーク時に白浮きしていた問題を解消）。
+  - `.hero-card` の `cursor: pointer` 重複定義（末尾ブロック）を削除し 125 行の定義に集約。
+- **JS: タイムスタンプ命名吸収**（`assets/js/app.js`）: `pickTimestamp(obj)` を追加し `updated_at ?? fetchedAt ?? observed_at` にフォールバック。`markStale`（tide/wave/warning/forecast/wind）・`freshness`・`displayFetchTime` の参照を統一。警報のみ `fetchedAt` 直参照だった分岐を解消し、フォーク/スキーマ変更耐性を確保。**データスキーマ（Python 生成 JSON）は不変**。前回セッション「スコープ外」記録だったタイムスタンプ命名統一を JS 側正規化で解決。
+- **JS: 表示トグル統一**（`assets/js/app.js`）: content/loading の `.style.display` を `.hidden` クラスへ統一（34→21 箇所）。content は初期 `class="hidden"` と対で `classList.remove("hidden")`、loading（`.section-loading`, display 指定なし）は `classList.add("hidden")`。CSS の `display` 指定・ID セレクタ・flex/grid と衝突する箇所（`#skeleton-loading`/`#toast`/`.section-error`/`.tide-chart-area`/`.typhoon-notice`/概況・風トグル/`.floating-alert`）は打ち消しリスク回避のため**現状維持**。
+- **検証**: `pytest` 41 件通過 / `node --check` OK / `prettier` 整形済み。差分は意図分のみ（+53/-30）。
+- **未処理**: CSS/JS min はコミット push 時に `minify.yml` が自動再生成（`csscompressor`＋`terser`）。**push は要ユーザー操作**（自動モードで main 直 push が拒否されたため手元 push 待ち）。push 後、min 版に `stale-banner`/`markStale`/`pickTimestamp` が含まれることを grep 検証すること。
+
+**関連ファイル**
+- `assets/css/style.css` / `assets/js/app.js` / `README.md` / `progress.md`
+
+---
+
 ### エラー耐性向上: データ鮮度の可視化＋バックエンド堅牢化（main 作業）
 
 - **背景**: 実障害①オーナーのGitHubアカウントが誤検知で一時停止→Actions全停止→データ更新が止まったが**サイトに一切警告が出ず**閲覧者が古い情報を最新と誤認しうる状態だった。懸念②各ソース（気象庁/Open-Meteo）の仕様変更で最新取得不能時の表示安全性。原因は(1)「更新日時」が `new Date()`（取得時刻）でJSON内 `updated_at` 未参照、鮮度警告はアメダス `stale` のみで実質無効、(2)`fetch_forecast.py` だけが失敗時 `null` で既存を上書き。
