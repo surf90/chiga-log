@@ -1,10 +1,34 @@
 ---
-updated: 2026-06-18
+updated: 2026-07-08
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-07-08）
+
+### エラー耐性向上: データ鮮度の可視化＋バックエンド堅牢化（main 作業）
+
+- **背景**: 実障害①オーナーのGitHubアカウントが誤検知で一時停止→Actions全停止→データ更新が止まったが**サイトに一切警告が出ず**閲覧者が古い情報を最新と誤認しうる状態だった。懸念②各ソース（気象庁/Open-Meteo）の仕様変更で最新取得不能時の表示安全性。原因は(1)「更新日時」が `new Date()`（取得時刻）でJSON内 `updated_at` 未参照、鮮度警告はアメダス `stale` のみで実質無効、(2)`fetch_forecast.py` だけが失敗時 `null` で既存を上書き。
+- **層A: フロント鮮度表示**（問題1・2の主軸, `assets/js/app.js`）:
+  - 鮮度ヘルパー追加（`parseIso`/`humanAge`/`freshness`/`markStale`）＋閾値定数 `FRESHNESS`（データ種別ごと個別: marine/wind 3h・forecast 18h・wave 15h・warning 3h・tide 30h）。
+  - **`displayFetchTime` 是正**: 取得時刻→`weather_marine.updated_at`（実データ生成時刻＋経過時間）。古い時は `.is-stale` 警告スタイル。
+  - **グローバル停止バナー** `#stale-banner`: 最頻更新ソース(weather_marine, */30)が3h超で古い or 取得失敗時に最上部表示。**アカウント停止/cron停止の主検知**（`fetchWeatherData` 内）。
+  - **セクション別 stale 注記**: 潮汐・波・警報・天気・風の各 `updated_at`(警報は `fetchedAt`)基準で `.stale-note` 点灯。
+  - **津波失敗の明示化**: 失敗を「平常(津波なし)」と区別し `#tsunami-error` 表示。
+- **層B: バックエンド堅牢化**（問題2, `scripts/fetch_forecast.py`）:
+  - 唯一の脆弱点だった「失敗時 null 上書き」を修正。`is_valid_forecast()` で構造検証し、失敗・仕様変更時は既存を温存（`fetch_warning.py` と同パターン）。既存も無い場合のみ `RuntimeError`。
+- **HTML/CSS**（`index.html`/`assets/css/style.css`）: `#stale-banner`・各 `.stale-note`・`#tsunami-error` 要素追加。既存の警告色変数（`--warning-bg`/`--warning-border`, ダーク対応済）を流用したスタイル追加。トグルは `hidden` 属性方式（`display` 未指定）。
+- **検証**: `pytest` 41件通過 / `node --check`・Python構文OK / `jekyll build` 成功 / HTML↔JS のID整合9件一致 / 鮮度ロジック実行確認（10分=正常・4h=stale「4時間前」・2日前表記・不正ISO=誤警告なし）/ `fetch_forecast.py` 温存を実行検証（取得失敗・スキーマ変更の両模擬で `data/forecast.json` 不変）。
+- **スコープ外（記録）**: Actions失敗のGitHub通知・外部デッドマンスイッチ（ユーザー選択で見送り）。※アカウント停止時はActions自体が停止し内部監視は無力なため、フロントの停止バナーが実質的代替防御。タイムスタンプ命名統一（`updated_at`/`fetchedAt`/`observed_at` 混在）も今回は非対象。
+- **未処理**: CSS/JS min はコミットpush時に `minify.yml` が自動再生成（ローカル不要）。
+
+**関連ファイル**
+- `assets/js/app.js` / `index.html` / `assets/css/style.css` / `DESIGN.md`
+- `scripts/fetch_forecast.py` / `README.md`
+
+---
 
 ## 完了済み（2026-06-18）
 
