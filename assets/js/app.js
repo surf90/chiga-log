@@ -91,6 +91,16 @@ const FRESHNESS = {
 };
 
 /**
+ * データJSONから生成時刻を種別非依存で取り出す（命名揺れ吸収）。
+ * updated_at / fetchedAt / observed_at のいずれかを順にフォールバック。
+ * @param {object|null|undefined} obj データオブジェクト
+ * @returns {string|null} ISO日時文字列、なければ null
+ */
+function pickTimestamp(obj) {
+  return obj?.updated_at ?? obj?.fetchedAt ?? obj?.observed_at ?? null;
+}
+
+/**
  * ISO日時文字列を epoch ミリ秒へ変換する。解釈不能なら null。
  * @param {string} s
  * @returns {number|null}
@@ -443,7 +453,7 @@ async function fetchTideExtremes() {
     if (allTides.length > 0) {
       displayTideData(todayTides, allTides);
       updateTideSource(data.source || "気象庁");
-      markStale("tide-stale", data.updated_at, FRESHNESS.tide);
+      markStale("tide-stale", pickTimestamp(data), FRESHNESS.tide);
       return;
     }
     throw new Error("tide_widget.json にデータがありません");
@@ -691,12 +701,12 @@ async function fetchWaveGuidance() {
       todayData,
     );
 
-    document.getElementById("wave-guid-loading").style.display = "none";
-    document.getElementById("wave-guid-content").style.display = "block";
-    markStale("wave-stale", json.updated_at, FRESHNESS.wave);
+    document.getElementById("wave-guid-loading").classList.add("hidden");
+    document.getElementById("wave-guid-content").classList.remove("hidden");
+    markStale("wave-stale", pickTimestamp(json), FRESHNESS.wave);
   } catch (e) {
     console.error("Wave guidance error:", e);
-    document.getElementById("wave-guid-loading").style.display = "none";
+    document.getElementById("wave-guid-loading").classList.add("hidden");
     document.getElementById("wave-guid-error").style.display = "block";
   }
 }
@@ -969,12 +979,12 @@ async function fetchJmaWarning() {
       headlineEl.style.display = "none";
     }
 
-    document.getElementById("jma-warning-loading").style.display = "none";
-    contentEl.style.display = "block";
-    markStale("warning-stale", data.fetchedAt, FRESHNESS.warning);
+    document.getElementById("jma-warning-loading").classList.add("hidden");
+    contentEl.classList.remove("hidden");
+    markStale("warning-stale", pickTimestamp(data), FRESHNESS.warning);
   } catch (e) {
     console.error("JMA warning error:", e);
-    document.getElementById("jma-warning-loading").style.display = "none";
+    document.getElementById("jma-warning-loading").classList.add("hidden");
     document.getElementById("jma-warning-error").style.display = "block";
   }
 }
@@ -1150,12 +1160,12 @@ async function fetchJmaForecast() {
       ? "flex"
       : "none";
 
-    document.getElementById("jma-loading").style.display = "none";
-    document.getElementById("jma-forecast-content").style.display = "block";
-    markStale("forecast-stale", data.updated_at, FRESHNESS.forecast);
+    document.getElementById("jma-loading").classList.add("hidden");
+    document.getElementById("jma-forecast-content").classList.remove("hidden");
+    markStale("forecast-stale", pickTimestamp(data), FRESHNESS.forecast);
   } catch (e) {
     console.error("JMA forecast error:", e);
-    document.getElementById("jma-loading").style.display = "none";
+    document.getElementById("jma-loading").classList.add("hidden");
     document.getElementById("jma-error").style.display = "block";
   }
 }
@@ -1279,12 +1289,12 @@ async function fetchWindForecast() {
         : "";
     renderWindForecast(items);
     updateWindForecastToggleLabel(false);
-    document.getElementById("wind-forecast-loading").style.display = "none";
-    document.getElementById("wind-forecast-content").style.display = "block";
-    markStale("wind-stale", data.updated_at, FRESHNESS.wind);
+    document.getElementById("wind-forecast-loading").classList.add("hidden");
+    document.getElementById("wind-forecast-content").classList.remove("hidden");
+    markStale("wind-stale", pickTimestamp(data), FRESHNESS.wind);
   } catch (e) {
     console.error("Wind forecast error:", e);
-    document.getElementById("wind-forecast-loading").style.display = "none";
+    document.getElementById("wind-forecast-loading").classList.add("hidden");
     document.getElementById("wind-forecast-error").style.display = "block";
   }
 }
@@ -1334,7 +1344,7 @@ async function fetchWeatherData(isManual = false) {
 
     // 最頻更新ソース(weather_marine, */30)の鮮度で更新パイプライン停止を検知する。
     // 取得失敗(wmData=null)も更新停止の可能性が高いためバナーを出す。
-    const marineFresh = freshness(wmData?.updated_at, FRESHNESS.marine);
+    const marineFresh = freshness(pickTimestamp(wmData), FRESHNESS.marine);
     const pipelineStale = wmData == null || marineFresh.isStale;
     const banner = document.getElementById("stale-banner");
     if (banner) {
@@ -1350,7 +1360,8 @@ async function fetchWeatherData(isManual = false) {
 
     // アメダスstale(前回値引き継ぎ)またはパイプライン停止時に注記を点灯。
     const staleEl = document.getElementById("amedas-stale");
-    if (staleEl) staleEl.hidden = !((jma && jma.stale === true) || pipelineStale);
+    if (staleEl)
+      staleEl.hidden = !((jma && jma.stale === true) || pipelineStale);
 
     if (jma) {
       setText("temp", jma.temp != null ? `${jma.temp}℃` : "--℃");
@@ -1398,11 +1409,11 @@ async function fetchWeatherData(isManual = false) {
     if (skeletonEl) skeletonEl.style.display = "none";
     const contentEl = document.getElementById("weather-content");
     if (contentEl) {
-      contentEl.style.display = "block";
+      contentEl.classList.remove("hidden");
       contentEl.classList.remove("is-updating");
     }
     _lastFetchTime = Date.now();
-    displayFetchTime(wmData?.updated_at);
+    displayFetchTime(pickTimestamp(wmData));
   } catch (error) {
     console.error("Fetch error:", error);
     _showGlobalError();

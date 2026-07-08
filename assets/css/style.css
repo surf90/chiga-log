@@ -371,7 +371,7 @@ h1 .title-sub {
 }
 .jma-overview {
   font-size: 14px;
-  color: #707070;
+  color: var(--text-sub);
   line-height: 1.7;
   margin-top: 8px;
   white-space: pre-wrap;
@@ -556,7 +556,7 @@ p.note strong a {
 
 /* 状態表示 */
 .section-loading {
-  color: #707070;
+  color: var(--text-sub);
   font-size: 14px;
 }
 .section-error {
@@ -603,16 +603,11 @@ p.note strong a {
   z-index: 10;
 }
 
-/* ヒーローカードのクリック可能化 */
-.hero-card {
-  cursor: pointer;
-}
-
 /* 潮汐表示の文字スタイル */
 .tide-age-label {
   font-weight: normal;
   font-size: 0.85em;
-  color: #707070;
+  color: var(--text-sub);
 }
 .tide-height {
   color: #888888;
@@ -693,6 +688,23 @@ p.note strong a {
 /* セクション補足ラベル */
 .section-sub {
   font-weight: 400;
-  color: #aaaaaa;
+  color: var(--text-sub);
   font-size: 11px;
+}
+
+/* ダークモード時のコンポーネント上書き（ライト定義より後に置き優先）。
+   スケルトンとトーストは固定色のためダークで浮くのを防ぐ。 */
+@media (prefers-color-scheme: dark) {
+  .skeleton {
+    background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+    background-size: 800px 100%;
+  }
+  .skeleton-hero-card {
+    background: #2a2a2a;
+  }
+  #toast {
+    background: rgba(42, 42, 42, 0.92);
+    color: #5ebdd8;
+    border-color: rgba(94, 189, 216, 0.3);
+  }
 }
