@@ -51,8 +51,14 @@ jobs:
         with:
           node-version: "20"
       - name: Serve built site
-        run: npx --yes http-server _site -p 4000 --silent &
+        # baseurl(/chiga-log) 配下で配信する。http-server はルート配信のため、
+        # _site を _serve/chiga-log に写して /chiga-log/ を解決可能にする（本番パス再現）。
+        run: |
+          mkdir -p _serve/chiga-log
+          cp -r _site/. _serve/chiga-log/
+          npx --yes http-server _serve -p 4000 --silent &
       - name: Wait for server
-        run: npx --yes wait-on http://localhost:4000/chiga-log/
+        # 到達不能時に無期限ハングしないよう 60 秒でタイムアウトさせる。
+        run: npx --yes wait-on -t 60000 http://localhost:4000/chiga-log/
       - name: pa11y-ci
         run: npx --yes pa11y-ci
