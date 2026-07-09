@@ -864,7 +864,8 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
     item.className = "wave-legend-item";
     item.dataset.index = String(idx);
     item.setAttribute("aria-pressed", "true");
-    item.style.color = meta.color;
+    // テキストは可読な既定色（--text-main）を使い、系列色はスウォッチ（丸）で示す。
+    // 系列色を文字色にするとコントラスト比が WCAG2AA 未満になるため（緑 #27ae60 で 2.87:1）。
     const swatch = document.createElement("span");
     swatch.className = "wave-legend-swatch";
     swatch.style.backgroundColor = meta.color;
