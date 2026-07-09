@@ -1,10 +1,39 @@
 ---
-updated: 2026-07-08
+updated: 2026-07-09
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-07-09）
+
+### 公開URL検証→UX/UI・SEO・コード品質の低リスク修正（main 作業, Fable）
+
+- **背景**: 公開 URL（`https://surf90.github.io/chiga-log/`）を Chrome 実機で観測検証（Console/Network/DOM/グラフ描画）した結果、**機能障害はゼロ**（全 fetch 200・`--` 残留なし・両グラフ描画・SW正常）。以降は「モダンなページ」観点の UX/UI・SEO・コード品質の残課題を三原則準拠で潰した。デザイン見た目（ライトモード）は不変。
+- **UX/UI 改善**（commit `ba8677b`「fable UI改善」, `assets/css/style.css` / `index.html` / `DESIGN.md`）:
+  - **スティッキーホバー解消**（最重要）: `.hero-card`/`.current-time`/`.toggle-btn`/`p.note a`/`.footer a`/`.lifesaving-link` の `:hover` を全て `@media (hover: hover)` でガード。タッチ端末でタップ後にホバー塗り（例: トグルボタン）が残る構造を是正。
+  - **`color-scheme: light dark`** を `:root` に宣言（ダーク時のスクロールバー等 UA 部品の白浮き解消）。
+  - **ダーク可読性**: 固定色 `.warning-none`(#707070)・潮位/区切り(#888888) を `var(--text-sub)` に変数化。ダーク時のみ満潮 `#60a5fa`・干潮 `#f87171`・エラー赤 `#ef4444` に明色化（Chart.js グラフ色は不変）。
+  - **A11y**: 見出し・フッターの装飾 `|` に `aria-hidden="true"` 付与（SR の「縦線」読み上げ防止）。
+  - `DESIGN.md` に hover ガード原則・color-scheme・ダーク明色置換・装飾記号 aria-hidden を追記。
+- **SEO 修正**（`googled180bd734463e748.html`）:
+  - **sitemap.xml から Google Search Console 検証ファイルを除外**。本番 sitemap に検証ファイル（非コンテンツ）が `<loc>` 登録されていた欠陥を実確認 → front matter に `layout: null` + `sitemap: false` を付与。ビルド出力を `cat -A` でバイト検証し、検証文字列＋改行のみで**先頭空行なし＝Google 検証は維持**。ビルド後 sitemap はホームページ1件のみに。
+  - JSON-LD/OGP/canonical/robots/webmanifest/404 は再点検し欠陥なし（修正不要）。
+- **コード品質**（`assets/js/app.js` / `app.min.js`）:
+  - **死定数 `LAT`/`LON`（+ 専用 `_cfgLoc`）を削除**。データは Actions 事前取得 JSON 経由でクライアントは座標未使用。ESLint warn 3件（`LAT`/`LON`/未使用 catch）を解消。※2026-06-18 は「フォーク lat/lon 参照ドキュメント兼用」として温存判断だったが、lat/lon は `_data/site.json`・FORK.md・README・残存する `WAVE_GUID_AREA`/`TSUNAMI_AREA_CODE` のフォールバック例で十分保持されるため、本セッションで**方針転換して削除**。
+  - `catch (e)` → `catch`（optional catch binding、月齢フォールバック箇所）。
+  - `app.min.js` を CI と同じ `terser -c -m` で再生成。`node --check` OK。
+- **sw.js 課題は誤検知と判明（変更なし）**: 「sw.js の Prettier 差分」は git 上は **LF 保存**で prettier 準拠、`core.autocrlf=true` による作業コピー CRLF 化のみが原因（CI/Linux では合格）。実体なしのため sw.js は変更せず revert。
+- **README 修正**: minify 再生成手順の CSS コマンドが実 CI と不一致（README `clean-css-cli` ↔ `minify.yml` は `csscompressor`）だったのを是正。CI と同じ `csscompressor` の Python ワンライナーに差し替え。
+- **検証**: 公開 URL 実機観測 / `jekyll build` 成功 / ローカル `_site` を baseurl 再現配信（ジャンクション）で描画・Network 200・グラフ・エラー無しを確認 / `eslint` warn0 / `prettier --check` 全 clean / `pytest` 41件通過 / 検証ファイル・app.min.js の `node --check` OK。
+- **未処理（記録）**: ホームページ sitemap の `<lastmod>` 欠落は**意図的に見送り**。付与には `jekyll-last-modified-at` プラグイン追加（三原則2: 依存追加禁止）か静的日付ハードコード（データ更新と乖離＝誤読・三原則1）が必要で、いずれも原則に反する。lastmod は sitemaps.org 仕様上オプションで欠落は許容。
+
+**関連ファイル**
+- `assets/css/style.css` / `assets/css/style.min.css` / `index.html` / `DESIGN.md`（commit `ba8677b`）
+- `googled180bd734463e748.html` / `assets/js/app.js` / `assets/js/app.min.js` / `README.md` / `progress.md`
+
+---
 
 ## 完了済み（2026-07-08）
 

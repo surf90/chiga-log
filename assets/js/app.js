@@ -20,10 +20,7 @@
 // 地点設定: Jekyll が site-config.js に展開した window.SITE_CONFIG を参照。
 // 未定義（生配信・CSP遮断・読込失敗）時は現行リテラルにフォールバックする。
 const _cfg = window.SITE_CONFIG || {};
-const _cfgLoc = _cfg.location || {};
 const _cfgJma = _cfg.jma || {};
-const LAT = _cfgLoc.lat ?? 35.3175;
-const LON = _cfgLoc.lon ?? 139.4151;
 const WAVE_GUID_AREA = _cfgJma.wave_guid_area ?? "20";
 const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const STORAGE_PREFIX = "chigalog:v6:";
@@ -388,7 +385,7 @@ async function calculateTide(force = false) {
         ageSource = "NASA";
       }
     }
-  } catch (e) {
+  } catch {
     // フォールバック：数式の計算値を使用
   }
 

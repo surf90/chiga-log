@@ -236,11 +236,13 @@ curl -sL "https://cdn.jsdelivr.net/npm/chart.js@<VERSION>/dist/chart.umd.min.js"
 
 ## 🛠 minify ファイルの再生成手順
 
-`assets/js/app.min.js` と `assets/css/style.min.css` は `app.js` / `style.css` を編集後に再生成が必要です：
+`assets/js/app.min.js` と `assets/css/style.min.css` は `app.js` / `style.css` を編集後に再生成が必要です。push すると `minify.yml` が自動で再生成しますが、ローカルで確認する場合は**CI と同じツール**（JS: `terser` / CSS: `csscompressor`）で生成してください（別ツールだと CI と出力が一致せず差分が発生します）：
 
 ```bash
+# JS（minify.yml と同じ terser）
 npx --yes terser assets/js/app.js -c -m -o assets/js/app.min.js
-npx --yes clean-css-cli -o assets/css/style.min.css assets/css/style.css
+# CSS（minify.yml と同じ csscompressor。要 pip install csscompressor）
+python -c "import csscompressor, pathlib as P; P.Path('assets/css/style.min.css').write_text(csscompressor.compress(P.Path('assets/css/style.css').read_text(encoding='utf-8')), encoding='utf-8')"
 ```
 
 ---
