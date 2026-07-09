@@ -259,7 +259,11 @@ npx --yes eslint assets/js/app.js
 npx --yes prettier --check "**/*.{html,css,js,json}"
 # アクセシビリティ（WCAG2AA）。要ローカルサーバー
 bundle exec jekyll build
-npx --yes http-server _site -p 4000 &
+# baseurl(/chiga-log) 配下で配信する。http-server はルート配信のため、
+# _site を _serve/chiga-log に写して /chiga-log/ を解決可能にする（.pa11yci の URL と一致させる）。
+mkdir -p _serve/chiga-log && cp -r _site/. _serve/chiga-log/
+npx --yes http-server _serve -p 4000 &
+npx --yes wait-on -t 60000 http://localhost:4000/chiga-log/
 npx --yes pa11y-ci
 ```
 

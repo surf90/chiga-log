@@ -35,6 +35,26 @@ updated: 2026-07-09
 
 ---
 
+### CI ハング解消（pa11y の baseurl 404）＋顕在化した a11y コントラスト2件を修正（main 作業, Fable）
+
+- **発端**: 上記 UX 修正 push 後、GitHub の Frontend CI が **pa11y ジョブで23分以上ハング**し「デプロイが進まない」状態に。`gh run view` で `Wait for server` ステップ滞留を確認。
+- **根因（ハング）**: pa11y ワークフローは `http-server _site` で **ルート配信**する一方、`.pa11yci` と `wait-on` は `http://localhost:4000/chiga-log/`（baseurl 付き）を待つ。成果物は `_site/index.html` で `_site/chiga-log/` は無い → `/chiga-log/` が 404 → `wait-on`（既定タイムアウトなし）が**無期限待機**。2026-06-18 の `frontend-ci.yml` 追加以来の潜在バグで、フロント変更を含む push で初めて顕在化。
+- **ハング修正**（commit `e1bea78`, `.github/workflows/frontend-ci.yml`）: `_site` を `_serve/chiga-log/` に写して `/chiga-log/` を解決可能に（本番パス再現）。`wait-on` に `-t 60000`（60秒）を付与し、到達不能時は**ハングでなく高速失敗**させる。CI と同じ `http-server`＋`wait-on` でローカル end-to-end 検証（正しいパス即到達・不正パス60秒失敗）。
+- **顕在化した a11y 欠陥2件**（ハング解消で pa11y が46秒完走し検出。いずれも**テキストのコントラスト不足**。Chart.js の線・点・スウォッチはグラフィック要素で 1.4.3 対象外）:
+  1. **干潮文字** `.tide-low` `#d9534f`（3.96:1）→ **`#ce4844`（4.5:1）**（`style.css`）。ダーク上書き `#f87171` は不変。
+  2. **波グラフ凡例テキスト**（インライン `color:#27ae60`, 2.87:1）→ `item.style.color` を除去し、**系列色はスウォッチ（丸）で示し文字は既定色**（`--text-main`）に（`app.js`）。
+- **a11y 修正**（commit `fix(a11y)…`, `assets/js/app.js` / `assets/css/style.css` ＋ min 再生成 / `DESIGN.md`）。`DESIGN.md` に「本文4.5:1・系列色はスウォッチで示す・干潮 `#ce4844`」を追記。
+- **検証**: **pa11y-ci をローカル実機 Chrome（`chromeLaunchConfig.executablePath` 指定）で実行 → `0 errors` / `1/1 URLs passed` / exit 0**。`eslint` warn0 / `prettier` clean / `jekyll build` 成功 / min は CI と同じ terser・csscompressor 再生成。**GitHub 側で全チェック緑を確認**（Frontend CI 成功49s・Minify 成功・pages deploy 成功）。
+- **付随メモ**: ①キュー滞留（pages 等）は GitHub 側のランナー割当遅延で、`github-pages` 環境は branch policy のみ（必須チェックゲート無し）＝ CI ハングは Pages をブロックしない、と確認。②中間コミット `e1bea78` の CI が failure なのは a11y 修正**前**にコントラストを正しく検出したもの（想定どおり、緑コミットで置換済み）。③「LF→CRLF」警告は Windows 作業コピー起因で、コミット済みブロブは `core.autocrlf=true` により LF（`file(1)`＋小さい diffstat で確認）。
+- **README 追従**: 「フロントエンド品質チェック」のローカル pa11y 手順も同じ 404 の落とし穴があったため、baseurl 配下配信（`_serve/chiga-log`）＋`wait-on -t` に修正。
+
+**関連ファイル**
+- `.github/workflows/frontend-ci.yml`（commit `e1bea78`）
+- `assets/js/app.js` / `assets/js/app.min.js` / `assets/css/style.css` / `assets/css/style.min.css` / `DESIGN.md`（commit `fix(a11y)…`）
+- `README.md` / `progress.md`
+
+---
+
 ## 完了済み（2026-07-08）
 
 ### コード品質改善: ダークモード整合・タイムスタンプ吸収・表示トグル統一（main 作業）
