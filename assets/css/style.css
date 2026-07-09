@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light dark;
   --bg-gradient: linear-gradient(160deg, #fffbeb 0%, #eff6ff 100%);
   --text-main: #222222;
   --text-sub: #707070;
@@ -141,9 +142,12 @@ h1 .title-sub {
   outline: 2px solid #fff;
   outline-offset: 2px;
 }
-.hero-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+/* タッチ端末でタップ後にホバー状態が残るのを防ぐため hover 対応端末に限定 */
+@media (hover: hover) {
+  .hero-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+  }
 }
 .hero-card:active {
   transform: scale(0.98);
@@ -327,8 +331,10 @@ h1 .title-sub {
   outline: 2px solid #0e7490;
   outline-offset: 2px;
 }
-.current-time:hover {
-  opacity: 0.6;
+@media (hover: hover) {
+  .current-time:hover {
+    opacity: 0.6;
+  }
 }
 .current-time:active {
   opacity: 0.4;
@@ -420,9 +426,11 @@ h1 .title-sub {
     color 0.15s,
     transform 0.1s;
 }
-.toggle-btn:hover {
-  background: #0e7490;
-  color: #fff;
+@media (hover: hover) {
+  .toggle-btn:hover {
+    background: #0e7490;
+    color: #fff;
+  }
 }
 .toggle-btn:focus-visible {
   outline: 2px solid #0e7490;
@@ -460,7 +468,7 @@ h1 .title-sub {
 }
 .warning-none {
   font-size: 14px;
-  color: #707070;
+  color: var(--text-sub);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -521,8 +529,10 @@ p.note a {
   color: var(--text-sub);
   text-decoration: none;
 }
-p.note a:hover {
-  text-decoration: underline;
+@media (hover: hover) {
+  p.note a:hover {
+    text-decoration: underline;
+  }
 }
 p.note strong a {
   color: #0e7490;
@@ -544,9 +554,14 @@ p.note strong a {
   text-decoration: none;
   transition: opacity 0.2s;
 }
-.footer a:hover {
-  opacity: 0.7;
-  text-decoration: underline;
+@media (hover: hover) {
+  .footer a:hover {
+    opacity: 0.7;
+    text-decoration: underline;
+  }
+  .lifesaving-link:hover {
+    opacity: 1;
+  }
 }
 .footer-disclaimer {
   font-size: 11px;
@@ -563,9 +578,6 @@ p.note strong a {
 .lifesaving-link {
   color: #c0392b !important;
   opacity: 0.75;
-}
-.lifesaving-link:hover {
-  opacity: 1;
 }
 #weather-content {
   transition: opacity 0.3s ease;
@@ -644,12 +656,12 @@ p.note strong a {
   color: var(--text-sub);
 }
 .tide-height {
-  color: #888888;
+  color: var(--text-sub);
   font-weight: normal;
   font-size: 0.85em;
 }
 .tide-sep {
-  color: #888888;
+  color: var(--text-sub);
   font-weight: normal;
 }
 .tide-high {
@@ -751,5 +763,18 @@ p.note strong a {
     background: rgba(42, 42, 42, 0.92);
     color: #5ebdd8;
     border-color: rgba(94, 189, 216, 0.3);
+  }
+  /* 固定色の青/赤はダーク背景で沈むため明色に置換（グラフ本体は Chart.js 側の色を維持） */
+  .tide-high {
+    color: #60a5fa;
+  }
+  .tide-low {
+    color: #f87171;
+  }
+  .error,
+  .section-error,
+  .tide-error,
+  .typhoon-notice {
+    color: #ef4444;
   }
 }

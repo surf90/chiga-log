@@ -17,6 +17,7 @@
 ## 2. Color Palette & Roles
 
 カラーは CSS 変数（`:root`）で定義し、`prefers-color-scheme: dark` でダーク値に切り替わる。
+`:root` に `color-scheme: light dark` を宣言し、スクロールバー等の UA 部品もダークに追従させる。
 
 ### CSS 変数（Light / Dark）
 
@@ -37,6 +38,7 @@
 - **ブランドグラデ**: `linear-gradient(135deg,#0e7490 0%,#0284c7 100%)`（ティール→ブルー）。ヒーロータイトル文字（`background-clip:text`）とヒーローカード背景に使用。
 - **アクセント文字/リンク**: `#0e7490`（ティール）。数値ハイライト・リンク・点線下線・アウトラインボタン枠。
 - **警報系**: 通常警報 `#c0392b`、特別警報 `#7c3aed`（紫）、注意報レベルは橙系（`#e67e22` / `#d97706`）。
+- **ダーク時の明色置換**: 固定色の文字はダーク背景で沈むため、ダークでは満潮 `#0275d8→#60a5fa`、干潮 `#d9534f→#f87171`、エラー文字 `#c0392b→#ef4444` に切替（`@media (prefers-color-scheme: dark)` で上書き。Chart.js のグラフ色は変更しない）。補足灰色（潮位・区切り・「警報なし」）は固定値でなく `var(--text-sub)` を使う。
 
 > **原則**: 純黒 `#000000` は使わず `#222222`。新規色の追加は避け、上記変数/アクセントを再利用する。
 
@@ -79,7 +81,7 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
 ### ボタン
 - アウトライン型（`.toggle-btn`）: `border:1px solid #0e7490` / `color:#0e7490` / 背景透明 / `min-height:44px`。
-- 全ボタン共通: `touch-action:manipulation`・`-webkit-tap-highlight-color:transparent`。押下時は `:active`（`scale(0.97〜0.98)` または opacity 低下）、キーボード時は `:focus-visible`（2px アウトライン）で必ずフィードバックする。
+- 全ボタン共通: `touch-action:manipulation`・`-webkit-tap-highlight-color:transparent`。`:hover` スタイルは必ず `@media (hover: hover)` 内に置く（タッチ端末でタップ後にホバー状態が残るのを防ぐ）。押下時は `:active`（`scale(0.97〜0.98)` または opacity 低下）、キーボード時は `:focus-visible`（2px アウトライン）で必ずフィードバックする。
 - タップターゲット: `.toggle-btn` / `#toast` / `.current-time` は `min-height:44px`。`.wave-legend-item`（グラフ凡例トグル、`<button aria-pressed>`）は padding＋負マージンでヒット領域を拡張。
 - セクションへのスクロール移動先（`.weather-box`）は `scroll-margin-top:12px` で上端に余白を確保。
 
@@ -122,6 +124,7 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - ダークモード（`prefers-color-scheme: dark`）の見え方を必ず確認する。
 - 数値・単位・ラベルは等幅フォントで揃える。
 - テキスト色は `#222222`（ライト）/ `#e2e8f0`（ダーク）。
+- 装飾記号（見出し・フッターの `|` など）には `aria-hidden="true"` を付ける。
 
 ### Don't
 - 純黒 `#000000` を使わない。
