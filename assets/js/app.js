@@ -245,8 +245,10 @@ function toJstDateStr(date) {
 
 /**
  * 「更新日時」表示を更新する。
- * データ生成時刻(iso)が得られればそれを表示し（取得時刻ではなくデータの鮮度を示す）、
- * 閾値超過なら経過時間を併記して警告スタイルを付ける。iso不明時はfetch時刻で代替。
+ * リロード・手動更新でデータを参照できた時点の現在時刻を表示する
+ * （Actions側のデータ生成を待たず、参照の成功を示す）。
+ * データ生成時刻(iso)が閾値超過なら「（データ: X前）⚠」を併記して
+ * 古いデータであることを警告する。
  * @param {string|null} [iso] weather_marine 等の updated_at
  * @param {number} [thresholdMs] 古いと判定する閾値
  */
@@ -260,16 +262,13 @@ function displayFetchTime(iso = null, thresholdMs = FRESHNESS.marine) {
     hour: "2-digit",
     minute: "2-digit",
   };
+  const dt = new Date().toLocaleString("ja-JP", options);
   const f = iso ? freshness(iso, thresholdMs) : null;
-  if (f && f.ms != null) {
-    const dt = new Date(f.ms).toLocaleString("ja-JP", options);
-    el.textContent = f.isStale
-      ? `更新日時: ${dt}（${f.label}）⚠`
-      : `更新日時: ${dt} 🔄`;
-    el.classList.toggle("is-stale", f.isStale);
+  if (f && f.isStale) {
+    el.textContent = `更新日時: ${dt}（データ: ${f.label}）⚠`;
+    el.classList.add("is-stale");
   } else {
-    // データ時刻不明時はfetch時刻で代替表示する。
-    el.textContent = `更新日時: ${new Date().toLocaleString("ja-JP", options)} 🔄`;
+    el.textContent = `更新日時: ${dt} 🔄`;
     el.classList.remove("is-stale");
   }
 }
