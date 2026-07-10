@@ -23,8 +23,7 @@ const _cfg = window.SITE_CONFIG || {};
 const _cfgJma = _cfg.jma || {};
 const WAVE_GUID_AREA = _cfgJma.wave_guid_area ?? "20";
 const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
-const STORAGE_PREFIX = "chigalog:v6:";
-const LIVE_DATA_TTL_MS = 2 * 60 * 1000;
+const STORAGE_PREFIX = "chigalog:v7:";
 const _reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 let _isFetching = false;
@@ -1366,7 +1365,6 @@ async function fetchWeatherData(isManual = false) {
       fetchWindForecast(isManual),
       fetchCached("data/weather_marine.json", "cache_weather_marine", {
         force: isManual,
-        ttlMs: LIVE_DATA_TTL_MS,
       }),
     ]);
     const wmData = wmResult.status === "fulfilled" ? wmResult.value : null;
