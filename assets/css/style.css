@@ -312,8 +312,13 @@ h1 .title-sub {
   color: var(--text-main);
   letter-spacing: -0.28px;
   display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 7px;
+}
+.weather-box h2 > span:not(.section-label):not(.section-source) {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .section-icon {
   color: var(--brand);
