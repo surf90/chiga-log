@@ -341,6 +341,7 @@ h1 .title-sub {
   letter-spacing: -0.2px;
   margin-left: auto;
   flex-shrink: 0;
+  white-space: nowrap;
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 }
 .data-list {
@@ -597,11 +598,15 @@ h1 .title-sub {
   font-weight: 500;
 }
 p.note {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-sub);
   margin-top: 8px;
   margin-bottom: 0;
-  line-height: 1.6;
+  line-height: 1.55;
+}
+/* 注釈内の括弧書きなど補足的な文字はさらに小さく */
+p.note .note-fine {
+  font-size: 0.85em;
 }
 p.note a {
   color: var(--text-sub);
@@ -916,11 +921,6 @@ p.note strong a {
   }
   .weather-box h2 {
     gap: 6px;
-    flex-wrap: wrap;
-  }
-  .section-source {
-    width: 100%;
-    margin-left: 27px;
   }
   .data-row {
     gap: 10px;
