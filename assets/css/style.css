@@ -576,6 +576,7 @@ h1 .title-sub {
 }
 .badge-chuiho {
   background-color: #d97706;
+  color: #222222;
 }
 .badge-tsunami-major {
   background-color: #7c3aed;
@@ -585,6 +586,7 @@ h1 .title-sub {
 }
 .badge-tsunami-adv {
   background-color: #d97706;
+  color: #222222;
 }
 .warning-name {
   font-size: 14px;
