@@ -24,6 +24,7 @@ const _cfgJma = _cfg.jma || {};
 const WAVE_GUID_AREA = _cfgJma.wave_guid_area ?? "20";
 const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const STORAGE_PREFIX = "chigalog:v6:";
+const LIVE_DATA_TTL_MS = 2 * 60 * 1000;
 const _reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 let _isFetching = false;
@@ -64,7 +65,7 @@ async function fetchCached(
       storage.removeItem(key);
     }
   }
-  const res = await fetchWithTimeout(url, { force });
+  const res = await fetchWithTimeout(url, { force, cache: "no-store" });
   if (!res.ok) throw new Error(`fetch failed: ${url}`);
   const data = await res.json();
   try {
@@ -174,8 +175,12 @@ function formatJstHm(ms) {
  * @param {{timeoutMs?: number}} [opts]
  * @returns {Promise<Response>}
  */
-function fetchWithTimeout(url, { timeoutMs = 10000, force = false } = {}) {
+function fetchWithTimeout(
+  url,
+  { timeoutMs = 10000, force = false, cache } = {},
+) {
   const opts = { signal: AbortSignal.timeout(timeoutMs) };
+  if (cache) opts.cache = cache;
   // 手動更新時はHTTPキャッシュを迂回しネットワークから再取得する
   if (force) opts.cache = "reload";
   return fetch(url, opts);
@@ -1361,6 +1366,7 @@ async function fetchWeatherData(isManual = false) {
       fetchWindForecast(isManual),
       fetchCached("data/weather_marine.json", "cache_weather_marine", {
         force: isManual,
+        ttlMs: LIVE_DATA_TTL_MS,
       }),
     ]);
     const wmData = wmResult.status === "fulfilled" ? wmResult.value : null;
