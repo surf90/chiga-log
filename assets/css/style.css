@@ -296,6 +296,9 @@ h1 .title-sub {
   background: var(--warning-bg);
   border: 2px solid var(--warning-border);
 }
+.weather-box.warning-active::before {
+  display: none;
+}
 .weather-box h2 small {
   font-size: 11px;
   font-weight: 400;
