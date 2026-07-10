@@ -23,7 +23,7 @@ const _cfg = window.SITE_CONFIG || {};
 const _cfgJma = _cfg.jma || {};
 const WAVE_GUID_AREA = _cfgJma.wave_guid_area ?? "20";
 const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
-const STORAGE_PREFIX = "chigalog:v7:";
+const STORAGE_PREFIX = "chigalog:v6:";
 const _reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 let _isFetching = false;
@@ -64,7 +64,7 @@ async function fetchCached(
       storage.removeItem(key);
     }
   }
-  const res = await fetchWithTimeout(url, { force, cache: "no-store" });
+  const res = await fetchWithTimeout(url, { force });
   if (!res.ok) throw new Error(`fetch failed: ${url}`);
   const data = await res.json();
   try {
@@ -174,12 +174,8 @@ function formatJstHm(ms) {
  * @param {{timeoutMs?: number}} [opts]
  * @returns {Promise<Response>}
  */
-function fetchWithTimeout(
-  url,
-  { timeoutMs = 10000, force = false, cache } = {},
-) {
+function fetchWithTimeout(url, { timeoutMs = 10000, force = false } = {}) {
   const opts = { signal: AbortSignal.timeout(timeoutMs) };
-  if (cache) opts.cache = cache;
   // 手動更新時はHTTPキャッシュを迂回しネットワークから再取得する
   if (force) opts.cache = "reload";
   return fetch(url, opts);

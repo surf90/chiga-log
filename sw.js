@@ -1,4 +1,4 @@
-const CACHE_NAME = "chigalog-v10";
+const CACHE_NAME = "chigalog-v9";
 const BASE = self.location.pathname.replace(/sw\.js$/, "");
 const ASSETS = [
   BASE,
@@ -38,7 +38,7 @@ self.addEventListener("fetch", (e) => {
   // Cache Storage 肥大化を避けるため put せず、オフライン時のみキャッシュ退避を試す。
   if (url.pathname.startsWith(BASE + "data/")) {
     e.respondWith(
-      fetch(e.request, { cache: "no-store" }).catch(
+      fetch(e.request).catch(
         async () =>
           (await caches.match(e.request)) ||
           new Response("", { status: 504, statusText: "offline" }),
@@ -55,29 +55,6 @@ self.addEventListener("fetch", (e) => {
           (await caches.match(BASE + "index.html")) ||
           new Response("", { status: 504, statusText: "offline" }),
       ),
-    );
-    return;
-  }
-
-  // CSS/JS は新旧混在が機能差に直結するため network-first で更新を優先する。
-  if (
-    url.pathname.startsWith(BASE + "assets/css/") ||
-    url.pathname.startsWith(BASE + "assets/js/")
-  ) {
-    e.respondWith(
-      fetch(e.request)
-        .then((res) => {
-          if (res && res.status === 200 && res.type === "basic") {
-            const copy = res.clone();
-            caches.open(CACHE_NAME).then((c) => c.put(e.request, copy));
-          }
-          return res;
-        })
-        .catch(
-          async () =>
-            (await caches.match(e.request)) ||
-            new Response("", { status: 504, statusText: "offline" }),
-        ),
     );
     return;
   }
