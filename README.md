@@ -36,7 +36,8 @@ https://surf90.github.io/chiga-log/
 ### 注意報・警報
 * **注意報・警報**: 気象庁が発表する「茅ヶ崎市（コード: `1420700`）」の個別データを参照。
   * 取得元は気象庁レガシーフィード（`data.jma.go.jp` の `VPWS50/JPTF`、神奈川県）。bosai の警報JSON（`warning/140000.json`）は神奈川で更新が停止する事象が確認されたため使用しません。
-  * レガシーフィードはCORS非対応のため、Cloudflare Worker（`warning-worker/`）が閲覧時に茅ヶ崎分を抽出します。Workerの応答は60秒キャッシュされ、GitHub Actionsのschedule遅延に依存せず最新発表へアクセスします。
+  * レガシーフィードはCORS非対応のため、閲覧者のブラウザから [Cloudflare Worker](https://chiga-log-warning-api.delay-bot.workers.dev/warning)（`chiga-log-warning-api`）を経由して気象庁へアクセスします。Workerは閲覧時に茅ヶ崎分を抽出し、応答を60秒キャッシュします。
+  * ページ表示時と表示中5分ごとに注意報・警報を再取得するため、GitHub Actionsのschedule遅延に依存せず最新発表へアクセスできます。
   * Worker障害時は `fetch-openmeteo.yml` が生成する `data/warning_chigasaki.json` へフォールバックします。`scripts/fetch_warning.py` が取得失敗した場合も既存ファイルを温存し、誤って「なし」表示にしません。
 
 ### 津波注意報・警報
@@ -81,6 +82,30 @@ https://surf90.github.io/chiga-log/
 
 未設定の場合、Stormglassフォールバックはスキップされ、気象庁データが取得できなければ「取得失敗」が表示されます（誤読防止のためダミー潮汐は表示しません）。
 
+## Cloudflare Worker（注意報・警報API）
+
+気象庁レガシーフィードのCORS制約を回避するため、`warning-worker/` のWorkerを使用します。公開URLや地点変更時に使用するAPI URLは `_data/site.json` の `jma.warning_api_url` で管理します。
+
+処理経路:
+
+```text
+閲覧者のブラウザ → chiga-log-warning-api → 気象庁 VPWS50/JPTF
+```
+
+Cloudflareダッシュボードでは、対象アカウントを選択して **Workers & Pages → chiga-log-warning-api** からデプロイ状況・ログ・メトリクスを確認できます。ログインメールやAccount IDはリポジトリへ記録しません。
+
+ローカルでのテストとデプロイ:
+
+```bash
+cd warning-worker
+npm install
+npm test
+npm run check                 # wrangler deploy --dry-run
+npx wrangler deploy --minify  # Cloudflareへ反映
+```
+
+Workerは `https://surf90.github.io`、`http://localhost:4000`、`http://127.0.0.1:4000` のOriginを許可しています。許可Originを変更する場合は `warning-worker/src/index.js` の一覧を更新し、テストとdry-run後に再デプロイしてください。
+
 ## 地点設定の一元化（フォーク時の変更箇所）
 
 地点固有の値（緯度経度・JMA各種コード・地名）は **`_data/site.json` に集約**され、フロント（JS）・データ取得（Python）・HTML（Jekyll）の3者がここを参照します。別の海岸へ切り替える場合は基本このファイルだけを編集します。
@@ -94,6 +119,8 @@ https://surf90.github.io/chiga-log/
 ## ローカル動作確認チェックリスト
 
 `python -m http.server 8000` 起動後、ブラウザで http://localhost:8000 を開いて以下を確認:
+
+> `localhost:8000` はWorkerのCORS許可対象外なので、注意報・警報はActions生成済みの `warning_chigasaki.json` へフォールバックします。Workerからのライブ取得を確認する場合は、Jekyllを `localhost:4000` で起動してください。
 
 - [ ] ヒーローカード3枚（SEA / AIR / WIND）に `--` ではなく実数値が表示される
 - [ ] 潮汐セクションに「大潮/中潮/...」と月齢が出る（「NASA」または「計算値」のラベル）
@@ -277,8 +304,8 @@ npx --yes pa11y-ci
 - **SEO・構造化データ**: OGP / Twitter Card / canonical に加え、JSON-LD（`@graph`: Person・WebSite・WebPage・WebApplication）で著者・地理情報・公開/更新日を宣言。サイト名の表記ゆれ（ちがろぐ／チガログ／chigalog 等）は `alternateName` で網羅。`jekyll-sitemap` で sitemap.xml 自動生成。
 - **グラフ描画**: Chart.js（自ホスト版 `assets/vendor/chart.umd.min.js`。CDN通信を排除し、サードパーティ依存を最小化）
 - **品質ゲート**: ESLint（`eslint.config.js`）/ Prettier / pa11y-ci（WCAG2AA）を `frontend-ci.yml` で push・PR 時に自動実行
-- **自動化・ホスティング**: GitHub Actions / GitHub Pages
-- **気象庁データ (天気予報・注意報・潮汐)**: 気象庁公式データ (GitHub ActionsによるJSON定期取得、および年次更新データを利用)
+- **自動化・ホスティング**: GitHub Actions / GitHub Pages / Cloudflare Workers（注意報・警報の閲覧時取得BFF）
+- **気象庁データ (天気予報・注意報・潮汐)**: 気象庁公式データ（注意報・警報はCloudflare Worker経由で閲覧時取得、その他はGitHub ActionsによるJSON定期取得および年次更新データを利用）
 - **月齢データ**: NASA SVS (年次更新のJSONデータを利用)
 - **海面・現在の気象データ**: Open-Meteo API (登録不要・無料で利用可能)
 - **潮汐データ (サブ)**: Stormglass API (気象庁データ欠損時のみ日次バッチ内でフォールバック取得)

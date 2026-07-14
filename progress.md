@@ -1,10 +1,30 @@
 ---
-updated: 2026-07-09
+updated: 2026-07-14
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-07-14）
+
+### 注意報・警報をCloudflare Worker経由の閲覧時取得へ移行
+
+- **背景**: GitHub Actionsの定期実行を直近100件で検証。定期処理50件は全件成功していた一方、設定上30分ごとの `Fetch Open-Meteo Data` は実績33件で最短約59分・平均約108分・最大約230分の間隔があり、GitHubのschedule遅延・欠落可能性から注意報・警報の最新性を保証できなかった。
+- **採用方式**: CORS非対応の気象庁レガシーフィード（`VPWS50/JPTF_jp.json`）をCloudflare Worker `chiga-log-warning-api` が閲覧時に取得し、茅ヶ崎市（`1420700`）だけを返すBFFへ移行。
+- **公開URL**: `https://chiga-log-warning-api.delay-bot.workers.dev/warning`。Cloudflareのログインメール・Account IDは公開リポジトリへ記録しない。
+- **負荷・鮮度**: Workerとブラウザへ `Cache-Control: public, max-age=60, s-maxage=60` を返し、気象庁へのアクセスを60秒単位で集約。フロントはページ表示時および表示中5分ごとに注意報・警報と津波情報を再確認。
+- **CORS**: 本番 `https://surf90.github.io` とローカル確認用 `http://localhost:4000` / `http://127.0.0.1:4000` のみ許可。サイト側CSPの `connect-src` にWorkerドメインを追加。
+- **障害時**: Worker取得失敗時は、既存のGitHub Actionsが生成する同一オリジン `data/warning_chigasaki.json` へフォールバック。Actions側の取得・既存ファイル温存処理は安全網として継続。
+- **PWA反映**: Service Workerのキャッシュ名を `chigalog-v10` から `chigalog-v11` へ更新し、既存利用者のキャッシュ済み `app.min.js` を更新対象にした。
+- **検証**: デプロイ済みWorkerが200応答、GitHub Pages OriginへのCORS、60秒キャッシュ、対象コード`1420700`を返すことを確認。Worker単体テスト3件成功、Wrangler dry-run・ESLint・Prettier・Jekyll build成功。
+
+**関連ファイル**
+- `warning-worker/` / `_data/site.json`
+- `assets/js/app.js` / `assets/js/app.min.js`
+- `index.html` / `sw.js` / `README.md` / `progress.md`
+
+---
 
 ## 完了済み（2026-07-09）
 
