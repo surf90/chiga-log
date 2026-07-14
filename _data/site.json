@@ -33,6 +33,7 @@
     "tide_station": "D8",
     "wave_guid_area": "20",
     "wave_guid_link_area": "19",
-    "tsunami_area_code": "330"
+    "tsunami_area_code": "330",
+    "warning_api_url": "https://chiga-log-warning-api.delay-bot.workers.dev/warning"
   }
 }

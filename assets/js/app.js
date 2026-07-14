@@ -890,9 +890,11 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
 }
 
 // ─── 6. 警報・注意報 ────────────────────────────────────────
-// 注: JMA bosai の警報JSON(140000.json)は神奈川で更新停止が確認されたため、
-// GitHub Actions側(BFF)が最新のレガシーフィードから抽出した同一オリジンの
-// data/warning_chigasaki.json を読む。クライアントからJMAは直接叩かない。
+// JMA bosai の警報JSON(140000.json)は神奈川で更新停止が確認されたため、
+// Cloudflare Worker が最新のレガシーフィードから茅ヶ崎市分を閲覧時に抽出する。
+// Worker障害時はActions生成済みJSONへフォールバックし、可用性を確保する。
+
+const WARNING_API_URL = _cfgJma.warning_api_url ?? "";
 
 /** 警報名からバッジ用レベルを判定する。危険警報(レベル4)も「警報」を含むためkeiho。 */
 function warningLevelFromName(name) {
@@ -904,12 +906,28 @@ function warningLevelFromName(name) {
 async function fetchJmaWarning(force = false) {
   try {
     const bust = Math.floor(Date.now() / (15 * 60000));
-    const res = await fetchWithTimeout(
-      `data/warning_chigasaki.json?t=${bust}`,
-      {
+    let res;
+    if (WARNING_API_URL) {
+      try {
+        const separator = WARNING_API_URL.includes("?") ? "&" : "?";
+        res = await fetchWithTimeout(
+          `${WARNING_API_URL}${separator}t=${bust}`,
+          {
+            force,
+          },
+        );
+        if (!res.ok) throw new Error(`warning API returned ${res.status}`);
+      } catch (apiError) {
+        console.warn("Live warning API failed; using snapshot", apiError);
+        res = await fetchWithTimeout(`data/warning_chigasaki.json?t=${bust}`, {
+          force,
+        });
+      }
+    } else {
+      res = await fetchWithTimeout(`data/warning_chigasaki.json?t=${bust}`, {
         force,
-      },
-    );
+      });
+    }
     if (!res.ok) throw new Error("warning_chigasaki.json fetch failed");
     const data = await res.json();
 
@@ -1524,6 +1542,14 @@ function _onUserInteraction() {
 
 document.addEventListener("DOMContentLoaded", () => {
   fetchWeatherData();
+  // 災害情報は通常データより高頻度に再確認する。Worker/JMA側の60秒
+  // キャッシュにより、閲覧者数に比例して取得元へ負荷を掛けない。
+  const ALERT_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+  setInterval(() => {
+    if (document.visibilityState === "visible") {
+      Promise.allSettled([fetchJmaWarning(), fetchTsunami()]);
+    }
+  }, ALERT_REFRESH_INTERVAL_MS);
   // 背景タブで間引かれるsetIntervalを避け、経過時間を見て再帰実行
   const REFRESH_INTERVAL_MS = 3 * 60 * 60 * 1000;
   const scheduleNextFetch = () => {

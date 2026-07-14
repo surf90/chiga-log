@@ -1,0 +1,13 @@
+{
+  "name": "chiga-log-warning-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "check": "wrangler deploy --dry-run"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "wrangler": "^4.0.0"
+  }
+}

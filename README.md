@@ -36,8 +36,8 @@ https://surf90.github.io/chiga-log/
 ### 注意報・警報
 * **注意報・警報**: 気象庁が発表する「茅ヶ崎市（コード: `1420700`）」の個別データを参照。
   * 取得元は気象庁レガシーフィード（`data.jma.go.jp` の `VPWS50/JPTF`、神奈川県）。bosai の警報JSON（`warning/140000.json`）は神奈川で更新が停止する事象が確認されたため使用しません。
-  * レガシーフィードはCORS非対応のため、GitHub Actions側（BFF）で茅ヶ崎分を抽出し `data/warning_chigasaki.json` へ書き出し、フロントは同一オリジンの当該JSONを参照します（クライアントから気象庁を直接叩きません）。
-  * 更新頻度は `fetch-openmeteo.yml`（30分ごと）に相乗り。`scripts/fetch_warning.py` が取得失敗した場合は既存ファイルを温存し、誤って「なし」表示にしません。
+  * レガシーフィードはCORS非対応のため、Cloudflare Worker（`warning-worker/`）が閲覧時に茅ヶ崎分を抽出します。Workerの応答は60秒キャッシュされ、GitHub Actionsのschedule遅延に依存せず最新発表へアクセスします。
+  * Worker障害時は `fetch-openmeteo.yml` が生成する `data/warning_chigasaki.json` へフォールバックします。`scripts/fetch_warning.py` が取得失敗した場合も既存ファイルを温存し、誤って「なし」表示にしません。
 
 ### 津波注意報・警報
 * **津波情報**: 気象庁の津波予報区「相模湾・三浦半島（コード: `330`）」に**津波注意報・津波警報・大津波警報が発表されている時だけ**、ページ最上部に専用カードを表示します（津波予報のみ・解除時は非表示）。
