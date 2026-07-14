@@ -18,6 +18,12 @@ updated: 2026-07-14
 - **障害時**: Worker取得失敗時は、既存のGitHub Actionsが生成する同一オリジン `data/warning_chigasaki.json` へフォールバック。Actions側の取得・既存ファイル温存処理は安全網として継続。
 - **PWA反映**: Service Workerのキャッシュ名を `chigalog-v10` から `chigalog-v11` へ更新し、既存利用者のキャッシュ済み `app.min.js` を更新対象にした。
 - **検証**: デプロイ済みWorkerが200応答、GitHub Pages OriginへのCORS、60秒キャッシュ、対象コード`1420700`を返すことを確認。Worker単体テスト3件成功、Wrangler dry-run・ESLint・Prettier・Jekyll build成功。
+- **実サイト反映確認**: GitHub Pagesのコミット `5a73ef1` に対するデプロイ（Actions run `29305777433`）が成功。実サイトがWorker URL入り `site-config.js`、Worker許可済みCSP、Worker取得・フォールバック・5分更新入り `app.min.js`、`chigalog-v11` を配信していることを確認。
+- **実ブラウザ確認**: 公開URLで注意報・警報セクションのロード完了、「✅ 現在、注意報・警報はありません」表示、CSPエラー・Worker失敗・フォールバック警告なしを確認。実Workerは確認時点の気象庁発表（2026-07-14 13:20 JST）を200で返した。
+- **必須残タスク**: なし。現時点で管理者が実施すべき手動反映作業もなし。
+- **今後の手動タスク**: `warning-worker/` のソースを変更した場合、GitHubへのpushだけではWorkerは更新されない。`npm test` → `npm run check` → `npx wrangler deploy --minify` を `warning-worker/` で実行してCloudflareへ手動反映する。
+- **任意の運用改善**: Cloudflareダッシュボードでエラー・利用量を定期確認、障害/利用量通知の設定、GitHub ActionsによるWorkerデプロイ自動化を必要に応じて検討。独自ドメイン追加時はWorkerのCORS許可OriginとサイトCSPを同時更新する。
+- **既存PWA利用者**: 開きっぱなしの端末では旧JSが一時的に残る場合があるが、次回の再読み込みまたはPWA再起動で `chigalog-v11` へ切り替わる。管理者作業は不要。
 
 **関連ファイル**
 - `warning-worker/` / `_data/site.json`
