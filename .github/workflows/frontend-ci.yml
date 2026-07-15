@@ -10,6 +10,8 @@ on:
       - "**/*.html"
       - "eslint.config.js"
       - ".pa11yci"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/frontend-ci.yml"
   pull_request:
     paths:
@@ -18,6 +20,8 @@ on:
       - "**/*.html"
       - "eslint.config.js"
       - ".pa11yci"
+      - "package.json"
+      - "package-lock.json"
 
 permissions:
   contents: read
@@ -27,38 +31,44 @@ jobs:
     name: ESLint + Prettier
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: "20"
+          node-version: "24"
+          cache: npm
+      - name: Install pinned frontend tools
+        run: npm ci
       - name: ESLint (source JS)
-        run: npx --yes eslint assets/js/app.js
+        run: npx --no-install eslint assets/js/app.js
       - name: Prettier check
-        run: npx --yes prettier --check "**/*.{html,css,js,json}"
+        run: npx --no-install prettier --check "**/*.{html,css,js,json}"
 
   a11y:
     name: pa11y (WCAG2AA)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: ruby/setup-ruby@v1
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: ruby/setup-ruby@8e41b362d2589a22a44c1cfa214b3c83052c195b # v1
         with:
           ruby-version: "3.2"
           bundler-cache: true
       - name: Build site (Liquid 解決)
         run: bundle exec jekyll build
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: "20"
+          node-version: "24"
+          cache: npm
+      - name: Install pinned accessibility tools
+        run: npm ci
       - name: Serve built site
         # baseurl(/chiga-log) 配下で配信する。http-server はルート配信のため、
         # _site を _serve/chiga-log に写して /chiga-log/ を解決可能にする（本番パス再現）。
         run: |
           mkdir -p _serve/chiga-log
           cp -r _site/. _serve/chiga-log/
-          npx --yes http-server _serve -p 4000 --silent &
+          npx --no-install http-server _serve -p 4000 --silent &
       - name: Wait for server
         # 到達不能時に無期限ハングしないよう 60 秒でタイムアウトさせる。
-        run: npx --yes wait-on -t 60000 http://localhost:4000/chiga-log/
+        run: npx --no-install wait-on -t 60000 http://localhost:4000/chiga-log/
       - name: pa11y-ci
-        run: npx --yes pa11y-ci
+        run: npx --no-install pa11y-ci
