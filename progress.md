@@ -1,10 +1,20 @@
 ---
-updated: 2026-07-14
+updated: 2026-07-16
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-07-16）
+
+### 熱中症警戒アラートカード
+
+- **配信元**: 環境省「熱中症特別警戒情報・熱中症警戒情報」公式CSV。神奈川県（都道府県コード `14`）の正式発表フラグ `1` / `3` のみ抽出し、事前判定 `2` は表示しない。
+- **表示位置・条件**: 発表中だけ「注意報・警報」の直下、「天気予報」の直上へ表示。通常警戒は標準カード、特別警戒だけオレンジ枠。未発表・対象日外・取得失敗時はカード全体を非表示。
+- **Actions遅延対策**: 専用 `fetch-heatstroke-alert.yml` を公式発表（05:00 / 14:00 / 17:00 JST）の25分・15分・5分前に実行。CSVを先行取得しても `publishedAt` までは表示せず、既存30分ワークフローも安全網として維持。
+- **ブラウザ反映**: `data/heatstroke_alert.json` を5分粒度のキャッシュバスター付きで再取得し、発表前の「発表なし」がsessionStorageへ30分残る問題を回避。
+- **検証**: 取得・フラグ・発表時刻・先行取得候補のテストを追加。全45テスト、ESLint、JavaScript構文、差分チェック成功。
 
 ## 完了済み（2026-07-14）
 
@@ -26,6 +36,7 @@ updated: 2026-07-14
 - **既存PWA利用者**: 開きっぱなしの端末では旧JSが一時的に残る場合があるが、次回の再読み込みまたはPWA再起動で `chigalog-v11` へ切り替わる。管理者作業は不要。
 
 **関連ファイル**
+
 - `warning-worker/` / `_data/site.json`
 - `assets/js/app.js` / `assets/js/app.min.js`
 - `index.html` / `sw.js` / `README.md` / `progress.md`
@@ -56,6 +67,7 @@ updated: 2026-07-14
 - **未処理（記録）**: ホームページ sitemap の `<lastmod>` 欠落は**意図的に見送り**。付与には `jekyll-last-modified-at` プラグイン追加（三原則2: 依存追加禁止）か静的日付ハードコード（データ更新と乖離＝誤読・三原則1）が必要で、いずれも原則に反する。lastmod は sitemaps.org 仕様上オプションで欠落は許容。
 
 **関連ファイル**
+
 - `assets/css/style.css` / `assets/css/style.min.css` / `index.html` / `DESIGN.md`（commit `ba8677b`）
 - `googled180bd734463e748.html` / `assets/js/app.js` / `assets/js/app.min.js` / `README.md` / `progress.md`
 
@@ -75,6 +87,7 @@ updated: 2026-07-14
 - **README 追従**: 「フロントエンド品質チェック」のローカル pa11y 手順も同じ 404 の落とし穴があったため、baseurl 配下配信（`_serve/chiga-log`）＋`wait-on -t` に修正。
 
 **関連ファイル**
+
 - `.github/workflows/frontend-ci.yml`（commit `e1bea78`）
 - `assets/js/app.js` / `assets/js/app.min.js` / `assets/css/style.css` / `assets/css/style.min.css` / `DESIGN.md`（commit `fix(a11y)…`）
 - `README.md` / `progress.md`
@@ -96,6 +109,7 @@ updated: 2026-07-14
 - **未処理**: CSS/JS min はコミット push 時に `minify.yml` が自動再生成（`csscompressor`＋`terser`）。**push は要ユーザー操作**（自動モードで main 直 push が拒否されたため手元 push 待ち）。push 後、min 版に `stale-banner`/`markStale`/`pickTimestamp` が含まれることを grep 検証すること。
 
 **関連ファイル**
+
 - `assets/css/style.css` / `assets/js/app.js` / `README.md` / `progress.md`
 
 ---
@@ -117,6 +131,7 @@ updated: 2026-07-14
 - **未処理**: CSS/JS min はコミットpush時に `minify.yml` が自動再生成（ローカル不要）。
 
 **関連ファイル**
+
 - `assets/js/app.js` / `index.html` / `assets/css/style.css` / `DESIGN.md`
 - `scripts/fetch_forecast.py` / `README.md`
 
@@ -142,6 +157,7 @@ updated: 2026-07-14
 - **見送り（記録）**: フォント woff2 自ホスト化（作業量大・今回は非ブロッキング化で代替）/ DOM null 全40箇所一括化（高リスク4関数に限定）/ LAT・LON 死定数の削除（フォーク時 lat/lon 参照ドキュメントを兼ね温存）。
 
 **関連ファイル**
+
 - `index.html` / `sw.js` / `assets/js/app.js` / `assets/css/style.css`
 - `eslint.config.js`（新規）/ `.prettierignore`（新規）/ `.pa11yci`（新規）/ `.github/workflows/frontend-ci.yml`（新規）
 - `_config.yml` / `README.md` / `404.html` / `_data/site.json` / `assets/js/sw-register.js`
@@ -161,6 +177,7 @@ updated: 2026-07-14
 - **検証**: Python で ld+json 抽出→Liquid擬似展開→`json.loads` 成功・未解決変数ゼロを確認（bundler未導入のため実Jekyllビルド検証は未実施＝要・公開前確認）。
 
 **関連ファイル**
+
 - `index.html`（head限定）/ `_config.yml`
 
 ---
@@ -175,6 +192,7 @@ updated: 2026-07-14
 - **見送り（記録）**: jekyll-seo-tag 導入（手動実装で全要素カバー済み・冗長）/ img alt（img要素なし、SVGは aria-hidden 済み）。
 
 **関連ファイル**
+
 - `404.html`（新規） / `_config.yml`
 
 ---
@@ -192,6 +210,7 @@ updated: 2026-07-14
 - 検証: CSS/JS は merge 後 `minify.yml` が自動再生成。
 
 **関連ファイル**
+
 - `assets/js/app.js` / `assets/css/style.css` / `_config.yml` / `index.html` / `DESIGN.md` / `README.md`
 
 ---
@@ -228,6 +247,7 @@ updated: 2026-07-14
 - 検証: `python scripts/extract_daily_data.py` 正常実行（tide_widget.json/moon_today.json生成、tide_today/3dayは再生成されず）/ pytest 35件通過。
 
 **関連ファイル**
+
 - `.gitignore` / `CLAUDE.md` / `README.md`
 - `scripts/extract_daily_data.py`
 - 削除: `data/tide_2day.json` / `data/tide_data.json` / `data/tide_today.json` / `data/tide_3day.json` / `scripts/fetch_tide.py` / `.github/workflows/update-tide-data.yml`
@@ -247,6 +267,7 @@ updated: 2026-07-14
 - 検証: pytest 35件通過 / Jekyll描画シミュレートで元と完全一致 / minify後もフォールバック保持。
 
 **関連ファイル**
+
 - `_data/site.json`（新規）/ `assets/js/site-config.js`（新規）/ `FORK.md`（新規）
 - `index.html` / `assets/js/app.js`・`app.min.js`
 - `scripts/_common.py` ほか fetch/generate 系7本
@@ -265,6 +286,7 @@ updated: 2026-07-14
 - **その他の値は全て正しいことを確認**: forecast 140000(神奈川県) / area 140010(東部) / 警報 1420700(茅ヶ崎市)・JPTF / 潮汐 D8(湘南港) / 波浪 20・19 / 津波 330(相模湾・三浦半島) / 座標 35.3175,139.4151。
 
 **関連ファイル**
+
 - `_data/site.json` / `scripts/fetch_openmeteo.py` / `scripts/generate_tide.py`
 - `README.md` / `FORK.md`
 
@@ -286,6 +308,7 @@ updated: 2026-07-14
 - `sw.js`：`CACHE_NAME` `'chigalog-v6'` → `'chigalog-v7'`。
 
 **関連ファイル**
+
 - `index.html`
 - `assets/js/app.js` / `app.min.js`
 - `assets/css/style.css` / `style.min.css`
@@ -308,6 +331,7 @@ updated: 2026-07-14
 - 経緯メモ：#92（cache-buster＋TTL短縮）, #93（東部140010併合）は bosai が空データだったため無効と判明。真因特定後 #94 で BFF へ切替し解決。
 
 **関連ファイル**
+
 - `scripts/fetch_warning.py`（新規）
 - `assets/js/app.js` / `app.min.js`
 - `.github/workflows/fetch_openmeteo.yml`
@@ -327,6 +351,7 @@ updated: 2026-07-14
 - `.github/workflows/fetch_openmeteo.yml`：`data/wind_forecast.json` を `git add` 対象に追加
 
 **関連ファイル**
+
 - `scripts/fetch_openmeteo.py`
 - `assets/js/app.js` / `app.min.js`
 - `assets/css/style.css` / `style.min.css`
@@ -342,6 +367,7 @@ updated: 2026-07-14
 - `CACHE_NAME`：`'chigalog-v2'` → `'chigalog-v3'` にバンプし旧 SW を強制更新
 
 **関連ファイル**
+
 - `sw.js`
 
 ---
@@ -356,6 +382,7 @@ updated: 2026-07-14
 - `app.js`：`visibilitychange`（10分超→自動fetch、3分超→トースト）＋ `pageshow`（bfcache復帰→強制fetch）追加
 
 **関連ファイル**
+
 - `site.webmanifest`
 - `index.html`
 - `sw.js`
@@ -378,6 +405,7 @@ updated: 2026-07-14
 - 潮汐テキスト表示（数値）は当日分のみ維持
 
 **関連ファイル**
+
 - `assets/js/app.js`
 - `index.html`
 - `scripts/extract_daily_data.py`
@@ -395,5 +423,6 @@ updated: 2026-07-14
 - CSP は変更せず（同一オリジン fetch のみで現状正しい）。GitHub Actions cron も不変
 
 **関連ファイル**
+
 - `index.html` / `assets/js/app.js` / `assets/css/style.css` / `_data/site.json`
 - `_includes/icons/` / `Gemfile` / `_config.yml` / `.gitignore`

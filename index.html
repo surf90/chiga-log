@@ -281,30 +281,6 @@ lang: ja
             </div>
           </div>
 
-          <div
-            class="weather-box heatstroke-box hidden"
-            id="heatstroke-box"
-            role="status"
-            aria-live="polite"
-          >
-            <h2>
-              {% include icons/alert.svg %}<span class="section-label"
-                >HEAT</span
-              ><span id="heatstroke-title">熱中症警戒アラート</span
-              ><span id="heatstroke-source" class="section-source"
-                >環境省・気象庁</span
-              >
-            </h2>
-            <div id="heatstroke-list"></div>
-            <p class="note">
-              ※<a
-                href="https://www.wbgt.env.go.jp/alert.php"
-                target="_blank"
-                rel="noopener noreferrer"
-                >環境省 熱中症予防情報サイト</a
-              >の発表情報です。
-            </p>
-          </div>
           <p id="tsunami-error" class="stale-inline" hidden>
             ※津波情報を取得できませんでした。気象庁HPでご確認ください。
           </p>
@@ -541,6 +517,31 @@ lang: ja
             <div id="jma-warning-error" class="section-error" data-nosnippet>
               注意報情報の取得に失敗しました。
             </div>
+          </div>
+
+          <div
+            class="weather-box heatstroke-box hidden"
+            id="heatstroke-box"
+            role="status"
+            aria-live="polite"
+          >
+            <h2>
+              {% include icons/alert.svg %}<span class="section-label"
+                >HEAT</span
+              ><span id="heatstroke-title">熱中症警戒アラート</span
+              ><span id="heatstroke-source" class="section-source"
+                >環境省・気象庁</span
+              >
+            </h2>
+            <div id="heatstroke-list"></div>
+            <p class="note">
+              ※<a
+                href="https://www.wbgt.env.go.jp/alert.php"
+                target="_blank"
+                rel="noopener noreferrer"
+                >環境省 熱中症予防情報サイト</a
+              >の発表情報です。
+            </p>
           </div>
 
           <div class="weather-box" id="jma-forecast-box">
