@@ -8,7 +8,7 @@
 //   3. チャート共通 (X軸構築、スクロール同期、Nowライン)
 //   4. 潮汐 (calculateTide, fetchTideExtremes, drawTideChart)
 //   5. 波 (fetchWaveGuidance, drawWaveCombinedChart)
-//   6. 警報・注意報 (fetchJmaWarning)
+//   6. 警報・注意報 / 熱中症情報 (fetchJmaWarning, fetchHeatstrokeAlert)
 //   7. 天気予報 (fetchJmaForecast)
 //   8. 風予報 (fetchWindForecast)
 //   9. 統合フェッチ (fetchWeatherData)
@@ -1022,6 +1022,71 @@ async function fetchJmaWarning(force = false) {
   }
 }
 
+/** 発表対象日を「今日」「明日」または月日で表示する。 */
+function heatstrokeDateLabel(date) {
+  const today = toJstDateStr(new Date());
+  const tomorrow = toJstDateStr(new Date(Date.now() + 24 * 3600e3));
+  if (date === today) return "今日";
+  if (date === tomorrow) return "明日";
+  const [, month, day] = (date || "").split("-");
+  return month && day ? `${Number(month)}月${Number(day)}日` : date;
+}
+
+async function fetchHeatstrokeAlert(force = false) {
+  const box = document.getElementById("heatstroke-box");
+  const list = document.getElementById("heatstroke-list");
+  const title = document.getElementById("heatstroke-title");
+  const source = document.getElementById("heatstroke-source");
+  if (!box || !list || !title || !source) return;
+  try {
+    const data = await fetchCached(
+      "data/heatstroke_alert.json",
+      "cache_heatstroke_alert",
+      { ttlMs: 30 * 60 * 1000, force },
+    );
+    const today = toJstDateStr(new Date());
+    const tomorrow = toJstDateStr(new Date(Date.now() + 24 * 3600e3));
+    const alerts = (data.alerts ?? []).filter(
+      (alert) =>
+        (alert.level === "warning" || alert.level === "special") &&
+        (alert.date === today || alert.date === tomorrow),
+    );
+    if (alerts.length === 0) {
+      box.classList.add("hidden");
+      box.classList.remove("heatstroke-special");
+      return;
+    }
+
+    const hasSpecial = alerts.some((alert) => alert.level === "special");
+    title.textContent = hasSpecial
+      ? "熱中症特別警戒アラート"
+      : "熱中症警戒アラート";
+    source.textContent = hasSpecial ? "環境省" : "環境省・気象庁";
+    box.classList.toggle("heatstroke-special", hasSpecial);
+    list.innerHTML = "";
+    alerts.forEach((alert) => {
+      const item = document.createElement("div");
+      item.className = "heatstroke-item";
+      const date = document.createElement("div");
+      date.className = "heatstroke-date";
+      date.textContent = `${heatstrokeDateLabel(alert.date)}（${alert.date}） 神奈川県に発表中`;
+      const message = document.createElement("p");
+      message.className = "heatstroke-message";
+      message.textContent =
+        alert.level === "special"
+          ? "危険な暑さから、自分と周りの人の命を守る行動をしてください。"
+          : "涼しい環境で過ごし、こまめに水分・塩分を補給してください。";
+      item.append(date, message);
+      list.appendChild(item);
+    });
+    box.classList.remove("hidden");
+  } catch (error) {
+    console.warn("Heatstroke alert fetch failed", error);
+    box.classList.add("hidden");
+    box.classList.remove("heatstroke-special");
+  }
+}
+
 // ─── 6.5 津波注意報・警報（相模湾・三浦半島） ──────────────────
 // 注: 気象庁 bosai 津波フィードはCORS対応のためクライアントから直接取得する。
 // 相模湾・三浦半島(予報区コード330)に津波注意報/警報が出ている時だけカード表示。
@@ -1368,12 +1433,13 @@ async function fetchWeatherData(isManual = false) {
   try {
     // 各セクションは相互依存がないため全fetchを並行実行（初期表示を高速化）。
     // 部分失敗はセクション単位のエラーUIで吸収する。
-    const [, , , , , , , wmResult] = await Promise.allSettled([
+    const [, , , , , , , , wmResult] = await Promise.allSettled([
       calculateTide(isManual),
       fetchTideExtremes(isManual),
       fetchJmaForecast(isManual),
       fetchJmaWarning(isManual),
       fetchTsunami(isManual),
+      fetchHeatstrokeAlert(isManual),
       fetchWaveGuidance(isManual),
       fetchWindForecast(isManual),
       fetchCached("data/weather_marine.json", "cache_weather_marine", {
@@ -1547,7 +1613,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const ALERT_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
   setInterval(() => {
     if (document.visibilityState === "visible") {
-      Promise.allSettled([fetchJmaWarning(), fetchTsunami()]);
+      Promise.allSettled([
+        fetchJmaWarning(),
+        fetchTsunami(),
+        fetchHeatstrokeAlert(),
+      ]);
     }
   }, ALERT_REFRESH_INTERVAL_MS);
   // 背景タブで間引かれるsetIntervalを避け、経過時間を見て再帰実行

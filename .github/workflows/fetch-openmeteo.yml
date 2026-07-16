@@ -3,7 +3,7 @@ name: Fetch Open-Meteo Data
 on:
   schedule:
     # 30分ごと (UTC)
-    - cron: '*/30 * * * *'
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 
 concurrency:
@@ -24,16 +24,18 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: Run fetch script
         run: python scripts/fetch_openmeteo.py
       - name: Fetch JMA warnings (BFF)
         run: python scripts/fetch_warning.py
+      - name: Fetch heatstroke alerts
+        run: python scripts/fetch_heatstroke_alert.py
       - name: Commit and push if changed
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add data/weather_marine.json data/wind_forecast.json data/warning_chigasaki.json
+          git add data/weather_marine.json data/wind_forecast.json data/warning_chigasaki.json data/heatstroke_alert.json
           if ! git diff --quiet || ! git diff --staged --quiet; then
             git commit -m "Update Open-Meteo data"
             for i in 1 2 3; do

@@ -100,6 +100,12 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
 - `.floating-alert.level-tokubetsu { background:#7c3aed; }`（特別警報）。通常警報は `#c0392b` 系、注意報は橙系。
 
+### 熱中症警戒アラートカード
+
+- `#heatstroke-box`: 神奈川県に正式発表中の場合だけ、コンテンツ上部へ表示。未発表・取得失敗・対象日外はカードごと非表示。
+- 通常の熱中症警戒アラートは標準の `.weather-box` を維持し、常態化する夏季に過度な強調をしない。
+- 熱中症特別警戒アラートだけ `.heatstroke-special` を付け、橙枠（ライト `#d97706`／ダーク `#f59e0b`）と薄い橙背景にする。
+
 ### 津波カード（`#tsunami-box`）
 
 - 相模湾・三浦半島（予報区330）に津波注意報/警報発表時のみ、ページ最上部に表示（通常は `hidden`）。`.warning-active` の赤枠・赤背景を流用。
