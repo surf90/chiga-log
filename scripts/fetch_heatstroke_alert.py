@@ -14,13 +14,15 @@ HEADER_MARKER = "府県予報区"
 
 
 def candidate_urls(now: datetime) -> list[str]:
-    """新しい順に、既に生成時刻を迎えたCSVのURLを返す。"""
+    """新しい順に、発表30分前を迎えたCSVのURLを返す。"""
     candidates = []
     for offset in (0, -1):
         day = (now + timedelta(days=offset)).date()
         for hour in SCHEDULE_HOURS:
             scheduled = datetime.combine(day, datetime.min.time(), tzinfo=now.tzinfo).replace(hour=hour)
-            if scheduled <= now:
+            # 公式CSVは発表時刻のおよそ30分前に生成される。先に取得しておき、
+            # 表示開始はpublishedAtで制御してActionsの遅延を吸収する。
+            if scheduled <= now + timedelta(minutes=30):
                 name = f"alert_{day:%Y%m%d}_{hour:02d}.csv"
                 candidates.append((scheduled, f"{BASE_URL}/{day:%Y}/{name}"))
     return [url for _, url in sorted(candidates, reverse=True)]
@@ -40,18 +42,24 @@ def parse_alert_csv(text: str, source: str) -> dict:
     if area is None:
         raise ValueError("神奈川県の行が見つかりません")
 
+    report_date = metadata.get("ReportDate", "").replace("/", "-")
+    report_time = metadata.get("ReportTime", "")
     alerts = []
     for suffix in ("1", "2"):
         flag = area.get(f"TargetDate{suffix}フラグ", "")
         if flag not in {"1", "3"}:
             continue
-        alerts.append({
-            "date": metadata.get(f"TargetDate{suffix}", "").replace("/", "-"),
-            "level": "special" if flag == "3" else "warning",
-        })
+        target_date = metadata.get(f"TargetDate{suffix}", "").replace("/", "-")
+        level = "special" if flag == "3" else "warning"
+        if level == "special":
+            published_day = datetime.fromisoformat(target_date).date() - timedelta(days=1)
+            published_at = f"{published_day.isoformat()}T14:00:00+09:00"
+        elif target_date == report_date:
+            published_at = f"{target_date}T05:00:00+09:00"
+        else:
+            published_at = f"{report_date}T17:00:00+09:00"
+        alerts.append({"date": target_date, "level": level, "publishedAt": published_at})
 
-    report_date = metadata.get("ReportDate", "").replace("/", "-")
-    report_time = metadata.get("ReportTime", "")
     return {
         "fetchedAt": now_jst().isoformat(timespec="seconds"),
         "reportDateTime": f"{report_date}T{report_time}+09:00" if report_date and report_time else "",

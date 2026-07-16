@@ -19,8 +19,16 @@ TargetDate2,2026/07/17,,,,,,,,,
 def test_parse_alert_csv_extracts_only_formal_alerts():
     data = parse_alert_csv(sample_csv(), "https://example.test/alert.csv")
     assert data["alerts"] == [
-        {"date": "2026-07-16", "level": "warning"},
-        {"date": "2026-07-17", "level": "special"},
+        {
+            "date": "2026-07-16",
+            "level": "warning",
+            "publishedAt": "2026-07-16T05:00:00+09:00",
+        },
+        {
+            "date": "2026-07-17",
+            "level": "special",
+            "publishedAt": "2026-07-16T14:00:00+09:00",
+        },
     ]
 
 
@@ -33,3 +41,9 @@ def test_candidate_urls_uses_previous_day_before_five_am():
     now = datetime(2026, 7, 17, 0, 30, tzinfo=ZoneInfo("Asia/Tokyo"))
     urls = candidate_urls(now)
     assert urls[0].endswith("/2026/alert_20260716_17.csv")
+
+
+def test_candidate_urls_prefetches_csv_during_thirty_minute_lead():
+    now = datetime(2026, 7, 16, 13, 35, tzinfo=ZoneInfo("Asia/Tokyo"))
+    urls = candidate_urls(now)
+    assert urls[0].endswith("/2026/alert_20260716_14.csv")

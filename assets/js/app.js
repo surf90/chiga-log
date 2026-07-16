@@ -1039,17 +1039,24 @@ async function fetchHeatstrokeAlert(force = false) {
   const source = document.getElementById("heatstroke-source");
   if (!box || !list || !title || !source) return;
   try {
-    const data = await fetchCached(
-      "data/heatstroke_alert.json",
-      "cache_heatstroke_alert",
-      { ttlMs: 30 * 60 * 1000, force },
+    // 発表時刻（5時・14時・17時）直後に、発表前のsessionStorageが
+    // 最大30分残らないよう、5分粒度のURLで同一オリジンJSONを直接取得する。
+    const bust = Math.floor(Date.now() / (5 * 60 * 1000));
+    const response = await fetchWithTimeout(
+      `data/heatstroke_alert.json?t=${bust}`,
+      { force },
     );
+    if (!response.ok)
+      throw new Error(`heatstroke alert returned ${response.status}`);
+    const data = await response.json();
     const today = toJstDateStr(new Date());
     const tomorrow = toJstDateStr(new Date(Date.now() + 24 * 3600e3));
+    const now = Date.now();
     const alerts = (data.alerts ?? []).filter(
       (alert) =>
         (alert.level === "warning" || alert.level === "special") &&
-        (alert.date === today || alert.date === tomorrow),
+        (alert.date === today || alert.date === tomorrow) &&
+        (!alert.publishedAt || Date.parse(alert.publishedAt) <= now),
     );
     if (alerts.length === 0) {
       box.classList.add("hidden");
