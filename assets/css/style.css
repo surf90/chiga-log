@@ -299,12 +299,16 @@ h1 .title-sub {
 .weather-box.warning-active::before {
   display: none;
 }
+.weather-box.heatstroke-box {
+  border: 2px solid #eab308;
+  background: #fefce8;
+}
+.weather-box.heatstroke-box::before {
+  display: none;
+}
 .weather-box.heatstroke-special {
   border: 2px solid #d97706;
   background: #fffbeb;
-}
-.weather-box.heatstroke-special::before {
-  display: none;
 }
 .heatstroke-date {
   color: var(--text-main);
@@ -878,6 +882,10 @@ p.note strong a {
   .weather-box.heatstroke-special {
     background: #422006;
     border-color: #f59e0b;
+  }
+  .weather-box.heatstroke-box:not(.heatstroke-special) {
+    background: #35300b;
+    border-color: #facc15;
   }
   .weather-box {
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
