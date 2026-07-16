@@ -83,11 +83,13 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
 - `body::before` で白〜水色の控えめなラジアル光と下部の海色フェードを重ねる。ダークモードでは低彩度の青い光に置換する。装飾は固定背景で、コンテンツを遮らない（`pointer-events:none`, `z-index:-1`）。
 - コンテナ: `max-width:600px` / `padding:34px 24px 28px` / `border-radius:16px` / `background:var(--container-bg)` / `box-shadow:var(--container-shadow)` / 上端に 4px のブランドグラデーションバー。
+- ヘッダー / フッター: `--brand-soft` と半透明の白を重ねた軽量なグラデーション面、`1px solid var(--hairline)`、`border-radius:12px`、薄い影でコンテンツから穏やかに分離する。追加の画像や JavaScript は使わない。
 
 ### カード / ボックス
 
 - ヒーローカード: ブランドグラデ背景・文字 `#fff`・`border-radius:12px`・`padding:15px 8px 13px`・薄い白境界・影。hover は `translateY(-2px)` と影の増加。
 - 情報ボックス: `background:var(--box-bg)`・`border:1px solid var(--box-border)`・`border-radius:10px`・`padding:20px 24px`・薄い影・左端 3px のブランドグラデーションバー。
+- 初期表示: ヘッダー、データカード、フッターを `opacity` と `translateY(8px)` のみで短くフェードアップする。偶数番目のカードだけ `0.04s` 遅らせ、過度な待ち時間を作らない。`prefers-reduced-motion: reduce` では既存の全体ルールにより実質無効化する。
 
 ### ボタン
 
