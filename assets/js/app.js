@@ -716,6 +716,24 @@ async function fetchWaveGuidance(force = false) {
   }
 }
 
+/**
+ * 波高軸の下限・上限・目盛り間隔を決める。
+ *
+ * 0 を基準に、0.5 の倍数で上限と刻みを取る。自動スケールに任せると
+ * 凪の日（例: 1.5〜1.6m）に 0.03 刻みの目盛りが作られ、0.1m 単位の
+ * 表示で同じラベルが並ぶうえ、わずかな差が大波のように誇張される。
+ *
+ * @param {number[]} values 波高の配列 [m]
+ * @returns {{min: number, max: number, stepSize: number}} 軸設定
+ */
+function waveAxisBounds(values) {
+  const valid = values.filter((v) => Number.isFinite(v));
+  const dataMax = valid.length ? Math.max(...valid) : 0;
+  const stepSize = [0.5, 1, 2, 5].find((s) => dataMax <= s * 4) ?? 10;
+  const max = Math.max(stepSize, Math.ceil(dataMax / stepSize) * stepSize);
+  return { min: 0, max, stepSize };
+}
+
 function drawWaveCombinedChart(canvasId, existingInstance, data) {
   if (existingInstance) {
     existingInstance.destroy();
@@ -726,6 +744,7 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
     x: new Date(d.time).getTime(),
     y: d.wave_height,
   }));
+  const waveAxis = waveAxisBounds(heightData.map((d) => d.y));
   const periodData = data.map((d) => ({
     x: new Date(d.time).getTime(),
     y: d.period,
@@ -815,9 +834,11 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
           type: "linear",
           position: "left",
           title: { display: false },
+          min: waveAxis.min,
+          max: waveAxis.max,
           ticks: {
             padding: 0,
-            maxTicksLimit: 4,
+            stepSize: waveAxis.stepSize,
             callback: (v) => v.toFixed(1),
           },
           grid: { color: "rgba(0,0,0,0.05)", drawTicks: false, tickLength: 0 },
