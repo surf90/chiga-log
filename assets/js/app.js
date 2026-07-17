@@ -716,22 +716,42 @@ async function fetchWaveGuidance(force = false) {
   }
 }
 
+// 波高軸が取りうる最小の表示幅 [m]。下限をデータに追従させると凪の日に
+// 0.1m の差が画面全高に引き伸ばされ大波と誤読されるため、この幅までは
+// 必ず軸を広げて変動の小ささが見た目に残るようにする。
+const WAVE_MIN_SPAN_M = 1.0;
+
 /**
  * 波高軸の下限・上限・目盛り間隔を決める。
  *
- * 0 を基準に、0.5 の倍数で上限と刻みを取る。自動スケールに任せると
- * 凪の日（例: 1.5〜1.6m）に 0.03 刻みの目盛りが作られ、0.1m 単位の
- * 表示で同じラベルが並ぶうえ、わずかな差が大波のように誇張される。
+ * データ範囲を含む 0.5 の倍数へ丸めた下限・上限を取り、目盛りは常に
+ * 0.5 の倍数刻みにする。Chart.js の自動スケールに任せると凪の日
+ * （例: 1.5〜1.6m）に 0.03 刻みの目盛りが作られ、0.1m 単位の表示で
+ * 同じラベルが並ぶ。下限は 0 を下回らない。
  *
  * @param {number[]} values 波高の配列 [m]
  * @returns {{min: number, max: number, stepSize: number}} 軸設定
  */
 function waveAxisBounds(values) {
+  const round = (v) => Math.round(v * 100) / 100;
   const valid = values.filter((v) => Number.isFinite(v));
-  const dataMax = valid.length ? Math.max(...valid) : 0;
-  const stepSize = [0.5, 1, 2, 5].find((s) => dataMax <= s * 4) ?? 10;
-  const max = Math.max(stepSize, Math.ceil(dataMax / stepSize) * stepSize);
-  return { min: 0, max, stepSize };
+  if (valid.length === 0)
+    return { min: 0, max: WAVE_MIN_SPAN_M, stepSize: 0.5 };
+
+  const dataMin = Math.min(...valid);
+  const dataMax = Math.max(...valid);
+  const span = Math.max(dataMax - dataMin, WAVE_MIN_SPAN_M);
+  const stepSize = [0.5, 1, 2, 5].find((s) => span <= s * 4) ?? 10;
+
+  let min = Math.max(0, Math.floor(dataMin / stepSize) * stepSize);
+  let max = Math.ceil(dataMax / stepSize) * stepSize;
+  // 最小表示幅を満たすまで広げる。0 に近い側を優先して伸ばし、
+  // 下限が 0 に達したら上限側へ回す。
+  while (max - min < WAVE_MIN_SPAN_M - 1e-9) {
+    if (min > 0) min = Math.max(0, min - stepSize);
+    else max += stepSize;
+  }
+  return { min: round(min), max: round(max), stepSize };
 }
 
 function drawWaveCombinedChart(canvasId, existingInstance, data) {
