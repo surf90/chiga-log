@@ -1,7 +1,7 @@
 {
-  "fetchedAt": "2026-07-25T15:58:54+09:00",
-  "reportDateTime": "2026-07-25T14:00:00+09:00",
-  "source": "https://www.wbgt.env.go.jp/alert/dl/2026/alert_20260725_14.csv",
+  "fetchedAt": "2026-07-25T17:09:50+09:00",
+  "reportDateTime": "2026-07-25T17:00:00+09:00",
+  "source": "https://www.wbgt.env.go.jp/alert/dl/2026/alert_20260725_17.csv",
   "area": "神奈川県",
   "prefectureCode": "14",
   "alerts": [
@@ -9,6 +9,11 @@
       "date": "2026-07-25",
       "level": "warning",
       "publishedAt": "2026-07-25T05:00:00+09:00"
+    },
+    {
+      "date": "2026-07-26",
+      "level": "warning",
+      "publishedAt": "2026-07-25T17:00:00+09:00"
     }
   ]
 }
