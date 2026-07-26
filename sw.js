@@ -1,4 +1,4 @@
-const CACHE_NAME = "chigalog-v12";
+const CACHE_NAME = "chigalog-v13";
 const BASE = self.location.pathname.replace(/sw\.js$/, "");
 const ASSETS = [
   BASE,
@@ -27,12 +27,17 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
-  if (
-    e.request.method !== "GET" ||
-    !e.request.url.startsWith(self.location.origin)
-  )
+  if (e.request.method !== "GET") return;
+  // 前方一致で判定すると同一オリジンを接頭辞に持つ別ドメイン
+  // (例: https://example.github.io.attacker.test/) まで自オリジン扱いに
+  // なるため、URLを解析してオリジンを厳密比較する。
+  let url;
+  try {
+    url = new URL(e.request.url);
+  } catch {
     return;
-  const url = new URL(e.request.url);
+  }
+  if (url.origin !== self.location.origin) return;
 
   // データJSON(?t=, ?d= 等のキャッシュバスター付き)は鮮度最優先。
   // Cache Storage 肥大化を避けるため put せず、オフライン時のみキャッシュ退避を試す。

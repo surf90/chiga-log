@@ -1,10 +1,30 @@
 ---
-updated: 2026-07-16
+updated: 2026-07-26
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-07-26）
+
+### 不具合・脆弱性の修正
+
+- **Webフォントが適用されない（CSP違反）**: `index.html` のフォント用 `<link>` が `onload="this.media='all'"` を使っていたが、CSP `script-src 'self'`（`script-src-attr` がフォールバック）下ではインラインイベントハンドラが実行されずブロックされていた。属性を `data-media-onload="all"` に変え、`app.js` の `applyDeferredStyles()` が読込完了後に `media` を切り替える方式へ移行（非ブロック読込は維持）。
+- **更新が恒久停止する競合**: `fetchWeatherData()` が `_isFetching = true` の後、`try` の外でDOM操作していたため、そこで例外が出ると `finally` に到達せずフラグが立ちっぱなしになり、以後の自動更新・手動更新・可視化復帰がすべて無視されていた。事前UI更新を `try` 内へ移し、要素をnullガード。
+- **潮汐・津波の時刻が閲覧端末のTZ依存**: 満潮・干潮時刻とグラフラベル（`toLocaleTimeString`）、津波の第一波到達時刻（`getHours`）が端末TZで描画され、JST以外の端末で誤った時刻を表示していた。`formatJstHhMm()` を追加しJST固定に統一。
+- **Service Workerのオリジン判定が前方一致**: `url.startsWith(self.location.origin)` は `https://<origin>.attacker.test/` のような別ドメインも自オリジンと誤判定するため、`URL` を解析して `origin` を厳密比較する方式へ変更（解析不能なURLは素通し）。
+- **波浪ガイダンスの日付算出**: `new Date(new Date().toLocaleString("en-US", …))` はロケール文字列の再パースが実装依存（Invalid Date になり得る）だったため、既存の `toJstDateStr()` によるJSTオフセット加算へ統一。`data[].time` の型チェックも追加。
+- **その他の堅牢化**: 月齢のNaN/範囲外を不採用（`月齢: NaN` 表示の防止）、風向の負値・非数値・null正規化（`undefined` / 誤った「北」表示の防止）、`fetchTsunami` / `showToast` / `hideToast` / `calculateTide` の要素nullガード、`syncChartScroll` が要素未生成時に同期を恒久無効化する問題の修正。
+- **データ生成スクリプト**: `extract_moon_today()` がNASA月齢JSONのキー欠落・非数値で `KeyError` を投げ、後続の `tide_widget.json` 生成まで巻き添えで落ちていたため、`None` を返してフォールバック経路に載せるよう修正（単体テスト3件追加）。
+- **ESLint設定**: `npx eslint .` がLiquidテンプレート `assets/js/site-config.js` でパースエラーになっていたため、生成物・ベンダを `ignores` に追加（CIは `app.js` 個別指定のため従来から緑）。
+- **PWA反映**: Service Workerのキャッシュ名を `chigalog-v12` → `chigalog-v13` へ更新し、キャッシュ優先の `app.min.js` / `index.html` が旧版のまま残らないようにした。
+- **検証**: pytest 48件、ESLint、Prettier `--check`、`node --check`、Worker単体テスト3件すべて成功。
+
+**関連ファイル**
+
+- `index.html` / `assets/js/app.js` / `sw.js` / `eslint.config.js`
+- `scripts/extract_daily_data.py` / `tests/test_extract_daily_data.py`
 
 ## 完了済み（2026-07-16）
 

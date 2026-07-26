@@ -159,6 +159,16 @@ function markStale(noteElId, iso, thresholdMs) {
   }
 }
 
+/** Dateを JST の "HH:MM" に整形する（ブラウザTZ非依存）。 */
+function formatJstHhMm(date) {
+  const jst = new Date(date.getTime() + JST_OFFSET_MS);
+  return (
+    String(jst.getUTCHours()).padStart(2, "0") +
+    ":" +
+    String(jst.getUTCMinutes()).padStart(2, "0")
+  );
+}
+
 /** ミリ秒(epoch)を JST の "H:MM" に整形する共通関数。 */
 function formatJstHm(ms) {
   const h = (new Date(ms).getUTCHours() + 9) % 24;
@@ -191,7 +201,38 @@ function setText(id, text) {
   if (el) el.textContent = text;
 }
 
+/**
+ * `media="print"` で先読みしたCSS（Webフォント）を、読み込み完了後に
+ * `data-media-onload` の値へ切り替えて適用する。
+ *
+ * CSP `script-src 'self'` 下ではインラインの onload 属性が実行されない
+ * （script-src-attr は script-src にフォールバックする）ため、従来の
+ * `onload="this.media='all'"` はブロックされフォントが当たらなかった。
+ * defer 実行時点で既に読み込み済み（link.sheet あり）なら即時適用する。
+ */
+function applyDeferredStyles() {
+  document.querySelectorAll("link[data-media-onload]").forEach((link) => {
+    const media = link.dataset.mediaOnload;
+    if (!media) return;
+    if (link.sheet) {
+      link.media = media;
+      return;
+    }
+    link.addEventListener(
+      "load",
+      () => {
+        link.media = media;
+      },
+      { once: true },
+    );
+  });
+}
+
 function getWindDirection16(degree) {
+  // null/空文字は Number() で 0 になり「北」と誤表示されるため先に弾く。
+  if (degree == null || degree === "") return "--";
+  const deg = Number(degree);
+  if (!Number.isFinite(deg)) return "--";
   const directions = [
     "北",
     "北北東",
@@ -210,7 +251,8 @@ function getWindDirection16(degree) {
     "北西",
     "北北西",
   ];
-  return directions[Math.round(degree / 22.5) % 16];
+  // 負値・360超も 0-15 に正規化する（負の剰余で undefined になるのを防ぐ）
+  return directions[((Math.round(deg / 22.5) % 16) + 16) % 16];
 }
 
 function getWindDirectionJma(num) {
@@ -321,10 +363,12 @@ function setChartContainerWidth(containerId, px) {
 
 function syncChartScroll() {
   if (chartScrollSynced) return;
-  chartScrollSynced = true;
   const tideScroll = document.getElementById("tide-chart-scroll");
   const waveScroll = document.getElementById("wave-chart-scroll");
+  // 片方が未生成の段階で呼ばれても恒久的に同期を無効化しないよう、
+  // 両要素が揃ってから「登録済み」フラグを立てる。
   if (!tideScroll || !waveScroll) return;
+  chartScrollSynced = true;
   let syncing = false;
   tideScroll.addEventListener(
     "scroll",
@@ -379,8 +423,10 @@ async function calculateTide(force = false) {
     });
     if (resp.ok) {
       const moonToday = await resp.json();
-      if (moonToday.age !== undefined) {
-        age = parseFloat(moonToday.age);
+      const nasaAge = parseFloat(moonToday.age);
+      // NaN や範囲外は採用せず計算値のまま（"月齢: NaN" 表示を防ぐ）
+      if (Number.isFinite(nasaAge) && nasaAge >= 0 && nasaAge < 30) {
+        age = nasaAge;
         ageSource = "NASA";
       }
     }
@@ -408,6 +454,7 @@ async function calculateTide(force = false) {
       ? `月齢: ${age.toFixed(1)}`
       : `月齢: ${age.toFixed(1)} / 計算値`;
   const tideTypeEl = document.getElementById("tide-type");
+  if (!tideTypeEl) return;
   tideTypeEl.textContent = "";
   tideTypeEl.appendChild(document.createTextNode(tideType + " "));
   const ageSpan = document.createElement("span");
@@ -435,7 +482,7 @@ function showTideError() {
 }
 
 async function fetchTideExtremes(force = false) {
-  document.getElementById("tide-status").textContent = "読み込み中...";
+  setText("tide-status", "読み込み中...");
 
   if (!window.location.protocol.startsWith("http")) {
     showTideError();
@@ -489,10 +536,8 @@ function displayTideData(extremes, chartExtremes) {
     lowTides = [];
   extremes.forEach((item) => {
     const dateObj = new Date(item.time);
-    const timeStr = dateObj.toLocaleTimeString("ja-JP", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    // 潮汐データはJST基準。閲覧端末のTZに引きずられないよう固定で整形する。
+    const timeStr = formatJstHhMm(dateObj);
     (item.type === "high" ? highTides : lowTides).push({
       timeStr,
       height: item.height,
@@ -532,10 +577,7 @@ function displayTideData(extremes, chartExtremes) {
   let hasHeightData = false;
   chartData.forEach((item) => {
     const dateObj = new Date(item.time);
-    const timeStr = dateObj.toLocaleTimeString("ja-JP", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const timeStr = formatJstHhMm(dateObj);
     let heightValue = item.type === "high" ? 1 : 0;
     if (item.height != null) {
       hasHeightData = true;
@@ -678,25 +720,21 @@ async function fetchWaveGuidance(force = false) {
       throw new Error(`wave_guid_${WAVE_GUID_AREA}.json の読み込みに失敗`);
     const json = await resp.json();
 
-    const todayJst = new Date(
-      new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }),
-    );
+    // ロケール文字列の再パース（実装依存でInvalid Dateになり得る）を避け、
+    // JSTオフセット加算による日付算出で統一する。
     const dateStrs = [];
     for (let i = 0; i < CHART_DAYS; i++) {
-      const d = new Date(todayJst);
-      d.setDate(d.getDate() + i);
-      dateStrs.push(
-        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
-      );
+      dateStrs.push(toJstDateStr(new Date(Date.now() + i * 86400000)));
     }
-    const nextDayJst = new Date(todayJst);
-    nextDayJst.setDate(nextDayJst.getDate() + CHART_DAYS);
-    const nextDayStr = `${nextDayJst.getFullYear()}-${String(nextDayJst.getMonth() + 1).padStart(2, "0")}-${String(nextDayJst.getDate()).padStart(2, "0")}`;
+    const nextDayStr = toJstDateStr(
+      new Date(Date.now() + CHART_DAYS * 86400000),
+    );
 
     const todayData = (json.data || []).filter(
       (d) =>
-        dateStrs.some((s) => d.time.startsWith(s)) ||
-        d.time.startsWith(nextDayStr + "T00:00"),
+        typeof d?.time === "string" &&
+        (dateStrs.some((s) => d.time.startsWith(s)) ||
+          d.time.startsWith(nextDayStr + "T00:00")),
     );
     if (todayData.length === 0) throw new Error("本日の波浪データがありません");
 
@@ -1150,16 +1188,18 @@ function tsunamiLevelFromCode(code) {
   return { cls: "", show: false }; // 71:津波予報 や解除相当は非表示
 }
 
-/** ISO日時を HH:MM 形式に整形する。失敗時は空文字。*/
+/** ISO日時を JST の HH:MM 形式に整形する。失敗時は空文字。*/
 function formatTsunamiTime(iso) {
   if (!iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  // 気象庁の到達予想時刻はJST。閲覧端末のTZで表示すると誤読を招くため固定。
+  return formatJstHhMm(d);
 }
 
 async function fetchTsunami(force = false) {
   const box = document.getElementById("tsunami-box");
+  if (!box) return;
   const errEl = document.getElementById("tsunami-error");
   if (errEl) errEl.hidden = true; // 平常時・成功時は失敗注記を消す
   try {
@@ -1457,28 +1497,31 @@ async function fetchWeatherData(isManual = false) {
   if (_isFetching) return;
   _isFetching = true;
   const timeEl = document.getElementById("current-time");
-  if (timeEl.textContent !== "") {
-    timeEl.textContent = "データを更新中... ⏳";
-    const wc = document.getElementById("weather-content");
-    wc.classList.add("is-updating");
-    if (isManual) {
-      if (_reducedMotion.matches) {
-        window.scrollTo(0, 0);
-      } else {
-        (function smoothTop() {
-          const start = window.scrollY,
-            t0 = performance.now();
-          function step(t) {
-            const p = Math.min((t - t0) / 500, 1);
-            window.scrollTo(0, start * (1 - p * p * (3 - 2 * p)));
-            if (p < 1) requestAnimationFrame(step);
-          }
-          requestAnimationFrame(step);
-        })();
+  try {
+    // 事前UI更新は try 内で行う。ここで例外が出ると finally を経ずに
+    // _isFetching が true のまま残り、以降の更新が全て無視されるため。
+    if (timeEl && timeEl.textContent !== "") {
+      timeEl.textContent = "データを更新中... ⏳";
+      const wc = document.getElementById("weather-content");
+      if (wc) wc.classList.add("is-updating");
+      if (isManual) {
+        if (_reducedMotion.matches) {
+          window.scrollTo(0, 0);
+        } else {
+          (function smoothTop() {
+            const start = window.scrollY,
+              t0 = performance.now();
+            function step(t) {
+              const p = Math.min((t - t0) / 500, 1);
+              window.scrollTo(0, start * (1 - p * p * (3 - 2 * p)));
+              if (p < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+          })();
+        }
       }
     }
-  }
-  try {
+
     // 各セクションは相互依存がないため全fetchを並行実行（初期表示を高速化）。
     // 部分失敗はセクション単位のエラーUIで吸収する。
     const [, , , , , , , , wmResult] = await Promise.allSettled([
@@ -1585,8 +1628,9 @@ async function fetchWeatherData(isManual = false) {
 
 function showToast() {
   if (_toastShown) return;
-  _toastShown = true;
   const t = document.getElementById("toast");
+  if (!t) return;
+  _toastShown = true;
   t.style.display = "block";
   setTimeout(() => t.classList.add("show"), 10);
   setTimeout(() => hideToast(), 8000);
@@ -1594,6 +1638,7 @@ function showToast() {
 
 function hideToast() {
   const t = document.getElementById("toast");
+  if (!t) return;
   t.classList.remove("show");
   setTimeout(() => {
     t.style.display = "none";
@@ -1653,6 +1698,9 @@ _updateChartsTheme(_prefersDark);
 function _onUserInteraction() {
   if (Date.now() - _lastFetchTime >= 3 * 60 * 60 * 1000) showToast();
 }
+
+// defer 実行時点でDOMは構築済みのため、フォントCSSは即時に適用開始する。
+applyDeferredStyles();
 
 document.addEventListener("DOMContentLoaded", () => {
   fetchWeatherData();

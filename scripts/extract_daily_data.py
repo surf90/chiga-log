@@ -31,6 +31,12 @@ def extract_moon_today() -> dict | None:
         return None
 
     entry = moon_data[hour_index]
+    # キー欠落・非数値でKeyError/TypeErrorを送出すると、後続の潮汐ウィジェット
+    # 生成まで巻き添えで落ちるため、Noneを返してフォールバック経路に載せる。
+    if not isinstance(entry, dict) or not isinstance(entry.get("age"), (int, float)) or not isinstance(entry.get("phase"), (int, float)):
+        print(f"[moon] hourIndex={hour_index} のエントリが不正です。", file=sys.stderr)
+        return None
+
     result = {
         "date": n.strftime("%Y-%m-%d"),
         "age": round(entry["age"], 3),

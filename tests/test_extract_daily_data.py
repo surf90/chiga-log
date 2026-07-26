@@ -3,10 +3,12 @@
 import os
 import sys
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
-from extract_daily_data import _normalize_stormglass_item
+import extract_daily_data
+from extract_daily_data import _normalize_stormglass_item, extract_moon_today
 
 
 class TestNormalizeStormglassItem(unittest.TestCase):
@@ -34,6 +36,42 @@ class TestNormalizeStormglassItem(unittest.TestCase):
         item = {"time": "2026-05-13T00:00:00Z", "height": 0.5, "type": "unknown"}
         out = _normalize_stormglass_item(item)
         self.assertEqual(out["type"], "low")
+
+
+class TestExtractMoonToday(unittest.TestCase):
+    """NASA月齢JSONの読み出しと、不正エントリ時のフォールバックを検証する。"""
+
+    def _run(self, entry):
+        """当日JST正午のエントリが entry になる年間配列を組み立てて実行する。"""
+        n = extract_daily_data.now_jst()
+        year_start = extract_daily_data.datetime(n.year, 1, 1, tzinfo=extract_daily_data.timezone.utc)
+        target = extract_daily_data.datetime(n.year, n.month, n.day, 3, tzinfo=extract_daily_data.timezone.utc)
+        idx = int((target - year_start).total_seconds() / 3600)
+        moon_data = [{"age": 0.0, "phase": 0.0}] * (idx + 1)
+        moon_data[idx] = entry
+        with mock.patch.object(extract_daily_data, "load_json", return_value=moon_data), mock.patch.object(
+            extract_daily_data, "save_json"
+        ) as saver:
+            return extract_moon_today(), saver
+
+    def test_valid_entry(self):
+        """正常なエントリは丸めて返され、保存される。"""
+        result, saver = self._run({"age": 14.56789, "phase": 99.44})
+        self.assertEqual(result["age"], 14.568)
+        self.assertEqual(result["phase"], 99.4)
+        saver.assert_called_once()
+
+    def test_missing_age_returns_none(self):
+        """ageキー欠落でも例外を投げずNoneを返す（潮汐生成を巻き添えにしない）。"""
+        result, saver = self._run({"phase": 50.0})
+        self.assertIsNone(result)
+        saver.assert_not_called()
+
+    def test_non_numeric_age_returns_none(self):
+        """ageが非数値でも例外を投げずNoneを返す。"""
+        result, saver = self._run({"age": "N/A", "phase": 50.0})
+        self.assertIsNone(result)
+        saver.assert_not_called()
 
 
 if __name__ == "__main__":
