@@ -159,9 +159,9 @@ function markStale(noteElId, iso, thresholdMs) {
   }
 }
 
-/** Dateを JST の "HH:MM" に整形する（ブラウザTZ非依存）。 */
-function formatJstHhMm(date) {
-  const jst = new Date(date.getTime() + JST_OFFSET_MS);
+/** ミリ秒(epoch)を JST の "HH:MM"（時をゼロ埋め）に整形する。ブラウザTZ非依存。 */
+function formatJstHhMm(ms) {
+  const jst = new Date(ms + JST_OFFSET_MS);
   return (
     String(jst.getUTCHours()).padStart(2, "0") +
     ":" +
@@ -169,11 +169,10 @@ function formatJstHhMm(date) {
   );
 }
 
-/** ミリ秒(epoch)を JST の "H:MM" に整形する共通関数。 */
+/** ミリ秒(epoch)を JST の "H:MM"（時は先頭ゼロなし）に整形する。ブラウザTZ非依存。 */
 function formatJstHm(ms) {
-  const h = (new Date(ms).getUTCHours() + 9) % 24;
-  const m = new Date(ms).getUTCMinutes();
-  return h + ":" + String(m).padStart(2, "0");
+  const jst = new Date(ms + JST_OFFSET_MS);
+  return jst.getUTCHours() + ":" + String(jst.getUTCMinutes()).padStart(2, "0");
 }
 
 // ─── 2. ユーティリティ ──────────────────────────────────────
@@ -537,7 +536,7 @@ function displayTideData(extremes, chartExtremes) {
   extremes.forEach((item) => {
     const dateObj = new Date(item.time);
     // 潮汐データはJST基準。閲覧端末のTZに引きずられないよう固定で整形する。
-    const timeStr = formatJstHhMm(dateObj);
+    const timeStr = formatJstHhMm(dateObj.getTime());
     (item.type === "high" ? highTides : lowTides).push({
       timeStr,
       height: item.height,
@@ -577,7 +576,7 @@ function displayTideData(extremes, chartExtremes) {
   let hasHeightData = false;
   chartData.forEach((item) => {
     const dateObj = new Date(item.time);
-    const timeStr = formatJstHhMm(dateObj);
+    const timeStr = formatJstHhMm(dateObj.getTime());
     let heightValue = item.type === "high" ? 1 : 0;
     if (item.height != null) {
       hasHeightData = true;
@@ -1194,7 +1193,7 @@ function formatTsunamiTime(iso) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
   // 気象庁の到達予想時刻はJST。閲覧端末のTZで表示すると誤読を招くため固定。
-  return formatJstHhMm(d);
+  return formatJstHhMm(d.getTime());
 }
 
 async function fetchTsunami(force = false) {
