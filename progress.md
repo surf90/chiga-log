@@ -19,12 +19,35 @@ updated: 2026-07-26
 - **データ生成スクリプト**: `extract_moon_today()` がNASA月齢JSONのキー欠落・非数値で `KeyError` を投げ、後続の `tide_widget.json` 生成まで巻き添えで落ちていたため、`None` を返してフォールバック経路に載せるよう修正（単体テスト3件追加）。
 - **ESLint設定**: `npx eslint .` がLiquidテンプレート `assets/js/site-config.js` でパースエラーになっていたため、生成物・ベンダを `ignores` に追加（CIは `app.js` 個別指定のため従来から緑）。
 - **PWA反映**: Service Workerのキャッシュ名を `chigalog-v12` → `chigalog-v13` へ更新し、キャッシュ優先の `app.min.js` / `index.html` が旧版のまま残らないようにした。
-- **検証**: pytest 48件、ESLint、Prettier `--check`、`node --check`、Worker単体テスト3件すべて成功。
+- **重複解消（自己レビュー対応）**: 追加した `formatJstHhMm()` と既存 `formatJstHm()` が同じJST変換を別実装で持ち、引数型も `Date` / `ms` で不揃いだったため、`JST_OFFSET_MS` 加算方式に統一し引数を `ms` へ揃えた。`formatJstHm()` の出力は従来と完全一致（グラフのツールチップ表示は不変）。
+
+**検証（実ブラウザでの修正前/後 A/B を含む）**
+
+- 静的チェック: pytest 48件、ESLint（`npx eslint .`）、Prettier `--check`、`node --check`、Worker単体テスト3件すべて成功。GitHub Actions の `test` / `ESLint + Prettier` / `pa11y (WCAG2AA)` も成功。
+- **CSP**: 最小再現ページで、旧 `onload` 属性は実際にブラウザが拒否（`Refused to execute inline event handler`）し `media="print"` のままCSSが適用されないこと、新方式では `media="all"` に切り替わり適用されることを Chromium で確認。
+- **実サイト A/B**: `jekyll build` + `terser` した実ページを Chromium で読み込み比較（fonts.googleapis.com は到達不能環境のためスタブ応答）。
+
+  | 項目 | 修正前(main) | 修正後 |
+  | --- | --- | --- |
+  | フォントCSS適用 | 適用されず | 適用される |
+  | 潮汐（TZ=Asia/Tokyo） | 満潮 00:54 / 16:36 | 満潮 00:54 / 16:36 |
+  | 潮汐（TZ=America/New_York） | 満潮 11:54 / 03:36（順序も崩壊） | 満潮 00:54 / 16:36 |
+
+- **手動更新パス**: 更新日時を2回連続クリックし、`データを更新中... ⏳` → 完了トースト → 再更新成功、`pageerror` なしを確認（`_isFetching` が正しく解放される）。
+- **JST整形の等価性**: `formatJstHm()` の新旧実装を40万件 × 4タイムゾーンで比較し差分0。
+
+**判断: 変更しないこととした点**
+
+- `item.time` が不正な場合に潮汐時刻が `NaN:NaN` になり得る点。部分的にフィルタすると壊れたデータを一部だけ表示することになる一方、現状は `fetchTideExtremes` の `catch` が「※潮汐データの取得に失敗しました」を表示する＝三原則1（ダミー値で誤読を誘発しない）に沿った挙動のため、意図的に据え置いた。
 
 **関連ファイル**
 
 - `index.html` / `assets/js/app.js` / `sw.js` / `eslint.config.js`
 - `scripts/extract_daily_data.py` / `tests/test_extract_daily_data.py`
+
+**残タスク**
+
+- なし（管理者の手動作業も不要）。`assets/js/app.min.js` / `style.min.css` は main マージ時に `minify.yml` が生成する。`warning-worker/` は未変更のため Cloudflare への手動デプロイも不要。
 
 ## 完了済み（2026-07-16）
 
