@@ -1,10 +1,53 @@
 ---
-updated: 2026-07-16
+updated: 2026-07-26
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-07-26）
+
+### 不具合・脆弱性の修正
+
+- **Webフォントが適用されない（CSP違反）**: `index.html` のフォント用 `<link>` が `onload="this.media='all'"` を使っていたが、CSP `script-src 'self'`（`script-src-attr` がフォールバック）下ではインラインイベントハンドラが実行されずブロックされていた。属性を `data-media-onload="all"` に変え、`app.js` の `applyDeferredStyles()` が読込完了後に `media` を切り替える方式へ移行（非ブロック読込は維持）。
+- **更新が恒久停止する競合**: `fetchWeatherData()` が `_isFetching = true` の後、`try` の外でDOM操作していたため、そこで例外が出ると `finally` に到達せずフラグが立ちっぱなしになり、以後の自動更新・手動更新・可視化復帰がすべて無視されていた。事前UI更新を `try` 内へ移し、要素をnullガード。
+- **潮汐・津波の時刻が閲覧端末のTZ依存**: 満潮・干潮時刻とグラフラベル（`toLocaleTimeString`）、津波の第一波到達時刻（`getHours`）が端末TZで描画され、JST以外の端末で誤った時刻を表示していた。`formatJstHhMm()` を追加しJST固定に統一。
+- **Service Workerのオリジン判定が前方一致**: `url.startsWith(self.location.origin)` は `https://<origin>.attacker.test/` のような別ドメインも自オリジンと誤判定するため、`URL` を解析して `origin` を厳密比較する方式へ変更（解析不能なURLは素通し）。
+- **波浪ガイダンスの日付算出**: `new Date(new Date().toLocaleString("en-US", …))` はロケール文字列の再パースが実装依存（Invalid Date になり得る）だったため、既存の `toJstDateStr()` によるJSTオフセット加算へ統一。`data[].time` の型チェックも追加。
+- **その他の堅牢化**: 月齢のNaN/範囲外を不採用（`月齢: NaN` 表示の防止）、風向の負値・非数値・null正規化（`undefined` / 誤った「北」表示の防止）、`fetchTsunami` / `showToast` / `hideToast` / `calculateTide` の要素nullガード、`syncChartScroll` が要素未生成時に同期を恒久無効化する問題の修正。
+- **データ生成スクリプト**: `extract_moon_today()` がNASA月齢JSONのキー欠落・非数値で `KeyError` を投げ、後続の `tide_widget.json` 生成まで巻き添えで落ちていたため、`None` を返してフォールバック経路に載せるよう修正（単体テスト3件追加）。
+- **ESLint設定**: `npx eslint .` がLiquidテンプレート `assets/js/site-config.js` でパースエラーになっていたため、生成物・ベンダを `ignores` に追加（CIは `app.js` 個別指定のため従来から緑）。
+- **PWA反映**: Service Workerのキャッシュ名を `chigalog-v12` → `chigalog-v13` へ更新し、キャッシュ優先の `app.min.js` / `index.html` が旧版のまま残らないようにした。
+- **重複解消（自己レビュー対応）**: 追加した `formatJstHhMm()` と既存 `formatJstHm()` が同じJST変換を別実装で持ち、引数型も `Date` / `ms` で不揃いだったため、`JST_OFFSET_MS` 加算方式に統一し引数を `ms` へ揃えた。`formatJstHm()` の出力は従来と完全一致（グラフのツールチップ表示は不変）。
+
+**検証（実ブラウザでの修正前/後 A/B を含む）**
+
+- 静的チェック: pytest 48件、ESLint（`npx eslint .`）、Prettier `--check`、`node --check`、Worker単体テスト3件すべて成功。GitHub Actions の `test` / `ESLint + Prettier` / `pa11y (WCAG2AA)` も成功。
+- **CSP**: 最小再現ページで、旧 `onload` 属性は実際にブラウザが拒否（`Refused to execute inline event handler`）し `media="print"` のままCSSが適用されないこと、新方式では `media="all"` に切り替わり適用されることを Chromium で確認。
+- **実サイト A/B**: `jekyll build` + `terser` した実ページを Chromium で読み込み比較（fonts.googleapis.com は到達不能環境のためスタブ応答）。
+
+  | 項目 | 修正前(main) | 修正後 |
+  | --- | --- | --- |
+  | フォントCSS適用 | 適用されず | 適用される |
+  | 潮汐（TZ=Asia/Tokyo） | 満潮 00:54 / 16:36 | 満潮 00:54 / 16:36 |
+  | 潮汐（TZ=America/New_York） | 満潮 11:54 / 03:36（順序も崩壊） | 満潮 00:54 / 16:36 |
+
+- **手動更新パス**: 更新日時を2回連続クリックし、`データを更新中... ⏳` → 完了トースト → 再更新成功、`pageerror` なしを確認（`_isFetching` が正しく解放される）。
+- **JST整形の等価性**: `formatJstHm()` の新旧実装を40万件 × 4タイムゾーンで比較し差分0。
+
+**判断: 変更しないこととした点**
+
+- `item.time` が不正な場合に潮汐時刻が `NaN:NaN` になり得る点。部分的にフィルタすると壊れたデータを一部だけ表示することになる一方、現状は `fetchTideExtremes` の `catch` が「※潮汐データの取得に失敗しました」を表示する＝三原則1（ダミー値で誤読を誘発しない）に沿った挙動のため、意図的に据え置いた。
+
+**関連ファイル**
+
+- `index.html` / `assets/js/app.js` / `sw.js` / `eslint.config.js`
+- `scripts/extract_daily_data.py` / `tests/test_extract_daily_data.py`
+
+**残タスク**
+
+- なし（管理者の手動作業も不要）。`assets/js/app.min.js` / `style.min.css` は main マージ時に `minify.yml` が生成する。`warning-worker/` は未変更のため Cloudflare への手動デプロイも不要。
 
 ## 完了済み（2026-07-16）
 

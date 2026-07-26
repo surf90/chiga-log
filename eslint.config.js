@@ -29,6 +29,17 @@ const browserGlobals = {
 
 module.exports = [
   {
+    // 生成物・Liquidテンプレート・外部ベンダは解析対象外。
+    // (site-config.js は Liquid を含みJSとしてパースできない)
+    ignores: [
+      "_site/**",
+      "assets/js/*.min.js",
+      "assets/js/site-config.js",
+      "assets/vendor/**",
+      "warning-worker/node_modules/**",
+    ],
+  },
+  {
     files: ["assets/js/app.js"],
     languageOptions: {
       ecmaVersion: 2022,
