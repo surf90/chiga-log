@@ -812,17 +812,6 @@ p.note strong a {
 }
 /* データ鮮度の警告表示（更新停止・古いデータの明示）。
    hidden 属性でトグルするため display は指定しない。 */
-.stale-banner {
-  margin: 0 0 16px;
-  padding: 10px 14px;
-  border: 2px solid var(--warning-border);
-  border-radius: 8px;
-  background: var(--warning-bg);
-  color: var(--warning-border);
-  font-size: 13px;
-  font-weight: 600;
-  text-align: center;
-}
 .stale-note,
 .stale-inline {
   margin: 0 0 8px;

@@ -143,8 +143,8 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 ### データ鮮度の警告表示
 
 - 目的: 更新停止（Actions 停止・API 障害）や古いデータを閲覧者に明示し、誤読を防ぐ（三原則1）。閾値はデータ種別ごとに個別（`app.js` の `FRESHNESS`）。
-- `.stale-banner`（`#stale-banner`）: 更新パイプライン停止時にコンテンツ最上部へ表示。`--warning-bg`/`--warning-border` を流用、`border-radius:8px`、中央寄せ。通常は `hidden`。
-- `.stale-note`（各セクション見出し直下）/ `.stale-inline`（`#tsunami-error`）: 該当データが閾値超で古い/取得失敗時に小さく赤字（`--warning-border`, 12px）で注記。通常は `hidden`。
+- **警告はカード単位で出し、ページ全体のバナーは使わない**。GitHub Actions のスケジュール遅延・スキップはデータ種別ごとに独立して起きるため、1ソースの遅延で全体バナーを出すと、更新できている他の情報まで古いと誤認させてしまう。旧 `.stale-banner`（`#stale-banner`）は本方針により廃止。
+- `.stale-note`（各セクション見出し直下）/ `.stale-inline`（`#tsunami-error`）: 該当データが閾値超で古い/取得失敗時に小さく赤字（`--warning-border`, 12px）で注記。通常は `hidden`。対象は潮汐・波・警報・天気予報・風（`markStale()`）と現在の気温･風（`#marine-stale`、`weather_marine` の鮮度・取得失敗）。
 - `.current-time.is-stale`: データが古い場合に「更新日時」の下線・文字色を `--warning-border` に切替（データ生成時刻＋経過時間を表示）。
 - トグルは `hidden` 属性で行うため、これらは `display` を指定しない。
 

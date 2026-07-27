@@ -1627,26 +1627,27 @@ async function fetchWeatherData(isManual = false) {
     const jma = wmData?.jma_amedas;
     const cw = wmData?.current_weather;
 
-    // 最頻更新ソース(weather_marine, */30)の鮮度で更新パイプライン停止を検知する。
-    // 取得失敗(wmData=null)も更新停止の可能性が高いためバナーを出す。
+    // 鮮度の警告はページ上部にまとめず、影響を受けるカード内にのみ出す。
+    // Actions のスケジュール遅延は種別ごとに独立して起きるため、全体バナーだと
+    // 更新できている他の情報まで古いと誤認させてしまう（三原則1: 誤読を防ぐ）。
     const marineFresh = freshness(pickTimestamp(wmData), FRESHNESS.marine);
-    const pipelineStale = wmData == null || marineFresh.isStale;
-    const banner = document.getElementById("stale-banner");
-    if (banner) {
-      if (pipelineStale) {
-        banner.textContent = marineFresh.ms
-          ? `データ更新が停止している可能性があります（最終更新: ${marineFresh.label}）。表示中の情報は古い場合があります。`
-          : "最新データを取得できませんでした。表示中の情報は古い場合があります。";
-        banner.hidden = false;
+    const marineStale = wmData == null || marineFresh.isStale;
+    const marineNote = document.getElementById("marine-stale");
+    if (marineNote) {
+      if (marineStale) {
+        marineNote.textContent = marineFresh.ms
+          ? `⚠ データが古い可能性（最終更新 ${marineFresh.label}）`
+          : "⚠ 最新データを取得できませんでした（表示中の値は古い可能性）";
+        marineNote.hidden = false;
       } else {
-        banner.hidden = true;
+        marineNote.hidden = true;
       }
     }
 
-    // アメダスstale(前回値引き継ぎ)またはパイプライン停止時に注記を点灯。
+    // アメダスstale(前回値引き継ぎ)またはweather_marine取得失敗時に注記を点灯。
     const staleEl = document.getElementById("amedas-stale");
     if (staleEl)
-      staleEl.hidden = !((jma && jma.stale === true) || pipelineStale);
+      staleEl.hidden = !((jma && jma.stale === true) || wmData == null);
 
     if (jma) {
       setText("temp", jma.temp != null ? `${jma.temp}℃` : "--℃");
