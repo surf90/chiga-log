@@ -332,6 +332,60 @@ const nowLinePlugin = {
   },
 };
 
+/**
+ * Y軸をスクロールに追従させず、常に表示領域の端に貼り付けて描画する。
+ *
+ * グラフは2日分(672px)を横スクロールで見せるため、「今」の位置へ寄せると
+ * キャンバス左端に描かれたY軸（潮位m・波高m）が画面外へ出てしまう。
+ * スクロール量ぶん平行移動した位置へ、カード背景で下地を塗ってから
+ * Chart.js の scale 自身に再描画させることで、目盛りの見た目を保ったまま
+ * 軸だけを固定する。右側の軸（周期）は表示領域の右端へ貼り付ける。
+ */
+const stickyYAxisPlugin = {
+  id: "stickyYAxis",
+  afterDraw(chart) {
+    const scroller = chart.canvas.closest(".chart-scroll");
+    if (!scroller) return;
+    const maxScroll = scroller.scrollWidth - scroller.clientWidth;
+    if (maxScroll <= 0) return;
+    const bg =
+      getComputedStyle(chart.canvas).getPropertyValue("--box-bg").trim() ||
+      "#ffffff";
+    Object.values(chart.scales).forEach((scale) => {
+      if (scale.axis !== "y" || scale.options.display === false) return;
+      const dx =
+        scale.position === "right"
+          ? scroller.scrollLeft - maxScroll
+          : scroller.scrollLeft;
+      if (dx === 0) return; // 端まで戻っていれば元の位置で既に見えている
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.translate(dx, 0);
+      // データ線とX軸ラベルの断片が目盛りの下に透けないよう、
+      // 軸の幅ぶんをキャンバス全高で塗りつぶしてから軸を描く。
+      ctx.fillStyle = bg;
+      ctx.fillRect(scale.left, 0, scale.width, chart.height);
+      scale.draw(chart.chartArea);
+      ctx.restore();
+    });
+  },
+};
+
+/**
+ * 横スクロール中にY軸の貼り付け位置を追従させる。
+ * スクロールイベントごとではなく1フレームに1回へ間引く。
+ */
+let _axisRedrawQueued = false;
+function redrawChartAxesForScroll() {
+  if (_axisRedrawQueued) return;
+  _axisRedrawQueued = true;
+  requestAnimationFrame(() => {
+    _axisRedrawQueued = false;
+    if (tideChartInstance) tideChartInstance.draw();
+    if (waveChartInstance) waveChartInstance.draw();
+  });
+}
+
 function buildChartXTicks(xMin, xMax) {
   const h4ms = 4 * 60 * 60 * 1000;
   const ticks = [{ value: xMin }];
@@ -372,6 +426,7 @@ function syncChartScroll() {
   tideScroll.addEventListener(
     "scroll",
     () => {
+      redrawChartAxesForScroll();
       if (syncing) return;
       syncing = true;
       waveScroll.scrollLeft = tideScroll.scrollLeft;
@@ -382,6 +437,7 @@ function syncChartScroll() {
   waveScroll.addEventListener(
     "scroll",
     () => {
+      redrawChartAxesForScroll();
       if (syncing) return;
       syncing = true;
       tideScroll.scrollLeft = waveScroll.scrollLeft;
@@ -642,7 +698,7 @@ function drawTideChart(extremes, hasHeightData) {
 
   tideChartInstance = new Chart(ctx, {
     type: "line",
-    plugins: [nowLinePlugin],
+    plugins: [nowLinePlugin, stickyYAxisPlugin],
     data: {
       datasets: [
         {
@@ -812,6 +868,9 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
     JST_OFFSET_MS;
   const xMin =
     chartXMin !== null ? chartXMin : todayJstStartMs + 4 * 60 * 60 * 1000;
+  // 潮汐取得が失敗した場合でも scrollChartsToNow() が波グラフを
+  // 「今」へ寄せられるよう、共有の基準時刻を確定させる。
+  if (chartXMin === null) chartXMin = xMin;
   const xMax = xMin + CHART_DAYS * 24 * 60 * 60 * 1000;
 
   setChartContainerWidth("wave-chart-container", CHART_TOTAL_PX);
@@ -823,7 +882,7 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
   const ctx = waveCanvas.getContext("2d");
   const chart = new Chart(ctx, {
     type: "line",
-    plugins: [nowLinePlugin],
+    plugins: [nowLinePlugin, stickyYAxisPlugin],
     data: {
       datasets: [
         {
@@ -925,8 +984,10 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
     legendDiv = document.createElement("div");
     legendDiv.id = canvasId + "-custom-legend";
     legendDiv.className = "wave-legend";
-    const container = document.getElementById(canvasId).parentNode;
-    container.insertBefore(legendDiv, document.getElementById(canvasId));
+    // 横スクロール領域の内側に置くと凡例も一緒にスクロールし、
+    // 2つ目の項目が画面外へ出てしまうため、スクロールしない親へ挿入する。
+    const anchor = waveCanvas.closest(".chart-scroll") || waveCanvas;
+    anchor.parentNode.insertBefore(legendDiv, anchor);
   }
 
   legendDiv.textContent = "";
@@ -1314,8 +1375,10 @@ async function fetchJmaForecast(force = false) {
       throw new Error("forecast.json に対象エリアがありません");
     }
 
-    document.getElementById("jma-weather").textContent =
-      areaWeather.weathers?.[0] ?? "--";
+    // 気象庁の天気文は全角スペース区切り。風と同じ扱いで半角に正規化する。
+    document.getElementById("jma-weather").textContent = (
+      areaWeather.weathers?.[0] || "--"
+    ).replace(/　/g, " ");
     document.getElementById("jma-pop").textContent = areaPop.pops?.[0]
       ? areaPop.pops[0] + "%"
       : "--";
@@ -1371,55 +1434,74 @@ function toggleOverview() {
 }
 
 // ─── 8. 風予報 ──────────────────────────────────────────────
+// 折りたたまずに常時表示する件数。開かなくても直近の風が読めるようにする。
+const WIND_VISIBLE_COUNT = 3;
+
+/** 風予報1行（時刻・風向・風速）を生成する。 */
+function createWindRow({ time, dir, speed }) {
+  const row = document.createElement("div");
+  row.className = "wind-row";
+  const mkSpan = (cls, text) => {
+    const s = document.createElement("span");
+    s.className = cls;
+    s.textContent = text;
+    return s;
+  };
+  row.append(
+    mkSpan("wind-time", time),
+    mkSpan("wind-dir", dir || "データなし"),
+    mkSpan("wind-speed", `${speed ?? "-"} m/s`),
+  );
+  return row;
+}
+
+/**
+ * 風予報を描画する。先頭 WIND_VISIBLE_COUNT 件は常時表示し、
+ * 残りは折りたたみ側へ入れる。残りが無ければトグル自体を隠す
+ * （押しても何も出ないボタンを見せない）。
+ */
 function renderWindForecast(entries) {
   const grid = document.getElementById("wind-forecast-list");
+  const moreGrid = document.getElementById("wind-forecast-more");
+  const toggle = document.getElementById("wind-forecast-toggle");
+  if (!grid) return;
   grid.innerHTML = "";
+  if (moreGrid) moreGrid.innerHTML = "";
+
   if (!entries || entries.length === 0) {
-    const row = document.createElement("div");
-    row.className = "wind-row";
-    const mkSpan = (cls, text) => {
-      const s = document.createElement("span");
-      s.className = cls;
-      s.textContent = text;
-      return s;
-    };
-    row.append(
-      mkSpan("wind-time", "--:--"),
-      mkSpan("wind-dir", "データなし"),
-      mkSpan("wind-speed", "-"),
+    grid.appendChild(
+      createWindRow({ time: "--:--", dir: "データなし", speed: null }),
     );
-    grid.appendChild(row);
+    if (toggle) toggle.hidden = true;
     return;
   }
-  entries.forEach(({ time, dir, speed }) => {
-    const row = document.createElement("div");
-    row.className = "wind-row";
-    const t = document.createElement("span");
-    t.className = "wind-time";
-    t.textContent = time;
-    const d = document.createElement("span");
-    d.className = "wind-dir";
-    d.textContent = dir || "データなし";
-    const s = document.createElement("span");
-    s.className = "wind-speed";
-    s.textContent = `${speed ?? "-"} m/s`;
-    row.append(t, d, s);
-    grid.appendChild(row);
-  });
+
+  entries
+    .slice(0, WIND_VISIBLE_COUNT)
+    .forEach((entry) => grid.appendChild(createWindRow(entry)));
+
+  const rest = entries.slice(WIND_VISIBLE_COUNT);
+  if (moreGrid) {
+    rest.forEach((entry) => moreGrid.appendChild(createWindRow(entry)));
+    // 折りたたみは常に閉じた状態から始める
+    moreGrid.style.display = "none";
+  }
+  if (toggle) toggle.hidden = rest.length === 0;
 }
 
 function updateWindForecastToggleLabel(isOpen) {
   const btn = document.getElementById("wind-forecast-toggle");
   if (!btn) return;
-  const range = windForecastRange || "昼間";
+  const range = windForecastRange ? `（${windForecastRange}）` : "";
   btn.textContent = isOpen
-    ? `予想風（${range}）を閉じる ▲`
-    : `予想風（${range}）を表示 ▼`;
+    ? `残りの予想風${range}を閉じる ▲`
+    : `残りの予想風${range}を表示 ▼`;
   btn.setAttribute("aria-expanded", String(isOpen));
 }
 
 function toggleWindForecast() {
-  const el = document.getElementById("wind-forecast-list");
+  const el = document.getElementById("wind-forecast-more");
+  if (!el) return;
   const isHidden = el.style.display === "none" || !el.style.display;
   el.style.display = isHidden ? "block" : "none";
   updateWindForecastToggleLabel(isHidden);
@@ -1475,10 +1557,15 @@ async function fetchWindForecast(force = false) {
       )
       .slice(0, 21);
 
+    // ラベルは折りたたむ側（4件目以降）の時間帯を示す。
+    // 1件しか残らない時に "23:00-23:00" とならないよう分岐する。
+    const rest = items.slice(WIND_VISIBLE_COUNT);
     windForecastRange =
-      items.length > 0
-        ? `${items[0].time}-${items[items.length - 1].time}`
-        : "";
+      rest.length === 0
+        ? ""
+        : rest.length === 1
+          ? rest[0].time
+          : `${rest[0].time}-${rest[rest.length - 1].time}`;
     renderWindForecast(items);
     updateWindForecastToggleLabel(false);
     document.getElementById("wind-forecast-loading").classList.add("hidden");
@@ -1609,6 +1696,10 @@ async function fetchWeatherData(isManual = false) {
     if (contentEl) {
       contentEl.classList.remove("hidden");
       contentEl.classList.remove("is-updating");
+      // グラフ描画時点では #weather-content が display:none のため、
+      // そこでの scrollLeft 代入は 0 にクランプされて捨てられる。
+      // レイアウト確定後に改めて「今」の位置へ寄せる。
+      requestAnimationFrame(scrollChartsToNow);
     }
     _lastFetchTime = Date.now();
     displayFetchTime(pickTimestamp(wmData));

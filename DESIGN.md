@@ -72,6 +72,7 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 | セクション数値（大） | 1.6rem       | 700     | カード主数値                                               |
 | 見出し（中）         | 1.2rem〜1rem | 600     | サブ見出し                                                 |
 | ラベル               | 12px         | 600     | カードラベル                                               |
+| データ行の値         | 15px         | 700     | 既定は右寄せ。長文で折り返す天気（`#jma-weather`）のみ左寄せ |
 | 本文                 | 15px (body)  | 400     | 既定                                                       |
 | 補足・キャプション   | 11px         | 400/700 | 単位・注記（等幅多用、小型端末の可読性確保のため最小11px） |
 
@@ -97,6 +98,21 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - 全ボタン共通: `touch-action:manipulation`・`-webkit-tap-highlight-color:transparent`。`:hover` スタイルは必ず `@media (hover: hover)` 内に置く（タッチ端末でタップ後にホバー状態が残るのを防ぐ）。押下時は `:active`（`scale(0.97〜0.98)` または opacity 低下）、キーボード時は `:focus-visible`（2px アウトライン）で必ずフィードバックする。
 - タップターゲット: `.toggle-btn` / `#toast` / `.current-time` は `min-height:44px`。`.wave-legend-item`（グラフ凡例トグル、`<button aria-pressed>`）は padding＋負マージンでヒット領域を拡張。
 - セクションへのスクロール移動先（`.weather-box`）は `scroll-margin-top:12px` で上端に余白を確保。
+
+### チャート（潮汐・波高/周期）
+
+- **横スクロール**: 2日分（`CHART_DAYS=2` × `PX_PER_HOUR=14` = 672px）を `.chart-scroll` の横スクロールで見せる。潮汐と波のスクロール位置は相互に同期する。
+- **初期位置**: 読み込み時は「今」の少し手前（`now - 80px`）へ寄せ、画面の大半を今後の予測に使う。`display:none` の状態では `scrollLeft` 代入が無効になるため、`#weather-content` を表示した後に `requestAnimationFrame` で寄せ直す。
+- **現在時刻ライン**: `nowLinePlugin` がオレンジ（`#ff6600`, `globalAlpha:0.35`）の縦帯を描く。
+- **Y軸の固定表示**: `stickyYAxisPlugin` が、スクロール量ぶん平行移動した位置に軸幅ぶんの下地（`--box-bg`）をキャンバス全高で塗り、Chart.js の scale を再描画する。左軸（潮位 m・波高 m）は表示領域の左端、右軸（周期 秒）は右端へ貼り付く。スクロール中は `requestAnimationFrame` で1フレーム1回に間引いて再描画する。
+- **右端フェード**: `.chart-scroll` に `mask-image` を当て、右端20pxを不透明度 `0.45` まで落として「横に続きがある」ことを示す（モバイルはスクロールバーが出ないため）。固定表示の周期軸が重なるので、完全な透明までは落とさない。
+- **凡例**: 波グラフのカスタム凡例（`.wave-legend`）は **`.chart-scroll` の外側**に置く。内側に入れると凡例も一緒にスクロールし、2項目目が画面外へ出る。
+
+### 風予報（`#wind-forecast-box`）
+
+- 直近 **3件（`WIND_VISIBLE_COUNT`）は常時表示**し、4件目以降を `#wind-forecast-more`（`.wind-grid-more`、既定 `display:none`）へ入れて `.toggle-btn` で開閉する。開かなくても直近の風が読める状態にする。
+- 残りが0件のときはトグルボタンごと隠す（`hidden`）。押しても何も出ないボタンを見せない。
+- トグルのラベルは折りたたむ側の時間帯を示す（例: `残りの予想風（12:00-23:00）を表示 ▼`）。
 
 ### 警報バッジ / フローティングアラート
 

@@ -22,6 +22,7 @@ const browserGlobals = {
   Response: "readonly",
   Intl: "readonly",
   matchMedia: "readonly",
+  getComputedStyle: "readonly",
   // 外部UMD / Jekyll 生成のグローバル
   Chart: "readonly",
   SITE_CONFIG: "readonly",
