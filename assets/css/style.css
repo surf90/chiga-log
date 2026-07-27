@@ -737,23 +737,16 @@ p.note strong a {
 }
 
 .footer {
-  margin-top: 8px;
+  margin-top: 24px;
   font-size: 11px;
   color: var(--text-sub);
   line-height: 1.7;
   text-align: center;
-  padding: 24px 20px 16px;
+  padding: 20px 12px 4px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  background: linear-gradient(
-    180deg,
-    var(--brand-soft),
-    rgba(255, 255, 255, 0.24)
-  );
-  border: 1px solid var(--hairline);
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(14, 116, 144, 0.05);
+  gap: 16px;
+  border-top: 1px solid var(--hairline);
   animation: rise-in 0.55s 0.08s ease-out both;
 }
 .footer a {
@@ -993,8 +986,7 @@ p.note strong a {
   .container {
     border-color: rgba(255, 255, 255, 0.08);
   }
-  header,
-  .footer {
+  header {
     background: linear-gradient(
       135deg,
       rgba(255, 255, 255, 0.04),

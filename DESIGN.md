@@ -84,7 +84,8 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
 - `body::before` で白〜水色の控えめなラジアル光と下部の海色フェードを重ねる。ダークモードでは低彩度の青い光に置換する。装飾は固定背景で、コンテンツを遮らない（`pointer-events:none`, `z-index:-1`）。
 - コンテナ: `max-width:600px` / `padding:34px 24px 28px` / `border-radius:16px` / `background:var(--container-bg)` / `box-shadow:var(--container-shadow)` / 上端に 4px のブランドグラデーションバー。
-- ヘッダー / フッター: `--brand-soft` と半透明の白を重ねた軽量なグラデーション面、`1px solid var(--hairline)`、`border-radius:12px`、薄い影でコンテンツから穏やかに分離する。追加の画像や JavaScript は使わない。
+- ヘッダー: `--brand-soft` と半透明の白を重ねた軽量なグラデーション面、`1px solid var(--hairline)`、`border-radius:12px`、薄い影でコンテンツから穏やかに分離する。追加の画像や JavaScript は使わない。
+- フッター: カード面（背景・枠・角丸・影）は持たず、上端の `1px solid var(--hairline)` の区切り線のみでコンテンツから分離するテキスト形式。リンクの重要度は低いため、装飾やチップ化はしない。
 
 ### サイトバー（スクロール追従、`#site-bar`）
 
