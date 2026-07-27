@@ -621,16 +621,20 @@ lang: ja
               取得中...
             </div>
             <div id="wind-forecast-content" class="hidden">
+              <div class="wind-grid" id="wind-forecast-list"></div>
               <button
                 class="toggle-btn"
                 id="wind-forecast-toggle"
                 type="button"
                 aria-expanded="false"
-                aria-controls="wind-forecast-list"
+                aria-controls="wind-forecast-more"
               >
-                予想風を表示 ▼
+                残りの予想風を表示 ▼
               </button>
-              <div class="wind-grid" id="wind-forecast-list"></div>
+              <div
+                class="wind-grid wind-grid-more"
+                id="wind-forecast-more"
+              ></div>
             </div>
             <div id="wind-forecast-error" class="section-error" data-nosnippet>
               風予報の取得に失敗しました。

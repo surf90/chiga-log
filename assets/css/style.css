@@ -438,6 +438,11 @@ h1 .title-sub {
   text-align: right;
   margin: 0;
 }
+/* 天気は「くもり 夜 雨 所により…」と長く折り返すため、
+   右寄せだと行頭が揃わず読みにくい。値だけ左揃えにする。 */
+#jma-weather {
+  text-align: left;
+}
 .error {
   color: #c0392b;
   text-align: center;
@@ -576,8 +581,11 @@ h1 .title-sub {
 }
 
 .wind-grid {
-  display: none;
   margin-top: 10px;
+}
+/* 折りたたむのは4件目以降のみ（直近3件は常時表示する） */
+.wind-grid-more {
+  display: none;
 }
 .wind-row {
   display: grid;
@@ -873,6 +881,22 @@ p.note strong a {
   -webkit-overflow-scrolling: touch;
   scrollbar-color: var(--brand) transparent;
   scrollbar-width: thin;
+  /* 右端をフェードさせ、横に続きがある（2日分ある）ことを示す。
+     モバイルはスクロールバーが出ないため、これが唯一の手がかりになる。
+     マスクは要素のボックスに固定され中身と一緒にスクロールしないので、
+     追加のDOMもJSも不要で、ライト/ダーク双方でそのまま成立する。
+     右端には固定表示の周期軸が重なるため、完全な透明までは落とさず
+     目盛りが読める濃さで止める。 */
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    #000 calc(100% - 20px),
+    rgba(0, 0, 0, 0.45) 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    #000 calc(100% - 20px),
+    rgba(0, 0, 0, 0.45) 100%
+  );
 }
 .tide-chart-scroll-wrap {
   margin-top: 20px;
