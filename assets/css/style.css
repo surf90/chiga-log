@@ -103,6 +103,51 @@ body::before {
 .skip-link:focus {
   top: 8px;
 }
+/* ヘッダーが画面外へ出たときだけ上端に出る簡易サイトバー。
+   .container が overflow:hidden のため sticky は効かず、コンテナ外に fixed で置く。 */
+.site-bar {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  padding-top: env(safe-area-inset-top);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--hairline);
+  box-shadow: 0 4px 16px rgba(14, 116, 144, 0.06);
+  opacity: 0;
+  transform: translateY(-100%);
+  pointer-events: none;
+  transition:
+    transform 0.22s ease,
+    opacity 0.22s ease;
+}
+.site-bar.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.site-bar-name {
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+}
+.site-bar-divider {
+  color: #cbd5e1;
+  font-size: 12px;
+  opacity: 0.7;
+}
+.site-bar-area {
+  font-size: 11px;
+  color: var(--text-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .container {
   max-width: 600px;
   margin: 0 auto;
@@ -154,14 +199,18 @@ header {
   animation: rise-in 0.55s ease-out both;
 }
 
-.logo-text {
+.logo-text,
+.site-bar-name {
   font-family: "Zen Kaku Gothic New", sans-serif;
   font-weight: 900;
-  font-size: 2.4rem;
-  letter-spacing: 0.05em;
   background: linear-gradient(135deg, #0e7490 0%, #0284c7 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+.logo-text {
+  font-size: 2.4rem;
+  letter-spacing: 0.05em;
 }
 
 h1 .title-sub {
@@ -302,7 +351,7 @@ h1 .title-sub {
   animation-delay: 0.04s;
 }
 .weather-box {
-  scroll-margin-top: 12px;
+  scroll-margin-top: 56px;
   background: var(--box-bg);
   border: 1px solid var(--box-border);
   padding: 20px 24px;
@@ -971,6 +1020,13 @@ p.note strong a {
   .skeleton-hero-card {
     background: #2a2a2a;
   }
+  .site-bar {
+    background: rgba(30, 30, 30, 0.88);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+  .site-bar-divider {
+    color: #475569;
+  }
   #toast,
   #refresh-toast {
     background: rgba(42, 42, 42, 0.92);
@@ -1011,6 +1067,17 @@ p.note strong a {
   }
   .logo-text {
     font-size: 1.72rem;
+  }
+  .site-bar {
+    gap: 6px;
+    padding: 0 12px;
+  }
+  .site-bar-name {
+    font-size: 0.92rem;
+  }
+  .site-bar-area {
+    font-size: 10px;
+    max-width: 55vw;
   }
   h1 .title-sub {
     transform: translateY(1px);

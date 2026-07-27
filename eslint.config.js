@@ -23,6 +23,7 @@ const browserGlobals = {
   Intl: "readonly",
   matchMedia: "readonly",
   getComputedStyle: "readonly",
+  IntersectionObserver: "readonly",
   // 外部UMD / Jekyll 生成のグローバル
   Chart: "readonly",
   SITE_CONFIG: "readonly",

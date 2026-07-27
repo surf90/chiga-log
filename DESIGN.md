@@ -66,15 +66,15 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
 ### サイズ・ウェイト階層（実測）
 
-| Role                 | Size         | Weight  | 備考                                                       |
-| -------------------- | ------------ | ------- | ---------------------------------------------------------- |
-| ヒーロータイトル     | 2.4rem       | 900     | ブランドグラデ文字                                         |
-| セクション数値（大） | 1.6rem       | 700     | カード主数値                                               |
-| 見出し（中）         | 1.2rem〜1rem | 600     | サブ見出し                                                 |
-| ラベル               | 12px         | 600     | カードラベル                                               |
+| Role                 | Size         | Weight  | 備考                                                         |
+| -------------------- | ------------ | ------- | ------------------------------------------------------------ |
+| ヒーロータイトル     | 2.4rem       | 900     | ブランドグラデ文字                                           |
+| セクション数値（大） | 1.6rem       | 700     | カード主数値                                                 |
+| 見出し（中）         | 1.2rem〜1rem | 600     | サブ見出し                                                   |
+| ラベル               | 12px         | 600     | カードラベル                                                 |
 | データ行の値         | 15px         | 700     | 既定は右寄せ。長文で折り返す天気（`#jma-weather`）のみ左寄せ |
-| 本文                 | 15px (body)  | 400     | 既定                                                       |
-| 補足・キャプション   | 11px         | 400/700 | 単位・注記（等幅多用、小型端末の可読性確保のため最小11px） |
+| 本文                 | 15px (body)  | 400     | 既定                                                         |
+| 補足・キャプション   | 11px         | 400/700 | 単位・注記（等幅多用、小型端末の可読性確保のため最小11px）   |
 
 ---
 
@@ -85,6 +85,16 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - `body::before` で白〜水色の控えめなラジアル光と下部の海色フェードを重ねる。ダークモードでは低彩度の青い光に置換する。装飾は固定背景で、コンテンツを遮らない（`pointer-events:none`, `z-index:-1`）。
 - コンテナ: `max-width:600px` / `padding:34px 24px 28px` / `border-radius:16px` / `background:var(--container-bg)` / `box-shadow:var(--container-shadow)` / 上端に 4px のブランドグラデーションバー。
 - ヘッダー / フッター: `--brand-soft` と半透明の白を重ねた軽量なグラデーション面、`1px solid var(--hairline)`、`border-radius:12px`、薄い影でコンテンツから穏やかに分離する。追加の画像や JavaScript は使わない。
+
+### サイトバー（スクロール追従、`#site-bar`）
+
+- 目的: 縦に長い1ページ構成でヒーローヘッダー（サイト名）が画面外に出た後も、サイト名を見失わせないための最小限のバー。
+- 配置: `.container` は `overflow:hidden` のため `position:sticky` は効かない。コンテナの**外**（`body` 直下）に `position:fixed; inset:0 0 auto; z-index:900` で配置する（`.skip-link` の 1000 より下、`#toast` の 9999 より下）。
+- 見た目: 高さ 44px 目安、背景 `rgba(255,255,255,0.82)`（ダーク `rgba(30,30,30,0.88)`）＋ `backdrop-filter:blur(10px)`、下端 `1px solid var(--hairline)`。内容は「サイト名｜地域ラベル」のみ（更新日時・進捗・トップへ戻るは置かない＝情報過多にしない）。
+- サイト名は `.logo-text` と同じブランドグラデ文字（フォントサイズのみ差し替え）。
+- 表示制御: 既定で `transform:translateY(-100%); opacity:0` の非表示。`IntersectionObserver` が `<header>` の可視性を監視し、非表示になったら `.is-visible` を付与してスライドイン（`app.js`）。scroll イベント購読は使わない。IntersectionObserver 非対応・要素欠如時は常に非表示のまま（安全側の劣化）。
+- `h1` と同一内容の再掲のため `aria-hidden="true"`。
+- アンカー移動先の見出しがバーに隠れないよう、`.weather-box` の `scroll-margin-top` は `56px`。
 
 ### カード / ボックス
 

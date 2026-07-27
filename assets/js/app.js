@@ -1842,6 +1842,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const currentTime = document.getElementById("current-time");
   if (currentTime)
     currentTime.addEventListener("click", () => fetchWeatherData(true));
+
+  // ヘッダーが画面外に出たら簡易サイトバーを表示
+  const siteBar = document.getElementById("site-bar");
+  const headerEl = document.querySelector("header");
+  if (siteBar && headerEl && "IntersectionObserver" in window) {
+    new IntersectionObserver(
+      ([entry]) =>
+        siteBar.classList.toggle("is-visible", !entry.isIntersecting),
+      { rootMargin: "-8px 0px 0px 0px", threshold: 0 },
+    ).observe(headerEl);
+  }
 });
 
 ["click", "touchstart"].forEach((ev) =>
