@@ -45,6 +45,19 @@ updated: 2026-07-27
 - `assets/js/app.js` / `assets/css/style.css` / `index.html` / `eslint.config.js`
 - `DESIGN.md`（チャート・風予報の節を追記）/ `README.md`（グラフの見かた・風予報の表示方法）
 
+### オープンPR6件のマージとブランチ整理
+
+- **#131**（上記UX改善）を draft 解除して squash マージ。CI（ESLint + Prettier / pa11y WCAG2AA）はいずれも success。
+- **dependabot 5件**を依存関係の妥当性（差分がバージョンピンのSHA更新のみであること）を確認のうえ squash マージ。
+  - #124 `actions/setup-python` 6.3.0 → 7.0.0
+  - #128 `ruby/setup-ruby` 1.318.0 → 1.320.0
+  - #125 `prettier` 3.9.5 → 3.9.6
+  - #127 `wait-on` 9.0.10 → 9.1.0
+  - #126 `actions/checkout` 5.0.1 → 7.0.1（#124 と隣接行で衝突したため `@dependabot rebase` を依頼し、リベース後にマージ）
+- マージ後、`test.yml` が新しい `actions/checkout@v7.0.1` + `actions/setup-python@v7.0.0` で success することを確認。
+- dependabot の5ブランチはマージ時に自動削除。`claude/fix-errors-bugs-vulnerabilities-sri5yl` は本セッションの git プロキシが ref 削除の push を拒否したため、**手動削除が必要**（内容は `738a4fb` として main に取り込み済みで削除して問題なし）。
+- **残課題（未対応・軽微）**: #126 のマージにより `fetch-heatstroke-alert.yml:24` の `actions/checkout` SHA ピンが `v7.0.1` 相当に更新されたが、コメント表記が `# v5` のまま（dependabot の生成ミス）。動作影響なし。次回の軽微修正時にコメントのみ `# v7.0.1` へ直す。
+
 ## 完了済み（2026-07-26）
 
 ### 不具合・脆弱性の修正
