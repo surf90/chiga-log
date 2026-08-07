@@ -8,7 +8,7 @@ from unittest import mock
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
 import extract_daily_data
-from extract_daily_data import _normalize_stormglass_item, extract_moon_today
+from extract_daily_data import _normalize_stormglass_item, build_tide_widget, extract_moon_today
 
 
 class TestNormalizeStormglassItem(unittest.TestCase):
@@ -72,6 +72,48 @@ class TestExtractMoonToday(unittest.TestCase):
         result, saver = self._run({"age": "N/A", "phase": 50.0})
         self.assertIsNone(result)
         saver.assert_not_called()
+
+
+class TestBuildTideWidget(unittest.TestCase):
+    """気象庁潮汐の当日欠落時にフォールバックへ抜けるかを検証する。"""
+
+    def _build(self, all_tides, sg_tides=None):
+        """save_json/Stormglass をモックして tide_widget の出力dictを返す。"""
+        with mock.patch.object(extract_daily_data, "save_json") as saver, mock.patch.object(
+            extract_daily_data, "load_json", return_value=None
+        ), mock.patch.object(
+            extract_daily_data, "fetch_stormglass_tides", return_value=sg_tides
+        ) as sg:
+            build_tide_widget(all_tides, {"age": 1.0, "phase": 2.0})
+            return saver.call_args[0][1], sg
+
+    def test_uses_jma_when_today_present(self):
+        """当日分がある通常時は気象庁データをそのまま使う。"""
+        today = extract_daily_data.now_jst().strftime("%Y-%m-%d")
+        tides = [{"time": f"{today}T03:50:00+09:00", "type": "low", "height": 0.47}]
+        result, sg = self._build({today: tides})
+        self.assertEqual(result["source"], "気象庁")
+        self.assertEqual(result["today"], tides)
+        sg.assert_not_called()
+
+    def test_falls_back_when_today_missing(self):
+        """年跨ぎ等で当日キーが引けない場合はStormglassへフォールバックする。
+
+        ここを素通しすると today/forecast が空のウィジェットになり、
+        フロントが「取得失敗」表示になる（三原則1）。
+        """
+        result, sg = self._build(
+            {"2000-01-01": [{"time": "2000-01-01T00:00:00+09:00", "type": "low", "height": 0.1}]},
+            sg_tides=[{"time": "2026-05-13T00:30:00+00:00", "height": 1.23, "type": "high"}],
+        )
+        sg.assert_called_once()
+        self.assertEqual(result["source"], "Stormglass")
+        self.assertIn("2026-05-13", result["forecast"])
+
+    def test_empty_tide_data_still_falls_back(self):
+        """潮汐ファイル自体が空/欠損でも従来どおりフォールバックする。"""
+        _, sg = self._build(None, sg_tides=None)
+        sg.assert_called_once()
 
 
 if __name__ == "__main__":

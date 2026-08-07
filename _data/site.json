@@ -24,6 +24,7 @@
   "jma": {
     "forecast_code": "140000",
     "forecast_area_code": "140010",
+    "forecast_temp_code": "46106",
     "pref_code": "140000",
     "city_warning_code": "1420700",
     "city_warning_name": "茅ヶ崎市",

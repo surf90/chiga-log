@@ -472,7 +472,9 @@ async function calculateTide(force = false) {
   let ageSource = "計算値";
 
   try {
-    const dayKey = new Date().toISOString().slice(0, 10);
+    // 日付キーはJST基準。toISOString()(UTC)だと 0-9時JSTの間だけ前日キーのまま
+    // となり、日次ジョブ(JST 0:05)が更新した月齢を最大9時間拾えない。
+    const dayKey = toJstDateStr(new Date());
     const resp = await fetchWithTimeout(`data/moon_daily.json?d=${dayKey}`, {
       force,
     });
@@ -546,7 +548,8 @@ async function fetchTideExtremes(force = false) {
   }
 
   try {
-    const dayKey = new Date().toISOString().slice(0, 10);
+    // 月齢と同じくJST基準。UTC日付だと日替わり直後の潮汐表を取り逃がす。
+    const dayKey = toJstDateStr(new Date());
     const res = await fetchWithTimeout(`data/tide_widget.json?d=${dayKey}`, {
       force,
     });
@@ -695,6 +698,11 @@ function drawTideChart(extremes, hasHeightData) {
     tideChartInstance = null;
   }
   const xTicks = buildChartXTicks(chartXMin, xMax);
+  // 極値が1件しか無い日は補間点が作れず dataPoints が空になる。
+  // Math.min(...[]) は Infinity のため、そのまま軸へ渡すと目盛りが壊れる。
+  const ys = dataPoints.map((d) => d.y);
+  const yMin = ys.length ? Math.min(...ys) - 0.2 : -0.2;
+  const yMax = ys.length ? Math.max(...ys) + 0.2 : 1.2;
 
   tideChartInstance = new Chart(ctx, {
     type: "line",
@@ -734,12 +742,8 @@ function drawTideChart(extremes, hasHeightData) {
       scales: {
         y: {
           display: hasHeightData,
-          suggestedMin: hasHeightData
-            ? Math.min(...dataPoints.map((d) => d.y)) - 0.2
-            : -0.2,
-          suggestedMax: hasHeightData
-            ? Math.max(...dataPoints.map((d) => d.y)) + 0.2
-            : 1.2,
+          suggestedMin: hasHeightData ? yMin : -0.2,
+          suggestedMax: hasHeightData ? yMax : 1.2,
           ticks: { callback: (v) => v.toFixed(1) + " m" },
           afterFit: (scale) => {
             scale.width = 55;
@@ -1346,6 +1350,11 @@ async function fetchTsunami(force = false) {
 }
 
 // ─── 7. 天気予報 ────────────────────────────────────────────
+// 予報区コード（天気・降水確率の timeSeries）と、気温の timeSeries が使う
+// 代表地点コード。フォーク時に _data/site.json を書き換えれば追従する。
+const FORECAST_AREA_CODE = _cfgJma.forecast_area_code ?? "140010";
+const FORECAST_TEMP_CODE = _cfgJma.forecast_temp_code ?? "46106";
+
 async function fetchJmaForecast(force = false) {
   const hour8Buster = Math.floor(Date.now() / (8 * 60 * 60 * 1000));
   try {
@@ -1363,13 +1372,13 @@ async function fetchJmaForecast(force = false) {
       throw new Error("forecast.json の構造が不正です");
     }
     const areaWeather =
-      timeSeries0.areas?.find((a) => a.area?.code === "140010") ||
+      timeSeries0.areas?.find((a) => a.area?.code === FORECAST_AREA_CODE) ||
       timeSeries0.areas?.[0];
     const areaPop =
-      timeSeries1.areas?.find((a) => a.area?.code === "140010") ||
+      timeSeries1.areas?.find((a) => a.area?.code === FORECAST_AREA_CODE) ||
       timeSeries1.areas?.[0];
     const areaTemp =
-      timeSeries2.areas?.find((a) => a.area?.code === "46106") ||
+      timeSeries2.areas?.find((a) => a.area?.code === FORECAST_TEMP_CODE) ||
       timeSeries2.areas?.[0];
     if (!areaWeather || !areaPop || !areaTemp) {
       throw new Error("forecast.json に対象エリアがありません");

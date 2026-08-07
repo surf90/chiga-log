@@ -22,7 +22,9 @@ exclude:
   - FORK.md
   - reports/
   # クライアント未参照の元データ（Actions専用）。公開不要・容量削減のため除外。
-  - data/mooninfo_2026.json
+  # 年次で差し替わるためワイルドカード指定（年を直書きすると翌年ぶんが
+  # 除外から漏れ、約2MBの元データが公開ビルドに混入する）。
+  - data/mooninfo_*.json
   - data/tide_data.json
   # フロントエンド品質チェック設定（公開ビルド不要・開発専用）
   - eslint.config.js
