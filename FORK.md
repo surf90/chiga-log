@@ -71,6 +71,9 @@ python -m http.server 8000        # raw 配信: 設定は反映されず本家�
 - `assets/og/ogp.png` / `assets/og/ogp.webp`（OGP 画像）。
 - ロゴ用フォントサブセット（`index.html` の `&text=ちがログ` 部分）。
 - フッターの外部 SNS リンク（例: ライフセービングの Instagram）。
+- `warning-worker/src/index.js`（警報BFF の Cloudflare Worker）。`_data/site.json` を
+  読まない独立デプロイのため、`UPSTREAM_URL` / `AREA_CODE` / `AREA_NAME` と
+  `ALLOWED_ORIGINS`（公開先オリジン）をこのファイル側で直接書き換えます。
 - 潮汐/警報の出力ファイル名 `data/warning_chigasaki.json`・`data/tide_data.json` は
   そのままでも動作します（地名はファイル名のみ）。
 

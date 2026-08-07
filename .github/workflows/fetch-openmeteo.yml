@@ -31,11 +31,20 @@ jobs:
           python-version: "3.12"
       - name: Run fetch script
         run: python scripts/fetch_openmeteo.py
+      # 以降のステップは Open-Meteo の成否に依存しない別ソース。既定の
+      # if: success() のままだと、Open-Meteo が落ちただけで気象庁の警報
+      # （30分ごとに更新される防災情報）まで取得・コミットされなくなる。
+      # 各スクリプトは失敗しても既存ファイルを温存する設計なので独立実行する。
       - name: Fetch JMA warnings (BFF)
+        if: ${{ !cancelled() }}
         run: python scripts/fetch_warning.py
       - name: Fetch heatstroke alerts
+        if: ${{ !cancelled() }}
         run: python scripts/fetch_heatstroke_alert.py
       - name: Commit and push if changed
+        # 一部ソースが失敗しても、取得できた分は反映する（ジョブ全体の
+        # 成否は各ステップの exit code がそのまま伝える）。
+        if: ${{ !cancelled() }}
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'

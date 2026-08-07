@@ -28,8 +28,20 @@ exclude:
   - data/tide_data.json
   # フロントエンド品質チェック設定（公開ビルド不要・開発専用）
   - eslint.config.js
+  # 以下はサイト本体ではないが exclude 漏れで実際に公開されていた（計約280KB）。
+  # tests: Pythonユニットテスト / warning-worker: Cloudflare Worker のソース
+  # （Workers へ別途デプロイするもの）/ npm マニフェスト: 開発ツール専用。
+  - tests/
+  - warning-worker/
+  - package.json
+  - package-lock.json
   # ローカルビルド用（独自 exclude は既定値を上書きするため明示）
   - Gemfile
   - Gemfile.lock
   - vendor/
   - .bundle/
+  # Jekyll 既定の exclude に含まれるが、上の独自 exclude が既定を丸ごと
+  # 上書きするため再宣言が必要。これが無いとローカルに node_modules が
+  # ある状態で `bundle exec jekyll build` が失敗する（CI は npm ci より
+  # 前に build するため再現しない）。
+  - node_modules

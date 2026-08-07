@@ -36,9 +36,10 @@ jobs:
 
       - name: Commit and push if changed
         # 月齢・潮汐のどちらか一方だけ失敗した場合、スクリプトは exit 1 で
-        # 異常を通知しつつ成功した側は書き出し済み。always() を付けないと
+        # 異常を通知しつつ成功した側は書き出し済み。この条件が無いと
         # そのコミットが丸ごと捨てられ、翌日まで古いデータが残る。
-        if: always()
+        # always() ではなく !cancelled() にして、キャンセル時は走らせない。
+        if: ${{ !cancelled() }}
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'

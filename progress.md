@@ -17,11 +17,26 @@ updated: 2026-08-07
 - **設定の一元管理からの漏れ（FORK.md の前提との齟齬）**: (1) CSP `connect-src` が警報Worker URL をリテラル直書きで、`_data/site.json` の `warning_api_url` を差し替えても CSP 側だけ取り残され**ライブ取得が黙ってブロックされスナップショットに落ちる**状態だった → Liquid でオリジンを自動展開（URL未設定・キー欠落・別URLの4パターンで描画検証、既存構成では出力バイト一致）。(2) `fetchJmaForecast()` が予報区 `140010` と気温地点 `46106` をハードコード → `jma.forecast_area_code` / 新設 `jma.forecast_temp_code` 参照に変更。いずれも FORK.md の表に追記。
 - **細部**: 極値が1件しか無い日に `Math.min(...[])`＝`Infinity` が潮汐グラフのY軸へ渡る経路をガード。`_config.yml` の月齢元データ除外を `data/mooninfo_2026.json` → `data/mooninfo_*.json` に一般化（年を直書きすると翌年ぶんが除外から漏れ約2MBが公開ビルドに混入する。Jekyll の `EntryFilter` で 2026/2027 とも除外されることを実機確認）。`sw.js` を `chigalog-v15` にバンプ。
 
+**同セッション 追加分（整合性検証で判明した積み残し）**
+
+- **潮汐/波グラフのx軸原点ズレ（到着順依存）**: `drawTideChart()` は `chartXMin` を無条件で当日最初の極値に上書きするが、`drawWaveCombinedChart()` は `chartXMin` が null のときだけ暫定原点（当日4:00 JST）を使う。両者は `Promise.allSettled` の並行取得で**到着順が不定**なため、波が先着すると波グラフだけ暫定原点のまま取り残される。2つのグラフは `scrollLeft` を相互同期しているので、時刻軸が無言でズレる。実物の `app.js` を Node の `vm` 上でスタブ実行して検証したところ、8/7（当日最初の極値 05:10）では **wave先着時に70分＝約16pxのズレ**を再現（14px/h × 672px 幅）。極値が0:15等なら3時間超のズレになり得る。→ 描画元データを `waveChartData` に保持し、潮汐が後着で原点を動かした場合のみ波グラフを同一原点で描き直す。両順序で `xMin` が一致することを確認（修正を外すと再現、戻すと解消）。
+- **Open-Meteo 障害が気象庁警報の更新を巻き添えにする**: `fetch-openmeteo.yml` は1ジョブで Open-Meteo →警報→熱中症→commit を直列実行する。`fetch_openmeteo.py` は必須データ欠落で `raise` するため、既定の `if: success()` により**Open-Meteo が落ちただけで30分ごとの防災情報（警報）の取得・コミットまで丸ごとスキップ**されていた。前セッション(#136)が熱中症で潰した不具合と同種で、`fetch_openmeteo.py` が先頭ステップである点が見落とされていた。→ 後続3ステップに `if: ${{ !cancelled() }}`。各スクリプトは失敗時に既存ファイルを温存する設計なので独立実行して安全。
+- **`if: always()` → `!cancelled()`**: 前段で入れた日次ジョブの条件は、キャンセル時にもコミットを走らせてしまう。キャンセル時は実行しない `!cancelled()` に是正。
+- **exclude 漏れで非公開想定のファイルが公開されていた**: `_config.yml` の独自 `exclude:` は Jekyll 既定値を丸ごと上書きするが、`node_modules` の再宣言が漏れていた（progress.md に「ローカルビルドが落ちる既存の環境要因」として残っていた事象の正体）。さらに `tests/`・`warning-worker/`・`package.json`・`package-lock.json` は exclude 対象に無く、**実際に公開ビルドへ出力されていた（計約280KB）**。CLAUDE.md の「ソース以外はビルド除外」方針との齟齬。→ いずれも追加。Jekyll の `EntryFilter` を実際に走らせ、公開対象トップレベルから除外されること・サイト本体（`index.html`/`assets`/`data`/`sw.js` 等）が影響を受けないことを確認。トップレベルのディレクトリ指定は**末尾スラッシュ無し**でないとマッチしない点も実測で確認済み（`node_modules/` では効かない）。
+- **FORK.md**: `warning-worker/src/index.js` は `_data/site.json` を読まない独立デプロイのため、フォーク時に手動で書き換える箇所として §4 に追記。
+
 **検証**
 
-- `pytest tests` 51件成功（+3）。`npx eslint assets/js/app.js` / `npx prettier --check` ともにクリーン。
+- `pytest tests` 51件成功（+3）。`npx eslint assets/js/app.js` / `npx prettier --check` / `node --check` ともにクリーン。全 YAML のパース確認済み。
 - `extract_daily_data.py` を実データのコピー上で実行し、通常経路が `source=気象庁` / exit 0 のままであることを確認。
+- CSP は Liquid を4パターン（URL設定済み/空文字/キー欠落/別URL）で描画検証。加えて PR #138 の pa11y ジョブが実際に `bundle exec jekyll build` を通しており、CI 3件すべて green。
+- グラフ原点の修正は Node の `vm` 上で実物の `app.js` を実行し、到着順2通りで検証（回帰スクリプトはスクラッチ領域のみ・リポジトリ非追跡）。
 - 気象庁・環境省の各エンドポイントはこの実行環境からは到達不可（プロキシが 403）。上流レスポンス形式の実地照合はできていないため、判断はリポジトリ内の実取得済み JSON とコードのみに基づく。
+
+**未対応（要相談）**
+
+- 潮汐の年跨ぎは今回フォールバック側で塞いだが、根治は `update-jma-tide.yml` の cron を年末（例: 12/25）へ前倒しすること。cron 変更は要相談（三原則3）のため見送り。
+- 波グラフのx軸右端（当日最初の極値+48h）に対し波浪ガイダンスのデータは翌々日0:00までしか無く、右端に最大数時間の空白が残る（従来からの挙動、今回は不変）。
 
 **関連ファイル**
 

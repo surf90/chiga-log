@@ -38,6 +38,9 @@ const PX_PER_HOUR = 14;
 const CHART_TOTAL_PX = PX_PER_HOUR * 24 * CHART_DAYS;
 let chartScrollSynced = false;
 let windForecastRange = "";
+// 波グラフの描画元データ。潮汐が後着でx軸原点を確定させた場合に、
+// 同じ原点で描き直すため保持する（下の drawTideChart 参照）。
+let waveChartData = null;
 
 // ─── 1. キャッシュヘルパー ──────────────────────────────────
 /**
@@ -662,7 +665,17 @@ function drawTideChart(extremes, hasHeightData) {
   const ctx = canvas.getContext("2d");
 
   extremes.sort((a, b) => a.timeMs - b.timeMs);
+  // 潮汐と波は Promise.allSettled で並行取得するため到着順が不定。波が先着
+  // した場合、波グラフは暫定原点(当日4時)で軸を作っている。ここで原点が
+  // 動くと、scrollLeft を同期している2つのグラフの時刻軸がずれるため、
+  // ずれた場合だけ波グラフを同じ原点で描き直す。
+  const prevXMin = chartXMin;
   chartXMin = extremes[0].timeMs;
+  const needWaveRedraw =
+    waveChartInstance !== null &&
+    waveChartData !== null &&
+    prevXMin !== null &&
+    prevXMin !== chartXMin;
   const xMax = chartXMin + CHART_DAYS * 24 * 60 * 60 * 1000;
 
   const dataPoints = [],
@@ -763,6 +776,14 @@ function drawTideChart(extremes, hasHeightData) {
     },
   });
 
+  if (needWaveRedraw) {
+    waveChartInstance = drawWaveCombinedChart(
+      "waveChart",
+      waveChartInstance,
+      waveChartData,
+    );
+  }
+
   syncChartScroll();
   scrollChartsToNow();
 }
@@ -797,6 +818,7 @@ async function fetchWaveGuidance(force = false) {
     );
     if (todayData.length === 0) throw new Error("本日の波浪データがありません");
 
+    waveChartData = todayData;
     waveChartInstance = drawWaveCombinedChart(
       "waveChart",
       waveChartInstance,
