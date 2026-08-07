@@ -71,6 +71,7 @@ def parse_alert_csv(text: str, source: str) -> dict:
 
 
 def main() -> None:
+    """CSVを取得し書き出す。取得失敗時は既存ファイルを保持する。"""
     now = now_jst()
     for url in candidate_urls(now):
         text = http_get_text(url)
@@ -84,7 +85,7 @@ def main() -> None:
         save_json(OUTPUT_PATH, output, indent=2)
         print(f"[heatstroke] {len(output['alerts'])}件: {output['alerts']}")
         return
-    raise RuntimeError("利用可能な熱中症情報CSVを取得できませんでした")
+    print("[heatstroke] 取得失敗。既存ファイルを保持します。")
 
 
 if __name__ == "__main__":
