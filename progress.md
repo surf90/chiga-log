@@ -1,10 +1,25 @@
 ---
-updated: 2026-07-27
+updated: 2026-08-07
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-08-07）
+
+### Actions失敗の原因調査・修正（Fetch Open-Meteo Data / Update Daily Data）
+
+- **報告事象**: 8/6夜「Fetch Open-Meteo Data」失敗、8/7「Update Daily Data」全ジョブキャンセル。
+- **原因**: `scripts/fetch_heatstroke_alert.py` が環境省WBGT CSV（当日・前日×4時刻ぶんの候補URL）を全滅（実ログでは `403 Forbidden`）すると `RuntimeError` を送出していた。この呼び出しは `fetch-openmeteo.yml` の最終ステップのため、直前に成功していた Open-Meteo（海面・風）・気象庁警報データの「Commit and push」ステップまでスキップされ、正常取得できていたデータもコミットされずジョブ全体が失敗扱いになっていた。全ワークフローが `concurrency: group: data-push` を共有しているため、この失敗が繰り返される中で「Update Daily Data」等の後続スケジュール実行がキュー詰まりでキャンセルされる一因にもなっていたと推定（現在は再発なし・キュー内ジョブなしを確認）。
+- **修正**: `scripts/fetch_warning.py` と同じ「取得失敗時は警告ログを出し既存ファイルを保持して正常終了」方式に統一（`raise RuntimeError` を削除）。他スクリプトの `raise`/`sys.exit` 箇所（`fetch_openmeteo.py` 必須データ欠落、`fetch_forecast.py` 既存ファイルも無い場合、`generate_tide.py`/`extract_daily_data.py`）は単独ステップの一次データ取得で他ステップをブロックしないため対象外と判断。
+- **検証**: `pytest tests`（48件）成功。マージ後 `fetch-openmeteo.yml` 実行（2026-08-07T00:24 UTC）が成功したことを確認。
+
+**関連ファイル**
+
+- `scripts/fetch_heatstroke_alert.py`
+
+**PR**: [#136](https://github.com/surf90/chiga-log/pull/136)（マージ済み）
 
 ## 完了済み（2026-07-27・続き）
 
