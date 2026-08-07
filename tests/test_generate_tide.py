@@ -3,9 +3,11 @@
 import os
 import sys
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
+import generate_tide
 from generate_tide import _extract_extremes, parse_jma_tide_text
 
 
@@ -68,6 +70,40 @@ class TestParseJmaTideText(unittest.TestCase):
         types = [e["type"] for e in day]
         self.assertEqual(types.count("high"), 2)
         self.assertEqual(types.count("low"), 2)
+
+
+class TestMainYearMerge(unittest.TestCase):
+    """当年＋翌年ぶんの併合（年跨ぎ対策）を検証する。"""
+
+    def _run(self, fetched):
+        """fetch_and_parse を年ごとの戻り値でモックし、保存された辞書を返す。"""
+        with mock.patch.object(
+            generate_tide, "fetch_and_parse", side_effect=lambda y: fetched.get(y)
+        ), mock.patch.object(generate_tide, "save_json") as saver:
+            generate_tide.main()
+            return saver.call_args[0][1]
+
+    def test_merges_next_year(self):
+        """翌年ぶんが取得できれば当年ぶんと併合される。"""
+        year = generate_tide.now_jst().year
+        saved = self._run({
+            year: {f"{year}-12-31": ["cur"]},
+            year + 1: {f"{year + 1}-01-01": ["next"]},
+        })
+        self.assertIn(f"{year}-12-31", saved)
+        self.assertIn(f"{year + 1}-01-01", saved)
+
+    def test_next_year_missing_is_not_fatal(self):
+        """翌年ぶんが未公開(None)でも当年ぶんだけで正常に保存する。"""
+        year = generate_tide.now_jst().year
+        saved = self._run({year: {f"{year}-12-31": ["cur"]}, year + 1: None})
+        self.assertEqual(list(saved), [f"{year}-12-31"])
+
+    def test_current_year_failure_exits(self):
+        """当年ぶんが取得できない場合は従来どおり異常終了する。"""
+        year = generate_tide.now_jst().year
+        with self.assertRaises(SystemExit):
+            self._run({year: None, year + 1: {"x": []}})
 
 
 if __name__ == "__main__":

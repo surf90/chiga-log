@@ -1,9 +1,15 @@
-"""気象庁の固定長テキストデータから1年分の潮汐JSONを生成する。"""
+"""気象庁の固定長テキストデータから潮汐JSONを生成する。
+
+当年に加えて翌年ぶんも取得できれば併合する。tide_data.json は日付キーの
+辞書なので、年末に翌年ぶんが入っていないと JST 1/1 に当日キーが引けず、
+潮汐ウィジェットが空になる（update-jma-tide の cron は年明け後に走るため
+当年ぶんだけでは間に合わない）。翌年ぶんは気象庁の公開時期次第で404に
+なるため、取得できなければ当年ぶんのみで正常終了する。
+"""
 
 import sys
-from datetime import datetime
 
-from _common import http_get_bytes, load_site_config, save_json
+from _common import http_get_bytes, load_site_config, now_jst, save_json
 
 # 観測所コードD8 = 湘南港。フォーク時は _data/site.json の jma.tide_station を変更。
 TIDE_STATION = load_site_config().get("jma", {}).get("tide_station", "D8")
@@ -72,12 +78,25 @@ def fetch_and_parse(year: int, station_code: str = TIDE_STATION) -> dict | None:
 
 
 def main() -> None:
-    target_year = datetime.now().year
+    # JST基準。cron は 15:05 UTC（＝翌日 0:05 JST）に走るため、UTC の暦年で
+    # 判定すると年末年始に1年ずれる余地がある。
+    target_year = now_jst().year
     print(f"気象庁から {target_year} 年の潮汐データを取得中...")
     result = fetch_and_parse(target_year)
     if not result:
         print("データの取得・解析に失敗しました。", file=sys.stderr)
         sys.exit(1)
+
+    # 翌年ぶんは未公開なら404。取得できた場合のみ併合する（年跨ぎ対策）。
+    next_year = target_year + 1
+    print(f"気象庁から {next_year} 年の潮汐データを取得中（任意）...")
+    next_result = fetch_and_parse(next_year)
+    if next_result:
+        result = {**result, **next_result}
+        print(f"{next_year} 年ぶんを併合しました（{len(next_result)}日分）。")
+    else:
+        print(f"{next_year} 年ぶんは取得できませんでした（未公開の可能性）。当年ぶんのみ保存します。")
+
     save_json("data/tide_data.json", result, indent=2)
     print(f"正常に data/tide_data.json を生成しました（{len(result)}日分）。")
 
