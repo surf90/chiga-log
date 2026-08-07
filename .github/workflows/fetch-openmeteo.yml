@@ -7,7 +7,11 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: data-push
+  # ワークフローごとに独立させる。共通グループにすると、待機中の run が
+  # 別ワークフローの新規 run 投入で cancel され（GitHub は running 1 + pending 1
+  # しか保持しない）、30分cronのOpen-Meteoが日次ジョブを潰す事故が起きる。
+  # 跨ワークフローの push 競合は各ジョブの pull --rebase リトライで吸収する。
+  group: data-push-${{ github.workflow }}
   cancel-in-progress: false
 
 env:
@@ -27,11 +31,20 @@ jobs:
           python-version: "3.12"
       - name: Run fetch script
         run: python scripts/fetch_openmeteo.py
+      # 以降のステップは Open-Meteo の成否に依存しない別ソース。既定の
+      # if: success() のままだと、Open-Meteo が落ちただけで気象庁の警報
+      # （30分ごとに更新される防災情報）まで取得・コミットされなくなる。
+      # 各スクリプトは失敗しても既存ファイルを温存する設計なので独立実行する。
       - name: Fetch JMA warnings (BFF)
+        if: ${{ !cancelled() }}
         run: python scripts/fetch_warning.py
       - name: Fetch heatstroke alerts
+        if: ${{ !cancelled() }}
         run: python scripts/fetch_heatstroke_alert.py
       - name: Commit and push if changed
+        # 一部ソースが失敗しても、取得できた分は反映する（ジョブ全体の
+        # 成否は各ステップの exit code がそのまま伝える）。
+        if: ${{ !cancelled() }}
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'

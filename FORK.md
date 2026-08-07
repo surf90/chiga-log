@@ -17,6 +17,7 @@ JS・Python・HTML（Jekyll）の3者がここを参照するため、基本は 
 | `location.tide_table_label` | 潮位表リンクの表示名 | 湘南港 | 最寄りの潮位観測所名 |
 | `jma.forecast_code` | 天気予報JSON（県）コード | 140000 | 下記「JMAコードの調べ方」 |
 | `jma.forecast_area_code` | 予報区（東部等）・警報リンクの `code` | 140010 | 同上 |
+| `jma.forecast_temp_code` | 気温 timeSeries の代表地点コード | 46106（横浜） | 予報JSONの3番目の `timeSeries` を確認 |
 | `jma.pref_code` | アメダスリンクの `area_code` | 140000 | 同上 |
 | `jma.city_warning_code` | 市区町村の警報コード（`selected_code`） | 1420700 | 同上 |
 | `jma.city_warning_name` | 警報JSON出力の地域名 | 茅ヶ崎市 | 任意 |
@@ -27,6 +28,10 @@ JS・Python・HTML（Jekyll）の3者がここを参照するため、基本は 
 | `jma.wave_guid_area` | 波浪ガイダンスのエリア番号 | 20 | 下記 |
 | `jma.wave_guid_link_area` | 波浪ガイダンスHTMLリンクの `area` | 19 | 気象庁サイト |
 | `jma.tsunami_area_code` | 津波予報区コード | 330 | 下記 |
+| `jma.warning_api_url` | 警報BFF（Cloudflare Worker）のURL | `https://…workers.dev/warning` | 自分でデプロイした Worker のURL。空文字ならライブ取得を行わず `data/warning_chigasaki.json` のみ使用 |
+
+> `warning_api_url` のオリジンは `index.html` の CSP `connect-src` に Liquid で
+> 自動展開されます。URL を変えても CSP の手動編集は不要です。
 
 > 座標 `tide_lon` の末尾ゼロ（139.410）は JSON では 139.41 になりますが数値は同一です。
 
@@ -66,6 +71,9 @@ python -m http.server 8000        # raw 配信: 設定は反映されず本家�
 - `assets/og/ogp.png` / `assets/og/ogp.webp`（OGP 画像）。
 - ロゴ用フォントサブセット（`index.html` の `&text=ちがログ` 部分）。
 - フッターの外部 SNS リンク（例: ライフセービングの Instagram）。
+- `warning-worker/src/index.js`（警報BFF の Cloudflare Worker）。`_data/site.json` を
+  読まない独立デプロイのため、`UPSTREAM_URL` / `AREA_CODE` / `AREA_NAME` と
+  `ALLOWED_ORIGINS`（公開先オリジン）をこのファイル側で直接書き換えます。
 - 潮汐/警報の出力ファイル名 `data/warning_chigasaki.json`・`data/tide_data.json` は
   そのままでも動作します（地名はファイル名のみ）。
 

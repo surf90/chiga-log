@@ -35,9 +35,14 @@ lang: ja
       href="{{ site.baseurl }}/assets/icons/apple-touch-icon.png"
     />
     <link rel="manifest" href="{{ site.baseurl }}/site.webmanifest" />
+    <!-- connect-src の警報BFFは _data/site.json の jma.warning_api_url から生成する。
+         リテラル直書きだと URL を差し替えたときだけ CSP に取り残され、
+         ライブ取得が黙ってブロックされてスナップショットに落ちる。 -->
+    {%- assign warning_api_origin = site.data.site.jma.warning_api_url |
+    default: "" | split: "/" | slice: 0, 3 | join: "/" -%}
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self' https://www.jma.go.jp https://chiga-log-warning-api.delay-bot.workers.dev; manifest-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+      content="default-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self' https://www.jma.go.jp {{ warning_api_origin }}; manifest-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
     />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />

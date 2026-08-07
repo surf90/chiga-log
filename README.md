@@ -212,7 +212,7 @@ git push
 
 **補足**
 
-- `mooninfo_YYYY.json`（約2MB）は `scripts/extract_daily_data.py` 専用の元データで、フロントは日次抽出後の `moon_daily.json` のみ参照します。容量削減のため `_config.yml` の `exclude:` で**公開ビルドから除外**（リポジトリには保持、Actions/スクリプトはリポジトリ直読みのため影響なし）。
+- `mooninfo_YYYY.json`（約2MB）は `scripts/extract_daily_data.py` 専用の元データで、フロントは日次抽出後の `moon_daily.json` のみ参照します。容量削減のため `_config.yml` の `exclude:` で**公開ビルドから除外**（リポジトリには保持、Actions/スクリプトはリポジトリ直読みのため影響なし）。除外指定は `data/mooninfo_*.json` のワイルドカードなので、年次差し替え時に `_config.yml` を編集する必要はありません。
 - データはUTC（協定世界時）基準で1時間ごとに記録されています（1年分 = 8,760〜8,784エントリ）
 - 日本時間（JST = UTC+9）の1月1日 0〜8時は、前年のJSONが参照されます。前年ファイルが存在しない場合は数式による概算値で自動補完されます
 - 月齢の表示に "NASA" と出ていれば正常にNASAデータを参照中、"計算値" と出ていればフォールバック中です

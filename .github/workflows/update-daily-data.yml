@@ -7,7 +7,11 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: data-push
+  # ワークフローごとに独立させる。共通グループにすると、待機中の run が
+  # 別ワークフローの新規 run 投入で cancel され（GitHub は running 1 + pending 1
+  # しか保持しない）、30分cronのOpen-Meteoが日次ジョブを潰す事故が起きる。
+  # 跨ワークフローの push 競合は各ジョブの pull --rebase リトライで吸収する。
+  group: data-push-${{ github.workflow }}
   cancel-in-progress: false
 
 env:
@@ -31,6 +35,11 @@ jobs:
         run: python scripts/extract_daily_data.py
 
       - name: Commit and push if changed
+        # 月齢・潮汐のどちらか一方だけ失敗した場合、スクリプトは exit 1 で
+        # 異常を通知しつつ成功した側は書き出し済み。この条件が無いと
+        # そのコミットが丸ごと捨てられ、翌日まで古いデータが残る。
+        # always() ではなく !cancelled() にして、キャンセル時は走らせない。
+        if: ${{ !cancelled() }}
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'

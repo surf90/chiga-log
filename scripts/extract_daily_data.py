@@ -94,7 +94,12 @@ def build_tide_widget(all_tides: dict | None, moon_result: dict | None) -> None:
     forecast: dict[str, list] = {}
     source = "気象庁"
 
-    if all_tides:
+    # 「ファイルがある」ではなく「当日分の極値がある」で判定する。
+    # tide_data.json は年単位のため、年明け直後は前年ぶんしか無く
+    # all_tides は真だが当日キーが引けない。ここを素通しすると
+    # today/forecast が空のウィジェットを出力し、フロントが
+    # 「潮汐データの取得に失敗しました」になる（三原則1に反する空表示）。
+    if all_tides and all_tides.get(date_str):
         for delta in range(3):
             d = n + timedelta(days=delta)
             ds = d.strftime("%Y-%m-%d")
@@ -132,7 +137,11 @@ def build_tide_widget(all_tides: dict | None, moon_result: dict | None) -> None:
 if __name__ == "__main__":
     moon_result = extract_moon_today()
     tide_data = load_json("data/tide_data.json")
-    ok_tide = tide_data is not None
+    # 当日キーが引けるかまで見る。年跨ぎで前年ぶんしか無い状態を
+    # 「取得成功」と報告すると、フォールバックしたことに気付けない。
+    ok_tide = isinstance(tide_data, dict) and bool(
+        tide_data.get(now_jst().strftime("%Y-%m-%d"))
+    )
 
     build_tide_widget(tide_data, moon_result)
 
