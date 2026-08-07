@@ -802,19 +802,19 @@ async function fetchWaveGuidance(force = false) {
 
     // ロケール文字列の再パース（実装依存でInvalid Dateになり得る）を避け、
     // JSTオフセット加算による日付算出で統一する。
+    // グラフのx軸は「当日最初の干満潮時刻」を原点に48時間ぶんなので、右端は
+    // 翌々日の未明まで伸びる。日付は CHART_DAYS+1 日ぶん丸ごと拾っておき、
+    // 実際の表示範囲での切り出しは drawWaveCombinedChart 側に任せる
+    // （原点が確定するのは潮汐の到着後のため）。
     const dateStrs = [];
-    for (let i = 0; i < CHART_DAYS; i++) {
+    for (let i = 0; i <= CHART_DAYS; i++) {
       dateStrs.push(toJstDateStr(new Date(Date.now() + i * 86400000)));
     }
-    const nextDayStr = toJstDateStr(
-      new Date(Date.now() + CHART_DAYS * 86400000),
-    );
 
     const todayData = (json.data || []).filter(
       (d) =>
         typeof d?.time === "string" &&
-        (dateStrs.some((s) => d.time.startsWith(s)) ||
-          d.time.startsWith(nextDayStr + "T00:00")),
+        dateStrs.some((s) => d.time.startsWith(s)),
     );
     if (todayData.length === 0) throw new Error("本日の波浪データがありません");
 
@@ -839,6 +839,10 @@ async function fetchWaveGuidance(force = false) {
 // 0.1m の差が画面全高に引き伸ばされ大波と誤読されるため、この幅までは
 // 必ず軸を広げて変動の小ささが見た目に残るようにする。
 const WAVE_MIN_SPAN_M = 1.0;
+
+// 気象庁 波浪ガイダンスの時間刻み。表示範囲の前後にこの1コマぶんを含めて
+// 線を端まで届かせる。
+const WAVE_STEP_MS = 3 * 60 * 60 * 1000;
 
 /**
  * 波高軸の下限・上限・目盛り間隔を決める。
@@ -879,16 +883,6 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
     existingInstance = null;
   }
 
-  const heightData = data.map((d) => ({
-    x: new Date(d.time).getTime(),
-    y: d.wave_height,
-  }));
-  const waveAxis = waveAxisBounds(heightData.map((d) => d.y));
-  const periodData = data.map((d) => ({
-    x: new Date(d.time).getTime(),
-    y: d.period,
-  }));
-
   const todayJstStartMs =
     Math.floor((Date.now() + JST_OFFSET_MS) / 86400000) * 86400000 -
     JST_OFFSET_MS;
@@ -898,6 +892,25 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
   // 「今」へ寄せられるよう、共有の基準時刻を確定させる。
   if (chartXMin === null) chartXMin = xMin;
   const xMax = xMin + CHART_DAYS * 24 * 60 * 60 * 1000;
+
+  // 表示範囲で切り出す。ガイダンスは3時間刻みなので前後1コマぶんを含めて
+  // おき、線が両端まで届くようにする（含めないと右端に最大3時間の空白が
+  // 残る）。範囲外を除くことで、画面に出ていない値が波高軸のスケールを
+  // 引き伸ばすのも防ぐ。
+  const visible = data.filter((d) => {
+    const t = new Date(d.time).getTime();
+    return t >= xMin - WAVE_STEP_MS && t <= xMax + WAVE_STEP_MS;
+  });
+
+  const heightData = visible.map((d) => ({
+    x: new Date(d.time).getTime(),
+    y: d.wave_height,
+  }));
+  const waveAxis = waveAxisBounds(heightData.map((d) => d.y));
+  const periodData = visible.map((d) => ({
+    x: new Date(d.time).getTime(),
+    y: d.period,
+  }));
 
   setChartContainerWidth("wave-chart-container", CHART_TOTAL_PX);
   const waveXTicks = buildChartXTicks(xMin, xMax);
