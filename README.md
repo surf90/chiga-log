@@ -88,6 +88,21 @@ https://surf90.github.io/chiga-log/
 
 > 注: オーナーのアカウント停止時はGitHub Actions自体が停止するため、リポジトリ内の監視では検知できません。上記の閲覧者側の鮮度表示が実質的な安全網です。
 
+### オフライン対応とキャッシュ戦略（PWA）
+
+`sw.js`（Service Worker）がリクエストの種類ごとに戦略を変えます。**「古いデータを最新に見せない」ことと「修正が確実に届くこと」を、表示速度より優先**しています。
+
+| 対象                            | 戦略                         | 意図                                                                                                        |
+| ------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `data/*.json`（潮汐・波・天気） | ネットワーク優先・保存しない | 鮮度最優先（三原則1）。オフライン時のみ退避キャッシュを試み、Cache Storage の肥大化も避ける                 |
+| ナビゲーション（ページ遷移）    | ネットワーク優先             | オフライン時だけ App Shell（`index.html`）を返す                                                            |
+| 静的アセット（CSS/JS/画像）     | Stale-While-Revalidate       | キャッシュがあれば即返して描画をブロックせず（三原則2）、裏で再取得して**次回アクセスから新版に入れ替わる** |
+
+- **静的アセットを Cache-First にしてはいけません。** `index.html` は `style.min.css` / `app.min.js` をクエリ無しの固定URLで参照するため、Cache-First かつ再検証なしだと `minify.yml` が更新した内容が `CACHE_NAME` を手で上げるまで永久に届きません（実際に発生した不具合）。
+- 他オリジンへのリクエスト（気象庁・Cloudflare Worker）は Service Worker を素通しします。オリジンは前方一致ではなく `URL` で解析して厳密比較します。
+- `assets/js/sw-register.js` は、**既存の Service Worker が置き換わったときだけ**ページを再読み込みします。`skipWaiting()` + `clients.claim()` は初回登録でも `controllerchange` を発火するため、無条件に再読み込みすると新規訪問者が毎回フルリロード＋データ再取得になります（三原則2・3に反する）。
+- `sw.js` を編集したら `CACHE_NAME`（`chigalog-vNN`）を上げてください。`activate` で旧キャッシュを削除します。
+
 ## 開発者・管理者向け情報
 
 <details>
@@ -327,7 +342,8 @@ npx --yes pa11y-ci
 
 ## 使用技術・API
 
-- **フロントエンド**: HTML5 / CSS3 / JavaScript (ES6+)
+- **フロントエンド**: HTML5 / CSS3 / JavaScript (ES6+)。ライブラリは原則不使用（例外は自ホストの Chart.js のみ）
+- **PWA**: `site.webmanifest` + Service Worker（`sw.js`）。ホーム画面へ追加でき、オフラインでも App Shell を表示。キャッシュ戦略は「[オフライン対応とキャッシュ戦略（PWA）](#オフライン対応とキャッシュ戦略pwa)」参照
 - **SEO・構造化データ**: OGP / Twitter Card / canonical に加え、JSON-LD（`@graph`: Person・WebSite・WebPage・WebApplication）で著者・地理情報・公開/更新日を宣言。サイト名の表記ゆれ（ちがろぐ／チガログ／chigalog 等）は `alternateName` で網羅。`jekyll-sitemap` で sitemap.xml 自動生成。
 - **グラフ描画**: Chart.js（自ホスト版 `assets/vendor/chart.umd.min.js`。CDN通信を排除し、サードパーティ依存を最小化）
 - **品質ゲート**: ESLint（`eslint.config.js`）/ Prettier / pa11y-ci（WCAG2AA）を `frontend-ci.yml` で push・PR 時に自動実行
