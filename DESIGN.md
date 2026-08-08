@@ -39,7 +39,7 @@
 
 ### ブランド/アクセント（変数化されていない固定値）
 
-- **ブランドグラデ**: `linear-gradient(135deg,#0e7490 0%,#0284c7 100%)`（ティール→ブルー）。ヒーロータイトル文字（`background-clip:text`）とヒーローカード背景に使用。ヒーローカードは白の薄いハイライトを重ねて、屋外でも押せる面として認識しやすくする。
+- **ブランドグラデ**: `linear-gradient(135deg,#0e7490 0%,#0284c7 100%)`（ティール→ブルー）。ヒーロータイトル文字（`background-clip:text`）とヒーローカード背景に使用。ヒーローカードは白の薄いハイライトを重ねて、屋外でも押せる面として認識しやすくする。グラデ文字は `-webkit-background-clip` と**標準 `background-clip` を必ず併記**する。接頭辞のみだと、将来の接頭辞廃止時に `-webkit-text-fill-color:transparent` だけが残りロゴが不可視になる。
 - **アクセント文字/リンク**: `--brand`（ライトは `#0e7490`、ダークは `#5ebdd8`）。数値ハイライト・リンク・点線下線・アウトラインボタン枠。
 - **警報系**: 通常警報 `#c0392b`、特別警報 `#7c3aed`（紫）、注意報レベルは橙系（`#e67e22` / `#d97706`）。注意報バッジは橙背景で白文字だとコントラスト不足になるため、文字色は `#222222`。
 - **ダーク時の明色置換**: 固定色の文字はダーク背景で沈むため、ダークでは満潮 `#0275d8→#60a5fa`、干潮 `#ce4844→#f87171`、エラー文字 `#c0392b→#ef4444` に切替（`@media (prefers-color-scheme: dark)` で上書き。Chart.js のグラフ色は変更しない）。補足灰色（潮位・区切り・「警報なし」）は固定値でなく `var(--text-sub)` を使う。
@@ -109,6 +109,7 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - 全ボタン共通: `touch-action:manipulation`・`-webkit-tap-highlight-color:transparent`。`:hover` スタイルは必ず `@media (hover: hover)` 内に置く（タッチ端末でタップ後にホバー状態が残るのを防ぐ）。押下時は `:active`（`scale(0.97〜0.98)` または opacity 低下）、キーボード時は `:focus-visible`（2px アウトライン）で必ずフィードバックする。
 - タップターゲット: `.toggle-btn` / `#toast` / `.current-time` は `min-height:44px`。`.wave-legend-item`（グラフ凡例トグル、`<button aria-pressed>`）は padding＋負マージンでヒット領域を拡張。
 - セクションへのスクロール移動先（`.weather-box`）は `scroll-margin-top:12px` で上端に余白を確保。
+- 「更新日時」ボタン（`.current-time`）の右寄せは、親 `.float-alert-wrap` の `display:flex; justify-content:flex-end` で行う。`float`＋`overflow:hidden` のクリアフィックスは使わない（`overflow:hidden` が `outline-offset` のフォーカスリングを欠けさせる）。
 
 ### チャート（潮汐・波高/周期）
 
@@ -128,6 +129,8 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 ### 警報バッジ / フローティングアラート
 
 - `.floating-alert.level-tokubetsu { background:#7c3aed; }`（特別警報）。通常警報は `#c0392b` 系、注意報は橙系。
+- 表示/非表示は `setFloatingAlert()`（`app.js`）に集約する。`className` と `style.display` を呼び出し側で個別に触ると状態がずれる。
+- **バーは `position:fixed` で画面下端に重なるため、表示中は逃がしぶんの余白を確保する**。`setFloatingAlert()` が `body.has-floating-alert` を付け外しし、`padding-bottom: calc(64px + env(safe-area-inset-bottom))` でフッター最終行が隠れるのを防ぐ。`#toast` / `#refresh-toast` も同クラス配下で `bottom` を上げてバーと重ならないようにする。
 
 ### 熱中症警戒アラートカード
 
@@ -147,6 +150,8 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - `.stale-note`（各セクション見出し直下）/ `.stale-inline`（`#tsunami-error`）: 該当データが閾値超で古い/取得失敗時に小さく赤字（`--warning-border`, 12px）で注記。通常は `hidden`。対象は潮汐・波・警報・天気予報・風（`markStale()`）と現在の気温･風（`#marine-stale`、`weather_marine` の鮮度・取得失敗）。
 - `.current-time.is-stale`: データが古い場合に「更新日時」の下線・文字色を `--warning-border` に切替（データ生成時刻＋経過時間を表示）。
 - トグルは `hidden` 属性で行うため、これらは `display` を指定しない。
+- `.section-error`（各カードの「取得に失敗しました」）は**成功時に必ず消す**。`setSectionError(id, show)`（`app.js`）を使い、失敗時 `true` / 成功時 `false` を対で呼ぶ。3時間ごとの自動更新・手動更新で復旧しても消えないと、正常なデータの横にエラーが残り続けて誤読を招く（三原則1）。
+- 全面エラー（`#error`）は**初期表示前に限る**。`_showGlobalError()` は `#weather-content` が表示済みなら何もしない。描画後の想定外の例外で、正常に出ているデータの上にエラーを被せないため。カード単位のエラー・鮮度注記が本来の受け口。
 
 ### 角丸スケール
 
