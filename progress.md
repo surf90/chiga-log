@@ -1,10 +1,34 @@
 ---
-updated: 2026-08-07
+updated: 2026-08-08
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-08-08）
+
+### 不具合修正（配信・エラー表示・表示欠落）＋モダン化
+
+実ブラウザ（Chromium/Playwright、375〜390px）で修正前後を計測して確認した5件。
+
+- **PWAに新しいCSS/JSが永久に届かない（最重要）**: `sw.js` の静的アセットが **Cache-First かつ再検証なし**だったため、`minify.yml` が更新した `style.min.css` / `app.min.js` は `CACHE_NAME` を手で上げるまで古いまま配信され続けていた。`index.html` はクエリ無しの固定URLで参照するため、他に更新経路がない。**Stale-While-Revalidate** に変更（キャッシュがあれば即返して描画をブロックせず＝原則2、裏で取得して次回に反映）。`CACHE_NAME` を v16→v17。実測：旧=リロード2回してもデプロイ内容が反映されず、新=リロード2回目で反映。
+- **初回訪問が必ず二重読み込みになる**: `skipWaiting()`+`claim()` は**初回登録でも `controllerchange` を発火**するため、`sw-register.js` がその場で `location.reload()` していた。新規訪問者は毎回フルリロード＋データ再取得（原則2・3に反する）。登録時に既存コントローラの有無を記録し、**置き換え時だけ**再読み込みするよう変更。実測：メインフレームのナビゲーション 旧2回 → 新1回。
+- **復旧してもセクションのエラー行が消えない**: 天気予報・波・風・警報の各セクションは失敗時に `style.display="block"` でエラーを出すだけで、**成功パスで消していなかった**。3時間ごとの自動更新・手動更新で再取得に成功しても「取得に失敗しました」が正常なデータの横に残り続ける（誤読の原因＝原則1）。`setSectionError()` を追加し4セクションの成功時に確実に消す。実測：失敗→`block`、その後の手動更新成功→`none`。
+- **当日ぶんの極値が無い日にタイドグラフごと消える**: `displayTideData()` が「満潮・干潮: データなし」を出した時点で `return` しており、**複数日データ（`forecast`）があってもグラフを描かずに終わっていた**。テキストとグラフを分離し、`chartExtremes` があれば描画する。`drawTideChart()` にも要素欠落時のガードを追加（例外がグローバル境界に届いて全面エラーへ倒れるのを防ぐ）。
+- **表示済みなのに全面エラーへ倒れる**: `_showGlobalError()` が `error`/`unhandledrejection` で無条件に「データの取得に失敗しました」を出すため、描画後の想定外の例外（グラフ操作中など）で**正常なデータの上にエラーが残り続けていた**。境界の目的は骨組み残り・白画面の救済なので、`#weather-content` が表示済みなら何もしないよう限定。各セクションは個別のエラーUIと鮮度注記を持つ。
+- **警報バーがフッターに重なる**: `.floating-alert` は `position:fixed` で画面下端に出るのに `body` 側の余白が無く、発令中はフッター最終行が読めなかった。`setFloatingAlert()` に集約して表示中だけ `body.has-floating-alert` を付け、余白（safe-area 込み）とトーストの位置を確保。実測：修正後は最下部までスクロールしても重なり無し。
+- **モダン化（DESIGN.md 準拠、見た目の変更なし）**: ロゴのグラデ文字に標準 `background-clip: text` を併記（接頭辞のみだと将来 `-webkit-text-fill-color: transparent` だけが残り不可視化する）。更新日時ボタンの `float: right`+`overflow:hidden` のクリアフィックスを flex 右寄せへ（`overflow:hidden` はフォーカスリングの欠けも招いていた）。注釈・免責に `text-wrap: pretty`。
+
+**検証**
+
+- `eslint` / `prettier --check` クリーン、`pytest tests` 54件成功。
+- `bundle exec jekyll build` → `pa11y-ci`（WCAG2AA）**0 errors**。
+- Playwright（Chromium 390×844）で通常表示・警報発令時・当日極値なし・取得失敗→復旧を再現。`pageerror` 0件。
+
+**関連ファイル**
+
+- `sw.js` / `assets/js/sw-register.js` / `assets/js/app.js` / `assets/css/style.css`
 
 ## 完了済み（2026-08-07・続き2）
 

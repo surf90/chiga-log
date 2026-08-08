@@ -205,6 +205,9 @@ header {
   font-weight: 900;
   background: linear-gradient(135deg, #0e7490 0%, #0284c7 100%);
   -webkit-background-clip: text;
+  /* 標準プロパティ。ベンダー接頭辞のみだと将来の接頭辞廃止でロゴが
+     -webkit-text-fill-color:transparent のまま塗り無し＝不可視になる。 */
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -512,7 +515,6 @@ h1 .title-sub {
   transition: opacity 0.2s;
   display: inline-flex;
   align-items: flex-end;
-  float: right;
   padding: 0 0 2px 12px;
   min-height: 44px;
 }
@@ -582,6 +584,14 @@ h1 .title-sub {
   z-index: 10000;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.25);
   box-sizing: border-box;
+}
+/* 警報バー表示中は、フッター最終行がバーの下に隠れないよう余白を確保する。 */
+body.has-floating-alert {
+  padding-bottom: calc(64px + env(safe-area-inset-bottom));
+}
+body.has-floating-alert #toast,
+body.has-floating-alert #refresh-toast {
+  bottom: calc(76px + env(safe-area-inset-bottom));
 }
 .floating-alert.level-keiho {
   background: #c0392b;
@@ -718,6 +728,8 @@ p.note {
   margin-top: 6px;
   margin-bottom: 0;
   line-height: 1.45;
+  /* 最終行に1〜2文字だけ残る「取り残し」を避ける（非対応ブラウザは無視） */
+  text-wrap: pretty;
 }
 /* 注釈内の括弧書きなど補足的な文字はさらに小さく */
 p.note .note-fine {
@@ -768,6 +780,7 @@ p.note strong a {
   letter-spacing: -0.28px;
   color: var(--text-sub);
   line-height: 1.5;
+  text-wrap: pretty;
 }
 .footer-copyright {
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
@@ -829,8 +842,11 @@ p.note strong a {
 .hidden {
   display: none;
 }
+/* float+overflow:hidden のクリアフィックスをやめ flex で右寄せする。
+   overflow:hidden はフォーカスリング(outline-offset)の欠けも招いていた。 */
 .float-alert-wrap {
-  overflow: hidden;
+  display: flex;
+  justify-content: flex-end;
   margin-bottom: 4px;
 }
 .note-z {
