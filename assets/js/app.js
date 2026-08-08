@@ -204,6 +204,21 @@ function setText(id, text) {
 }
 
 /**
+ * セクション単位のエラー表示を出し分ける。
+ *
+ * 3時間ごとの自動更新・手動更新・visibilitychange で再取得が成功しても、
+ * 以前の失敗で出したエラー行を消していなかったため、正常なデータの横に
+ * 「取得に失敗しました」が残り続けていた（誤読の原因＝三原則1）。
+ * 各セクションの成功パスで show=false を呼んで確実に消す。
+ * @param {string} id エラー要素のid
+ * @param {boolean} show 表示するか
+ */
+function setSectionError(id, show) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = show ? "block" : "none";
+}
+
+/**
  * `media="print"` で先読みしたCSS（Webフォント）を、読み込み完了後に
  * `data-media-onload` の値へ切り替えて適用する。
  *
@@ -579,9 +594,13 @@ async function fetchTideExtremes(force = false) {
 // extremes: 当日のみ（テキスト表示用）、chartExtremes: 複数日（グラフ用）
 function displayTideData(extremes, chartExtremes) {
   const container = document.getElementById("tide-extremes-container");
+  if (!container) return;
   container.innerHTML = "";
 
-  if (!extremes || extremes.length === 0) {
+  // 当日ぶんの極値が無い日でも、複数日データがあればグラフは描ける。
+  // 以前はここで return していたためタイドグラフごと消えていた。
+  const hasToday = Array.isArray(extremes) && extremes.length > 0;
+  if (!hasToday) {
     const row = document.createElement("div");
     row.className = "data-row";
     const l = document.createElement("dt");
@@ -590,12 +609,11 @@ function displayTideData(extremes, chartExtremes) {
     v.textContent = "データなし";
     row.append(l, " ", v);
     container.appendChild(row);
-    return;
   }
 
   const highTides = [],
     lowTides = [];
-  extremes.forEach((item) => {
+  (hasToday ? extremes : []).forEach((item) => {
     const dateObj = new Date(item.time);
     // 潮汐データはJST基準。閲覧端末のTZに引きずられないよう固定で整形する。
     const timeStr = formatJstHhMm(dateObj.getTime());
@@ -633,7 +651,8 @@ function displayTideData(extremes, chartExtremes) {
   if (highTides.length > 0) addRow("満潮", highTides, "tide-high");
   if (lowTides.length > 0) addRow("干潮", lowTides, "tide-low");
 
-  const chartData = chartExtremes || extremes;
+  const chartData = chartExtremes?.length ? chartExtremes : extremes || [];
+  if (chartData.length === 0) return;
   const chartDataPoints = [];
   let hasHeightData = false;
   chartData.forEach((item) => {
@@ -656,10 +675,13 @@ function displayTideData(extremes, chartExtremes) {
 
 function drawTideChart(extremes, hasHeightData) {
   const chartContainer = document.getElementById("tide-chart-container");
+  const canvas = document.getElementById("tideChart");
+  // 要素欠落時に例外を投げるとグローバルエラー境界が全面エラーへ倒すため、
+  // 描画対象が無ければ静かに諦める（テキストの満潮・干潮は既に描画済み）。
+  if (!chartContainer || !canvas || !extremes.length) return;
   chartContainer.style.display = "block";
   setChartContainerWidth("tide-chart-container", CHART_TOTAL_PX);
 
-  const canvas = document.getElementById("tideChart");
   canvas.width = CHART_TOTAL_PX;
   canvas.height = 160;
   const ctx = canvas.getContext("2d");
@@ -827,11 +849,12 @@ async function fetchWaveGuidance(force = false) {
 
     document.getElementById("wave-guid-loading").classList.add("hidden");
     document.getElementById("wave-guid-content").classList.remove("hidden");
+    setSectionError("wave-guid-error", false);
     markStale("wave-stale", pickTimestamp(json), FRESHNESS.wave);
   } catch (e) {
     console.error("Wave guidance error:", e);
     document.getElementById("wave-guid-loading").classList.add("hidden");
-    document.getElementById("wave-guid-error").style.display = "block";
+    setSectionError("wave-guid-error", true);
   }
 }
 
@@ -1074,6 +1097,26 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
 
 const WARNING_API_URL = _cfgJma.warning_api_url ?? "";
 
+/**
+ * 画面下端に固定する警報バーの表示を切り替える。
+ * バーは position:fixed でフッター最下部に重なるため、表示中は body 側に
+ * 逃がしぶんの余白を確保する（重なってフッターが読めなくなるのを防ぐ）。
+ * @param {HTMLElement} bar #floating-alert-bar
+ * @param {string} text 表示文言。空なら非表示
+ * @param {string} [level] "keiho" | "tokubetsu"
+ */
+function setFloatingAlert(bar, text, level) {
+  if (text) {
+    bar.textContent = text;
+    bar.className = `floating-alert level-${level}`;
+    bar.style.display = "block";
+  } else {
+    bar.style.display = "none";
+    bar.className = "floating-alert";
+  }
+  document.body.classList.toggle("has-floating-alert", Boolean(text));
+}
+
 /** 警報名からバッジ用レベルを判定する。危険警報(レベル4)も「警報」を含むためkeiho。 */
 function warningLevelFromName(name) {
   if (name.includes("特別警報")) return "tokubetsu";
@@ -1123,8 +1166,7 @@ async function fetchJmaWarning(force = false) {
       none.textContent = "✅ 現在、注意報・警報はありません";
       listEl.appendChild(none);
       warningBox.classList.remove("warning-active");
-      floatingBar.style.display = "none";
-      floatingBar.className = "floating-alert";
+      setFloatingAlert(floatingBar, "");
     } else {
       warningBox.classList.add("warning-active");
       const order = { tokubetsu: 0, keiho: 1, chuiho: 2 };
@@ -1166,12 +1208,13 @@ async function fetchJmaWarning(force = false) {
           severeList.length === 1
             ? `⚠ ${severeList[0].name} 発令中`
             : `⚠ ${hasTokubetsu ? "特別警報・警報" : "警報"} 発令中`;
-        floatingBar.textContent = barText;
-        floatingBar.className = `floating-alert level-${hasTokubetsu ? "tokubetsu" : "keiho"}`;
-        floatingBar.style.display = "block";
+        setFloatingAlert(
+          floatingBar,
+          barText,
+          hasTokubetsu ? "tokubetsu" : "keiho",
+        );
       } else {
-        floatingBar.style.display = "none";
-        floatingBar.className = "floating-alert";
+        setFloatingAlert(floatingBar, "");
       }
     }
 
@@ -1192,11 +1235,12 @@ async function fetchJmaWarning(force = false) {
 
     document.getElementById("jma-warning-loading").classList.add("hidden");
     contentEl.classList.remove("hidden");
+    setSectionError("jma-warning-error", false);
     markStale("warning-stale", pickTimestamp(data), FRESHNESS.warning);
   } catch (e) {
     console.error("JMA warning error:", e);
     document.getElementById("jma-warning-loading").classList.add("hidden");
-    document.getElementById("jma-warning-error").style.display = "block";
+    setSectionError("jma-warning-error", true);
   }
 }
 
@@ -1460,11 +1504,12 @@ async function fetchJmaForecast(force = false) {
 
     document.getElementById("jma-loading").classList.add("hidden");
     document.getElementById("jma-forecast-content").classList.remove("hidden");
+    setSectionError("jma-error", false);
     markStale("forecast-stale", pickTimestamp(data), FRESHNESS.forecast);
   } catch (e) {
     console.error("JMA forecast error:", e);
     document.getElementById("jma-loading").classList.add("hidden");
-    document.getElementById("jma-error").style.display = "block";
+    setSectionError("jma-error", true);
   }
 }
 
@@ -1614,11 +1659,12 @@ async function fetchWindForecast(force = false) {
     updateWindForecastToggleLabel(false);
     document.getElementById("wind-forecast-loading").classList.add("hidden");
     document.getElementById("wind-forecast-content").classList.remove("hidden");
+    setSectionError("wind-forecast-error", false);
     markStale("wind-stale", pickTimestamp(data), FRESHNESS.wind);
   } catch (e) {
     console.error("Wind forecast error:", e);
     document.getElementById("wind-forecast-loading").classList.add("hidden");
-    document.getElementById("wind-forecast-error").style.display = "block";
+    setSectionError("wind-forecast-error", true);
   }
 }
 
@@ -1921,6 +1967,12 @@ window.addEventListener("pageshow", (e) => {
 // ─── グローバルエラー境界 ───────────────────────────────────
 // 想定外の例外・未処理Promiseでも、骨組み残り/白画面を避けてエラーUIを表示する。
 function _showGlobalError() {
+  // 初期表示が済んでいれば全面エラーへは戻さない。以降の想定外エラー
+  // （グラフ操作中の例外など）で、正常に表示中のデータの上に
+  // 「取得に失敗しました」を出し続けてしまうため。各セクションは
+  // 個別のエラーUIと鮮度注記を持つ。この境界の目的は骨組み残り・白画面の救済。
+  const content = document.getElementById("weather-content");
+  if (content && !content.classList.contains("hidden")) return;
   const sk = document.getElementById("skeleton-loading");
   if (sk) sk.style.display = "none";
   const err = document.getElementById("error");

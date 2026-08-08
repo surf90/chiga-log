@@ -1,4 +1,4 @@
-const CACHE_NAME = "chigalog-v16";
+const CACHE_NAME = "chigalog-v17";
 const BASE = self.location.pathname.replace(/sw\.js$/, "");
 const ASSETS = [
   BASE,
@@ -64,22 +64,25 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // 静的アセット：Cache-First（即時描画）。未キャッシュ時は取得して保存。
+  // 静的アセット：Stale-While-Revalidate。
+  // キャッシュがあれば即返して描画をブロックせず(原則2)、裏で再取得して次回に反映する。
+  // Cache-First のままだと minify.yml が更新した style.min.css / app.min.js が
+  // CACHE_NAME を手で上げるまで永久に古いまま配信され、修正が届かなかった。
+  // index.html は URL 不変・クエリ無しで参照されるため、この経路以外に更新手段がない。
   e.respondWith(
-    caches.match(e.request).then(
-      (hit) =>
-        hit ||
-        fetch(e.request)
-          .then((res) => {
-            if (res && res.status === 200 && res.type === "basic") {
-              const copy = res.clone();
-              caches.open(CACHE_NAME).then((c) => c.put(e.request, copy));
-            }
-            return res;
-          })
-          .catch(
-            () => new Response("", { status: 504, statusText: "offline" }),
-          ),
-    ),
+    caches.match(e.request).then((hit) => {
+      const network = fetch(e.request)
+        .then((res) => {
+          if (res && res.status === 200 && res.type === "basic") {
+            const copy = res.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(e.request, copy));
+          }
+          return res;
+        })
+        .catch(
+          () => hit || new Response("", { status: 504, statusText: "offline" }),
+        );
+      return hit || network;
+    }),
   );
 });
