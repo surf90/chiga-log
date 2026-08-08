@@ -1,4 +1,4 @@
-const CACHE_NAME = "chigalog-v17";
+const CACHE_NAME = "chigalog-v18";
 const BASE = self.location.pathname.replace(/sw\.js$/, "");
 const ASSETS = [
   BASE,
@@ -39,15 +39,30 @@ self.addEventListener("fetch", (e) => {
   }
   if (url.origin !== self.location.origin) return;
 
-  // データJSON(?t=, ?d= 等のキャッシュバスター付き)は鮮度最優先。
-  // Cache Storage 肥大化を避けるため put せず、オフライン時のみキャッシュ退避を試す。
+  // データJSON(?t=, ?d= 等のキャッシュバスター付き)はネットワーク優先。
+  // 成功レスポンスはクエリを除いた正規URLへ1件だけ退避し、オフライン時に返す。
+  // リクエストURLをそのままキーにすると、時間ごとに変わるキャッシュバスターの
+  // 数だけエントリが増え続けるため、検索パラメータを保存キーに含めない。
   if (url.pathname.startsWith(BASE + "data/")) {
+    const fallbackUrl = new URL(url.pathname, self.location.origin).href;
     e.respondWith(
-      fetch(e.request).catch(
-        async () =>
-          (await caches.match(e.request)) ||
-          new Response("", { status: 504, statusText: "offline" }),
-      ),
+      fetch(e.request)
+        .then((res) => {
+          if (res && res.ok && res.type === "basic") {
+            const copy = res.clone();
+            e.waitUntil(
+              caches
+                .open(CACHE_NAME)
+                .then((cache) => cache.put(fallbackUrl, copy)),
+            );
+          }
+          return res;
+        })
+        .catch(
+          async () =>
+            (await caches.match(fallbackUrl)) ||
+            new Response("", { status: 504, statusText: "offline" }),
+        ),
     );
     return;
   }
