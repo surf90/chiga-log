@@ -13,14 +13,26 @@ updated: 2026-08-10
 - **`claude/fix-errors-bugs-vulnerabilities-sri5yl` を削除**（先端 `b2815dc`）。マージ前に実際にローカルでマージして検証した結果、**コード差分ゼロ**（マージ後ツリーと `origin/main` を `assets/` `index.html` `sw.js` で比較して差分なし）。内容は PR #131（`738a4fb`）として squash 済みで、ブランチ側は squash 後に main へ入った変更を持たない**退行版**だった（`DESIGN.md` にサイトバー節が無い、`eslint.config.js` に `IntersectionObserver` global が無い等）。競合3ファイル（`DESIGN.md` / `progress.md` / `eslint.config.js`）はいずれもこの退行と prettier の表整形差によるもので、マージしても得るものは空の重複見出し2件のみ。よって**マージせず削除**した。
 - **`fetch-heatstroke-alert.yml:28` のコメント修正**: `actions/checkout` の SHA ピンは他ワークフローと同一（`3d3c42e…` = v7.0.1）なのにコメントだけ `# v5` のままだった（2026-08-08 の残課題）。`# v7.0.1` に統一。動作影響なし。
 
+### dependabot オープンPR 5件のマージ
+
+いずれも差分がバージョンピンのみであること、`origin/main` と競合しないこと、CI（ESLint + Prettier / pa11y WCAG2AA）が success であることを確認のうえ squash マージ。ブランチはマージ時に自動削除。
+
+- #132 `ruby/setup-ruby` 1.320.0 → 1.321.0（`frontend-ci.yml` の SHA ピンのみ）
+- #133 `eslint` 10.7.0 → 10.8.0
+- #134 `ip-address` 10.2.0 → 10.4.0
+- #135 `undici` 6.27.0 → 6.28.0（ルートの `package-lock.json`）
+- #139 `js-yaml` 4.3.0 → 4.3.1
+
+マージ後、main で Frontend CI / Minify / pages build がいずれも success。オープンPR・main 以外のリモートブランチはゼロになった。
+
 **関連ファイル**
 
-- `.github/workflows/fetch-heatstroke-alert.yml` / `progress.md`
+- `.github/workflows/fetch-heatstroke-alert.yml` / `progress.md` / `package.json` / `package-lock.json` / `.github/workflows/frontend-ci.yml`
 
 **残タスク**
 
-- dependabot のオープンPR 5件（#132 `ruby/setup-ruby` 1.321.0 / #133 `eslint` 10.8.0 / #134 `ip-address` 10.4.0 / #135 `undici` 6.28.0 / #139 `js-yaml` 4.3.1）は未マージ。いずれも main と競合なし・CI（ESLint + Prettier / pa11y）success・差分はバージョンピンのみを確認済み。
-- Dependabot のセキュリティアラートが default branch に12件（high 3 / moderate 9）。上記PRで解消する分と残る分の切り分けが未実施。
+- **Dependabot アラート5件（high 1 / medium 4）が未解消**。対象は `warning-worker/package-lock.json` の `undici` 7.28.0（脆弱範囲 `>= 7.0.0, < 7.29.0`）。これは `wrangler 4.114.0` → `miniflare 4.20260722.0` が **`undici` を `7.28.0` で完全固定**しているための推移的 devDependency で、`undici` 単体では上げられない。解消には `wrangler` の更新（最新 4.120.0）が必要。デプロイ用CLIのみで Worker ランタイムには載らないため実害は限定的だが、依存の更新幅が大きいので要相談（CLAUDE.md「大きな依存関係変更」）。
+- 2026-08-08 時点の12件（high 3 / moderate 9）は上記5件を残して解消。
 
 ## 完了済み（2026-08-08・続き）
 
