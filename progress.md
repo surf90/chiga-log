@@ -1,10 +1,26 @@
 ---
-updated: 2026-08-08
+updated: 2026-08-10
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-08-10）
+
+### 残ブランチの整理と軽微修正
+
+- **`claude/fix-errors-bugs-vulnerabilities-sri5yl` を削除**（先端 `b2815dc`）。マージ前に実際にローカルでマージして検証した結果、**コード差分ゼロ**（マージ後ツリーと `origin/main` を `assets/` `index.html` `sw.js` で比較して差分なし）。内容は PR #131（`738a4fb`）として squash 済みで、ブランチ側は squash 後に main へ入った変更を持たない**退行版**だった（`DESIGN.md` にサイトバー節が無い、`eslint.config.js` に `IntersectionObserver` global が無い等）。競合3ファイル（`DESIGN.md` / `progress.md` / `eslint.config.js`）はいずれもこの退行と prettier の表整形差によるもので、マージしても得るものは空の重複見出し2件のみ。よって**マージせず削除**した。
+- **`fetch-heatstroke-alert.yml:28` のコメント修正**: `actions/checkout` の SHA ピンは他ワークフローと同一（`3d3c42e…` = v7.0.1）なのにコメントだけ `# v5` のままだった（2026-08-08 の残課題）。`# v7.0.1` に統一。動作影響なし。
+
+**関連ファイル**
+
+- `.github/workflows/fetch-heatstroke-alert.yml` / `progress.md`
+
+**残タスク**
+
+- dependabot のオープンPR 5件（#132 `ruby/setup-ruby` 1.321.0 / #133 `eslint` 10.8.0 / #134 `ip-address` 10.4.0 / #135 `undici` 6.28.0 / #139 `js-yaml` 4.3.1）は未マージ。いずれも main と競合なし・CI（ESLint + Prettier / pa11y）success・差分はバージョンピンのみを確認済み。
+- Dependabot のセキュリティアラートが default branch に12件（high 3 / moderate 9）。上記PRで解消する分と残る分の切り分けが未実施。
 
 ## 完了済み（2026-08-08・続き）
 
@@ -139,7 +155,7 @@ updated: 2026-08-08
 
 **残タスク**
 
-- 未使用ブランチ `claude/fix-errors-bugs-vulnerabilities-sri5yl` の削除（内容は `main` に取り込み済みで削除して問題なし。セッションの git 権限で push 拒否のため要手動削除）。
+- ~~未使用ブランチ `claude/fix-errors-bugs-vulnerabilities-sri5yl` の削除~~（2026-08-10 に削除済み）。
 - 風予報等のデータ取得スケジュール自体の遅延は本セッションの対象外（`gh workflow run fetch-openmeteo.yml` で手動復旧可能）。
 
 ## 完了済み（2026-07-27）
