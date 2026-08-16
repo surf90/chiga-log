@@ -1,17 +1,7 @@
 {
-  "updated_at": "2026-08-16T15:53:40.291337+09:00",
+  "updated_at": "2026-08-16T21:55:23.674864+09:00",
   "area": 20,
   "data": [
-    {
-      "time": "2026-08-13T03:00:00+09:00",
-      "period": 10.3,
-      "wave_height": 2.5
-    },
-    {
-      "time": "2026-08-13T06:00:00+09:00",
-      "period": 10.3,
-      "wave_height": 2.4
-    },
     {
       "time": "2026-08-13T09:00:00+09:00",
       "period": 10.3,
@@ -145,17 +135,17 @@
     {
       "time": "2026-08-16T15:00:00+09:00",
       "period": 9.4,
-      "wave_height": 1.9
+      "wave_height": 1.8
     },
     {
       "time": "2026-08-16T18:00:00+09:00",
       "period": 9.4,
-      "wave_height": 1.8
+      "wave_height": 1.7
     },
     {
       "time": "2026-08-16T21:00:00+09:00",
       "period": 9.4,
-      "wave_height": 1.8
+      "wave_height": 1.7
     },
     {
       "time": "2026-08-17T00:00:00+09:00",
@@ -180,12 +170,12 @@
     {
       "time": "2026-08-17T12:00:00+09:00",
       "period": 8.6,
-      "wave_height": 1.5
+      "wave_height": 1.6
     },
     {
       "time": "2026-08-17T15:00:00+09:00",
       "period": 8.6,
-      "wave_height": 1.5
+      "wave_height": 1.6
     },
     {
       "time": "2026-08-17T18:00:00+09:00",
@@ -200,7 +190,7 @@
     {
       "time": "2026-08-18T00:00:00+09:00",
       "period": 8.6,
-      "wave_height": 1.5
+      "wave_height": 1.6
     },
     {
       "time": "2026-08-18T03:00:00+09:00",
@@ -215,37 +205,47 @@
     {
       "time": "2026-08-18T09:00:00+09:00",
       "period": 8.6,
-      "wave_height": 1.4
+      "wave_height": 1.5
     },
     {
       "time": "2026-08-18T12:00:00+09:00",
       "period": 8.6,
-      "wave_height": 1.4
+      "wave_height": 1.6
     },
     {
       "time": "2026-08-18T15:00:00+09:00",
       "period": 8.6,
-      "wave_height": 1.4
+      "wave_height": 1.6
     },
     {
       "time": "2026-08-18T18:00:00+09:00",
       "period": 8.6,
-      "wave_height": 1.5
+      "wave_height": 1.6
     },
     {
       "time": "2026-08-18T21:00:00+09:00",
       "period": 8.6,
-      "wave_height": 1.4
+      "wave_height": 1.6
     },
     {
       "time": "2026-08-19T00:00:00+09:00",
       "period": 8.6,
-      "wave_height": 1.4
+      "wave_height": 1.6
     },
     {
       "time": "2026-08-19T03:00:00+09:00",
       "period": 8.6,
-      "wave_height": 1.4
+      "wave_height": 1.5
+    },
+    {
+      "time": "2026-08-19T06:00:00+09:00",
+      "period": 8.6,
+      "wave_height": 1.5
+    },
+    {
+      "time": "2026-08-19T09:00:00+09:00",
+      "period": 8.6,
+      "wave_height": 1.5
     }
   ]
 }
