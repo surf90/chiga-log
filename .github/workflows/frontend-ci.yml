@@ -22,6 +22,7 @@ on:
       - ".pa11yci"
       - "package.json"
       - "package-lock.json"
+  workflow_dispatch:
 
 permissions:
   contents: read

@@ -8,6 +8,10 @@ on:
       - "assets/js/app.js"
       - "package.json"
       - "package-lock.json"
+  # push の paths フィルタが評価されず起動しない事象に備えた手動実行口。
+  # これが無いと .min.css / .min.js を再生成する手段がリポジトリ内に無く、
+  # 修正が配信されないまま復旧できない。
+  workflow_dispatch:
 
 concurrency:
   # ワークフローごとに独立させる。共通グループにすると、待機中の run が
