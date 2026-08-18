@@ -685,3 +685,21 @@ updated: 2026-08-10
 
 - `index.html` / `assets/js/app.js` / `assets/css/style.css` / `_data/site.json`
 - `_includes/icons/` / `Gemfile` / `_config.yml` / `.gitignore`
+
+## 完了済み（2026-08-18）
+
+### Dependabot 脆弱性対応（undici / brace-expansion）
+
+- PR #149（`claude/dependabot-security-alerts-72gh6a` → main）でマージ済み
+- `warning-worker`: `wrangler` 4.114.0 → 4.123.0 に更新し、依存の `undici` を `7.28.0` → `7.29.0` へ引き上げ。alert #6/#7/#8/#9/#10（応答デシンク・キャッシュ情報漏洩・CRLFインジェクション・Cookie属性インジェクション）を解消
+- root: `npm audit fix` で `brace-expansion` を修正版へ更新（ついでに検出された High）
+- 変更は `package-lock.json` / `warning-worker/package-lock.json` の2ファイルのみ。ビルド成果物・cron・ワークフロー定義は無変更
+- CI（ESLint+Prettier / pa11y WCAG2AA）green を確認しマージ
+
+**未解消（申し送り）**
+
+- alert #19 `extract-zip`（symlink path traversal, High）: 上流に修正版が存在しない（`npm audit` 上も脆弱範囲は `<=2.0.1` で最新含む全バージョン）。`npm audit fix --force` は `pa11y-ci` を 3.1.0 へダウングレードするだけで、同じ脆弱な `extract-zip` を同梱するため実質的な修正にならず見送り。`pa11y-ci`（a11y CI専用・devDependencies）経由の間接依存で、Puppeteer が公式Chromiumビルドを HTTPS 取得する用途のみのため実害は限定的。上流にパッチが出た時点で `npm audit` に検出されるので、その際に再対応。
+
+**関連ファイル**
+
+- `package-lock.json` / `warning-worker/package-lock.json`
