@@ -3,6 +3,7 @@
 import os
 import sys
 import unittest
+from datetime import datetime
 from unittest import mock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
@@ -114,6 +115,29 @@ class TestBuildTideWidget(unittest.TestCase):
         """潮汐ファイル自体が空/欠損でも従来どおりフォールバックする。"""
         _, sg = self._build(None, sg_tides=None)
         sg.assert_called_once()
+
+
+class TestWarnIfNextYearMoonMissing(unittest.TestCase):
+    """翌年ぶん月齢データの未配置警告を検証する。"""
+
+    def _run(self, month, exists):
+        fake_now = datetime(2026, month, 15, 0, 5, tzinfo=extract_daily_data.JST)
+        with mock.patch.object(
+            extract_daily_data, "now_jst", return_value=fake_now
+        ), mock.patch.object(extract_daily_data.os.path, "exists", return_value=exists):
+            return extract_daily_data.warn_if_next_year_moon_missing()
+
+    def test_warns_in_december_when_missing(self):
+        """12月に翌年ファイルが無ければ警告する。"""
+        self.assertTrue(self._run(12, exists=False))
+
+    def test_silent_in_december_when_present(self):
+        """12月でも翌年ファイルがあれば警告しない。"""
+        self.assertFalse(self._run(12, exists=True))
+
+    def test_silent_outside_december(self):
+        """12月以外は（未配置でも）警告しない。"""
+        self.assertFalse(self._run(8, exists=False))
 
 
 if __name__ == "__main__":

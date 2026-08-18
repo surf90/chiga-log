@@ -47,9 +47,13 @@
 | `update-jma-tide.yml`        | 気象庁 年次潮汐                               | 年2回（1/1・7/1）       |
 | `minify.yml`                 | CSS/JS minify                                 | push トリガ             |
 | `test.yml`                   | Python ユニットテスト                         | push/PR                 |
+| `frontend-ci.yml`            | ESLint/Prettier + pa11y (WCAG2AA)             | push/PR                 |
 
 - データ品質は気象庁を一次優先（原則1）、更新頻度は Open-Meteo が主力（`fetch-openmeteo.yml`）。
 - cron 追加・頻度変更は要相談（三原則3: API/Actions 節約）。
+- cron は指定どおりには起動しない。`*/30` の実効間隔は約50分・最大93分まで伸びる
+  （2026-08 実測: 8.5時間で期待17回に対し実績11回）。`app.js` の `FRESHNESS`
+  閾値はこの遅延を織り込んで設定しており、cron 頻度そのままで詰めないこと。
 - 軽微修正は複数まとめて1コミットに集約。
 
 ## トークン節約

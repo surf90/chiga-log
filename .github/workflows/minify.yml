@@ -61,9 +61,25 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add assets/css/style.min.css assets/js/app.min.js
           if ! git diff --cached --quiet; then
-            git commit -m "chore: minify CSS and JS [skip ci]"
+            # [skip ci] を付けない。GITHUB_TOKEN のpushは通常のワークフローを
+            # 起動しないため再帰の心配は無い一方、Pages のビルド/デプロイまで
+            # スキップされ、minify 済みの .min.css / .min.js が次のデータpush
+            # まで配信されない（最大1時間強の反映遅れ）ため。
+            git commit -m "chore: minify CSS and JS"
+            # リトライを全て使い切っても for ループ自体は正常終了するため、
+            # 素の `for ... done` だと push 失敗がジョブ success のまま隠れる。
+            # コミットはローカルにしか残らず次回 checkout で消えるので、
+            # データ更新が静かに停止する。成否を明示的に持ち回って落とす。
+            pushed=false
             for i in 1 2 3; do
-              git pull --rebase origin main && git push && break
+              if git pull --rebase origin main && git push; then
+                pushed=true
+                break
+              fi
               sleep $((RANDOM % 10 + 5))
             done
+            if [ "$pushed" != true ]; then
+              echo "::error::push に3回失敗しました。変更は反映されていません。"
+              exit 1
+            fi
           fi

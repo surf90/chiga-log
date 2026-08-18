@@ -499,8 +499,14 @@ async function calculateTide(force = false) {
     if (resp.ok) {
       const moonToday = await resp.json();
       const nasaAge = parseFloat(moonToday.age);
+      // 当日ぶんであることを date で必ず検証する。mooninfo_YYYY.json は手動
+      // 更新のため、翌年ぶんの配置漏れで extract_daily_data.py が月齢を
+      // 書き出せなくなると moon_daily.json は前年末の値のまま凍結する。
+      // date を見ないと、その古い月齢を「NASA」表示のまま出し続け、
+      // 潮回り(大潮/中潮)判定まで連動して誤る（三原則1: 誤読を誘発しない）。
+      const isToday = moonToday?.date === dayKey;
       // NaN や範囲外は採用せず計算値のまま（"月齢: NaN" 表示を防ぐ）
-      if (Number.isFinite(nasaAge) && nasaAge >= 0 && nasaAge < 30) {
+      if (isToday && Number.isFinite(nasaAge) && nasaAge >= 0 && nasaAge < 30) {
         age = nasaAge;
         ageSource = "NASA";
       }

@@ -49,8 +49,20 @@ jobs:
         git add data/tide_data.json
         if ! git diff --quiet || ! git diff --staged --quiet; then
           git commit -m "Auto-update JMA tide data"
+          # リトライを全て使い切っても for ループ自体は正常終了するため、
+          # 素の `for ... done` だと push 失敗がジョブ success のまま隠れる。
+          # コミットはローカルにしか残らず次回 checkout で消えるので、
+          # データ更新が静かに停止する。成否を明示的に持ち回って落とす。
+          pushed=false
           for i in 1 2 3; do
-            git pull --rebase origin main && git push && break
+            if git pull --rebase origin main && git push; then
+              pushed=true
+              break
+            fi
             sleep $((RANDOM % 10 + 5))
           done
+          if [ "$pushed" != true ]; then
+            echo "::error::push に3回失敗しました。変更は反映されていません。"
+            exit 1
+          fi
         fi
