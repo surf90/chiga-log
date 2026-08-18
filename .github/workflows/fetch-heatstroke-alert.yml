@@ -4,6 +4,11 @@ on:
   schedule:
     # 公式発表 05:00 / 14:00 / 17:00 JST の25分・15分・5分前。
     # Actionsの起動遅延を見込み、各発表につき3回取得を試みる。
+    #
+    # 熱中症は fetch-openmeteo.yml (*/30) でも取得しており一見重複だが、
+    # GitHub のスケジュール遅延で */30 の実効間隔は約50分・最大93分まで
+    # 伸びる（実測）。発表直後の取りこぼしを防ぐため、この専用cron
+    # (9 run/日) は残す。削減する場合は上記の遅延実績を再確認すること。
     - cron: "35,45,55 19,4,7 * * *"
   workflow_dispatch:
 
@@ -39,8 +44,20 @@ jobs:
           git add data/heatstroke_alert.json
           if ! git diff --cached --quiet; then
             git commit -m "Update heatstroke alert"
+            # リトライを全て使い切っても for ループ自体は正常終了するため、
+            # 素の `for ... done` だと push 失敗がジョブ success のまま隠れる。
+            # コミットはローカルにしか残らず次回 checkout で消えるので、
+            # データ更新が静かに停止する。成否を明示的に持ち回って落とす。
+            pushed=false
             for i in 1 2 3; do
-              git pull --rebase origin main && git push && break
+              if git pull --rebase origin main && git push; then
+                pushed=true
+                break
+              fi
               sleep $((RANDOM % 10 + 5))
             done
+            if [ "$pushed" != true ]; then
+              echo "::error::push に3回失敗しました。変更は反映されていません。"
+              exit 1
+            fi
           fi

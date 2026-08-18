@@ -12,6 +12,30 @@ TIDE_LAT = _loc.get("tide_lat", 35.318)
 TIDE_LON = _loc.get("tide_lon", 139.410)
 
 
+def warn_if_next_year_moon_missing() -> bool:
+    """12月に入っても翌年の月齢元データが未配置なら警告を出す。
+
+    ``mooninfo_YYYY.json`` は NASA SVS からの手動取得（README参照）。配置を
+    忘れると 1/1 以降このジョブが失敗し、フロントは月齢を "計算値"
+    フォールバックへ落とす。年明けに気付くのでは遅いため、cron を増やさず
+    既存の日次ジョブから 12 月中の未配置をアノテーションとして通知する。
+
+    :returns: 警告を出したら True
+    """
+    n = now_jst()
+    if n.month != 12:
+        return False
+    next_file = f"data/mooninfo_{n.year + 1}.json"
+    if os.path.exists(next_file):
+        return False
+    print(
+        f"::warning::{next_file} が未配置です。"
+        f"{n.year + 1}/1/1 以降、月齢が計算値フォールバックになります。"
+        "README『月齢データの年間更新手順』に従い NASA SVS から取得してください。"
+    )
+    return True
+
+
 def extract_moon_today() -> dict | None:
     """NASA SVSの年間JSONから当日JST正午の月齢エントリを抽出して返す。"""
     n = now_jst()
@@ -135,6 +159,7 @@ def build_tide_widget(all_tides: dict | None, moon_result: dict | None) -> None:
 
 
 if __name__ == "__main__":
+    warn_if_next_year_moon_missing()
     moon_result = extract_moon_today()
     tide_data = load_json("data/tide_data.json")
     # 当日キーが引けるかまで見る。年跨ぎで前年ぶんしか無い状態を
