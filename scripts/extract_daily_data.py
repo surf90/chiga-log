@@ -1,5 +1,6 @@
 """毎日 JST 0:05 に実行し、当日分の月齢・潮汐データを小さなJSONとして出力する。"""
 
+import math
 import os
 import sys
 from datetime import datetime, timedelta, timezone
@@ -10,6 +11,121 @@ _loc = load_site_config().get("location", {})
 # 潮汐フォールバック(Stormglass)用座標。表示基準とは別値（現状維持）。
 TIDE_LAT = _loc.get("tide_lat", 35.318)
 TIDE_LON = _loc.get("tide_lon", 139.410)
+MOON_CALENDAR_DAYS = 35
+
+
+def tide_type_for_lunar_day(lunar_day: int) -> str:
+    """陰暦日を一般的な潮回り（大潮〜若潮）へ変換する。"""
+    if lunar_day in (1, 2, 14, 15, 16, 17, 29, 30):
+        return "大潮"
+    if lunar_day in (*range(3, 7), 12, 13, *range(18, 22), 27, 28):
+        return "中潮"
+    if lunar_day in (*range(7, 10), *range(22, 25)):
+        return "小潮"
+    if lunar_day in (10, 25):
+        return "長潮"
+    if lunar_day in (11, 26):
+        return "若潮"
+    return "不明"
+
+
+def _lunar_day_from_age(age: float, target_utc: datetime, n: datetime) -> int | None:
+    """NASA月齢から直前の朔を戻し、JST基準の陰暦日を求める。"""
+    if not isinstance(age, (int, float)) or isinstance(age, bool) or not math.isfinite(age):
+        return None
+    reset_date_jst = (target_utc - timedelta(days=age)).astimezone(JST).date()
+    lunar_day = (n.date() - reset_date_jst).days + 1
+    return lunar_day if 1 <= lunar_day <= 30 else None
+
+
+def _extract_moon_for_date(
+    moon_data: object, n: datetime, *, log_errors: bool = True
+) -> dict | None:
+    """NASA年間配列から指定JST日の正午エントリを検証して抽出する。"""
+    if not isinstance(moon_data, list):
+        if log_errors:
+            print("[moon] 年間データが配列ではありません。", file=sys.stderr)
+        return None
+
+    target_utc = datetime(n.year, n.month, n.day, 3, 0, 0, tzinfo=timezone.utc)
+    year_start = datetime(n.year, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+    hour_index = int((target_utc - year_start).total_seconds() / 3600)
+    if hour_index < 0 or hour_index >= len(moon_data):
+        if log_errors:
+            print(f"[moon] hourIndex={hour_index} が範囲外です。", file=sys.stderr)
+        return None
+
+    entry = moon_data[hour_index]
+    if not isinstance(entry, dict):
+        if log_errors:
+            print(f"[moon] hourIndex={hour_index} のエントリが辞書ではありません。", file=sys.stderr)
+        return None
+
+    age = entry.get("age")
+    phase = entry.get("phase")
+    values_are_valid = all(
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(value)
+        for value in (age, phase)
+    )
+    if not values_are_valid or not (0 <= age < 30) or not (0 <= phase <= 100):
+        if log_errors:
+            print(f"[moon] hourIndex={hour_index} の数値が不正です。", file=sys.stderr)
+        return None
+
+    expected_time = target_utc.strftime("%d %b %Y %H:%M UT")
+    if entry.get("time") != expected_time:
+        if log_errors:
+            actual_time = str(entry.get("time"))[:80]
+            print(
+                f"[moon] hourIndex={hour_index} の時刻が不一致です "
+                f"(expected={expected_time}, actual={actual_time})。",
+                file=sys.stderr,
+            )
+        return None
+
+    lunar_day = _lunar_day_from_age(age, target_utc, n)
+    if lunar_day is None:
+        if log_errors:
+            print(f"[moon] hourIndex={hour_index} から陰暦日を算出できません。", file=sys.stderr)
+        return None
+
+    # 朔がJST正午より後でも、陰暦ではその日の0時から1日。正午月齢だけを
+    # 戻すと前月30日になるため、当日末までの月齢リセットも確認する。
+    day_end_utc = (
+        datetime(n.year, n.month, n.day, tzinfo=JST) + timedelta(days=1)
+    ).astimezone(timezone.utc)
+    previous_age = age
+    probe_utc = target_utc + timedelta(hours=1)
+    probe_index = hour_index + 1
+    while probe_utc < day_end_utc and probe_index < len(moon_data):
+        probe_entry = moon_data[probe_index]
+        if not isinstance(probe_entry, dict):
+            break
+        probe_age = probe_entry.get("age")
+        if (
+            not isinstance(probe_age, (int, float))
+            or isinstance(probe_age, bool)
+            or not math.isfinite(probe_age)
+            or probe_entry.get("time")
+            != probe_utc.strftime("%d %b %Y %H:%M UT")
+        ):
+            break
+        if probe_age < previous_age:
+            lunar_day = 1
+            break
+        previous_age = probe_age
+        probe_utc += timedelta(hours=1)
+        probe_index += 1
+
+    return {
+        "date": n.strftime("%Y-%m-%d"),
+        "age": round(age, 3),
+        "phase": round(phase, 1),
+        "lunar_day": lunar_day,
+        "tide_type": tide_type_for_lunar_day(lunar_day),
+    }
 
 
 def warn_if_next_year_moon_missing() -> bool:
@@ -39,35 +155,31 @@ def warn_if_next_year_moon_missing() -> bool:
 def extract_moon_today() -> dict | None:
     """NASA SVSの年間JSONから当日JST正午の月齢エントリを抽出して返す。"""
     n = now_jst()
-    year = n.year
-    moon_file = f"data/mooninfo_{year}.json"
+    data_by_year: dict[int, object] = {}
 
-    moon_data = load_json(moon_file)
-    if moon_data is None:
+    def moon_data_for_year(year: int) -> object:
+        if year not in data_by_year:
+            data_by_year[year] = load_json(f"data/mooninfo_{year}.json")
+        return data_by_year[year]
+
+    result = _extract_moon_for_date(moon_data_for_year(n.year), n)
+    if result is None:
         return None
 
-    target_utc = datetime(n.year, n.month, n.day, 3, 0, 0, tzinfo=timezone.utc)
-    year_start = datetime(year, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-    hour_index = int((target_utc - year_start).total_seconds() / 3600)
-
-    if hour_index < 0 or hour_index >= len(moon_data):
-        print(f"[moon] hourIndex={hour_index} が範囲外です。", file=sys.stderr)
-        return None
-
-    entry = moon_data[hour_index]
-    # キー欠落・非数値でKeyError/TypeErrorを送出すると、後続の潮汐ウィジェット
-    # 生成まで巻き添えで落ちるため、Noneを返してフォールバック経路に載せる。
-    if not isinstance(entry, dict) or not all(
-        isinstance(entry.get(k), (int, float)) for k in ("age", "phase")
-    ):
-        print(f"[moon] hourIndex={hour_index} のエントリが不正です。", file=sys.stderr)
-        return None
-
-    result = {
-        "date": n.strftime("%Y-%m-%d"),
-        "age": round(entry["age"], 3),
-        "phase": round(entry["phase"], 1),
-    }
+    # 日次Actionsの遅延・一時停止中も潮回りだけはNASA由来で保てるよう、
+    # 当日から1朔望月を超える日数を小さな日付辞書として同梱する。
+    tide_calendar = {}
+    for delta in range(MOON_CALENDAR_DAYS):
+        day = n + timedelta(days=delta)
+        day_result = _extract_moon_for_date(
+            moon_data_for_year(day.year), day, log_errors=False
+        )
+        if day_result:
+            tide_calendar[day_result["date"]] = {
+                "lunar_day": day_result["lunar_day"],
+                "tide_type": day_result["tide_type"],
+            }
+    result["tide_calendar"] = tide_calendar
     save_json("data/moon_daily.json", result)
     print(f"[moon] {result['date']} age={result['age']} phase={result['phase']}")
     return result
@@ -141,11 +253,19 @@ def build_tide_widget(all_tides: dict | None, moon_result: dict | None) -> None:
 
     moon_entry: dict | None = None
     if moon_result:
-        moon_entry = {"age": moon_result["age"], "phase": moon_result["phase"]}
+        moon_entry = {
+            key: moon_result[key]
+            for key in ("date", "age", "phase", "lunar_day", "tide_type")
+            if key in moon_result
+        }
     else:
         existing = load_json("data/moon_daily.json")
-        if existing:
-            moon_entry = {"age": existing.get("age"), "phase": existing.get("phase")}
+        if isinstance(existing, dict) and existing.get("date") == date_str:
+            moon_entry = {
+                key: existing[key]
+                for key in ("date", "age", "phase", "lunar_day", "tide_type")
+                if key in existing
+            }
 
     result = {
         "updated_at": n.isoformat(),

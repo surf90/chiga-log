@@ -477,28 +477,59 @@ function scrollChartsToNow() {
 }
 
 // ─── 4. 潮汐 ────────────────────────────────────────────────
+function tideTypeForLunarDay(lunarDay) {
+  if ([1, 2, 14, 15, 16, 17, 29, 30].includes(lunarDay)) return "大潮";
+  if (
+    (lunarDay >= 3 && lunarDay <= 6) ||
+    [12, 13].includes(lunarDay) ||
+    (lunarDay >= 18 && lunarDay <= 21) ||
+    [27, 28].includes(lunarDay)
+  )
+    return "中潮";
+  if ((lunarDay >= 7 && lunarDay <= 9) || (lunarDay >= 22 && lunarDay <= 24))
+    return "小潮";
+  if ([10, 25].includes(lunarDay)) return "長潮";
+  if ([11, 26].includes(lunarDay)) return "若潮";
+  return "不明";
+}
+
+function approximateLunarDay(dayKey, knownNewMoon, synodicMonthMs) {
+  const dayStart = new Date(`${dayKey}T00:00:00+09:00`).getTime();
+  const dayEnd = dayStart + 24 * 60 * 60 * 1000 - 1;
+  // 当日中に朔が来る場合も陰暦1日として扱うため、日末以前の直近の朔を使う。
+  const cycle = Math.floor((dayEnd - knownNewMoon) / synodicMonthMs);
+  const newMoon = knownNewMoon + cycle * synodicMonthMs;
+  const newMoonDay = toJstDateStr(new Date(newMoon));
+  const newMoonDayStart = new Date(`${newMoonDay}T00:00:00+09:00`).getTime();
+  return Math.round((dayStart - newMoonDayStart) / (24 * 60 * 60 * 1000)) + 1;
+}
+
 async function calculateTide(force = false) {
   const synodicMonth = 29.530588853;
-  const knownNewMoon = new Date("2000-01-06T18:14:00+09:00").getTime();
-  const targetDate = new Date();
-  targetDate.setHours(12, 0, 0, 0);
+  const synodicMonthMs = synodicMonth * 24 * 60 * 60 * 1000;
+  // 2000-01-06 18:14 UTC。旧実装は同じ時刻をJSTとして解釈し9時間ずれていた。
+  const knownNewMoon = new Date("2000-01-06T18:14:00Z").getTime();
+  const dayKey = toJstDateStr(new Date());
+  const targetDate = new Date(`${dayKey}T12:00:00+09:00`);
 
   let age =
     ((targetDate.getTime() - knownNewMoon) / (1000 * 60 * 60 * 24)) %
     synodicMonth;
   if (age < 0) age += synodicMonth;
   let ageSource = "計算値";
+  let lunarDay = approximateLunarDay(dayKey, knownNewMoon, synodicMonthMs);
 
   try {
     // 日付キーはJST基準。toISOString()(UTC)だと 0-9時JSTの間だけ前日キーのまま
     // となり、日次ジョブ(JST 0:05)が更新した月齢を最大9時間拾えない。
-    const dayKey = toJstDateStr(new Date());
     const resp = await fetchWithTimeout(`data/moon_daily.json?d=${dayKey}`, {
       force,
     });
     if (resp.ok) {
       const moonToday = await resp.json();
-      const nasaAge = parseFloat(moonToday.age);
+      const nasaAge = moonToday?.age;
+      const nasaLunarDay = moonToday?.lunar_day;
+      const calendarLunarDay = moonToday?.tide_calendar?.[dayKey]?.lunar_day;
       // 当日ぶんであることを date で必ず検証する。mooninfo_YYYY.json は手動
       // 更新のため、翌年ぶんの配置漏れで extract_daily_data.py が月齢を
       // 書き出せなくなると moon_daily.json は前年末の値のまま凍結する。
@@ -510,25 +541,29 @@ async function calculateTide(force = false) {
         age = nasaAge;
         ageSource = "NASA";
       }
+      // 日次更新が遅れて date が前日のままでも、生成済みのNASA由来カレンダー
+      // に当日キーがあれば潮回りは概算へ落とさず維持する。
+      if (
+        Number.isInteger(calendarLunarDay) &&
+        calendarLunarDay >= 1 &&
+        calendarLunarDay <= 30
+      ) {
+        lunarDay = calendarLunarDay;
+      } else if (
+        isToday &&
+        Number.isInteger(nasaLunarDay) &&
+        nasaLunarDay >= 1 &&
+        nasaLunarDay <= 30
+      ) {
+        // 新フィールド配信前の旧moon_daily.jsonとの互換経路。
+        lunarDay = nasaLunarDay;
+      }
     }
   } catch {
     // フォールバック：数式の計算値を使用
   }
 
-  const r = Math.round(age) % 30;
-  let tideType;
-  if (r === 29 || r <= 2 || (r >= 14 && r <= 16)) tideType = "大潮";
-  else if (
-    (r >= 3 && r <= 6) ||
-    (r >= 12 && r <= 13) ||
-    (r >= 17 && r <= 20) ||
-    (r >= 26 && r <= 28)
-  )
-    tideType = "中潮";
-  else if ((r >= 7 && r <= 9) || (r >= 21 && r <= 23)) tideType = "小潮";
-  else if (r === 10 || r === 24) tideType = "長潮";
-  else if (r === 11 || r === 25) tideType = "若潮";
-  else tideType = "不明";
+  const tideType = tideTypeForLunarDay(lunarDay);
 
   const ageLabel =
     ageSource === "NASA"
