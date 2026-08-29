@@ -18,7 +18,15 @@ updated: 2026-08-29
 - **表示**: 「LIVE」バッジは追加せず（`.section-source` と「更新日時」と重複）、NOWカードに観測時刻「（10:20 観測）」を常時表示。`updated_at`（ジョブ実行時刻）ではなく `observed_at` を鮮度判定と「更新日時」の基準に変更。
 - **検討して見送り**: WIND/波の Open-Meteo ブラウザ直fetch（費用対効果が低く、Python/JS のロジック二重化・CSP 追加・混在整合性の問題を招く）。外部scheduler＋`workflow_dispatch`（閲覧者不在でも更新が要る日次系のみ有効。別件）。
 - **テスト**: `tests/test_live_frontend.cjs` を新設（17件）。QCフラグ処理、3時間ブロックのフォールバック、**新鮮な時に外部fetchが0本であること**、失敗時のスナップショット維持、hourly 行選択、風のカバレッジ判定を固定。`tests/test_fetch_openmeteo.py` に `fetch_marine()` の退避経路3件を追加。pytest 70件・Node 21件・ESLint・Prettier すべて成功。`sw.js` を `chigalog-v19` へバンプ。
-- **未検証（実ブラウザでの確認が必要）**: 実行環境から `www.jma.go.jp` / `marine-api.open-meteo.com` へ到達できずエンドポイントを実測できていない。(1) アメダス地点別JSONのパス形・CORS ヘッダ、(2) Marine API の `hourly=sea_surface_temperature` 受理。いずれも失敗時はスナップショット維持・current のみ再試行に落ちる設計だが、公開後に DevTools で要確認。
+- **自己レビューで発見・修正した4点**（初回コミット後）:
+  1. `pickSeaState` が `marine.hourly` に一部の系列しか無い場合、欠けている項目を `null` で上書きして**既存の値を消していた**。系列そのものが無い項目は `current` の値を残し、系列はあるが当該時刻が欠測の場合だけ「データなし」と出すよう修正（Marine API が `sea_surface_temperature` を hourly で返さなかった場合の退避も兼ねる）。
+  2. `upgradeWithLiveAmedas` が `updated_at` へフォールバックしていたため、**`jma_amedas` 自体が無い**（気象庁取得失敗＋引き継ぎ値なし）状態で `updated_at` が新しいとライブ取得を行わず、Open-Meteo 値のまま固定されていた。観測値の有無で判定するよう修正。
+  3. 手動更新（時刻タップ）時にライブ側だけ sessionStorage キャッシュを見ていたため、`force` を `fetchLiveAmedas` まで伝播。
+  4. `amedasKeyToIso` が想定外キーで例外を投げ得たため、`null` を返して当該スロットを捨てるよう変更。
+  - 回帰テストを3件追加（計24件）。
+- **Marine API の hourly は実証済み**: `workflow_dispatch` でブランチ上のワークフローを1回実行し、`fetch_openmeteo.py` が **退避経路の `[warn]` を出さずに** `data/weather_marine.json` を保存（`4 files changed, 287 insertions(+)`）。`hourly=wave_height,sea_surface_temperature&forecast_days=2` は受理される。
+  - なおこの run は最後の push 段階で失敗した。`git pull --rebase origin main` が **depth=1 の浅いクローン＋main 以外のブランチ**では共通祖先を持てず add/add コンフリクトになるため。main 上の通常運用（checkout 対象が main）では発生しない**既存の性質**で、今回の変更とは無関係。データは push されておらず影響なし。ブランチ上で手動 dispatch するのは非対応、と理解しておく。
+- **未検証（実ブラウザでの確認が必要）**: 実行環境から `www.jma.go.jp` へ到達できず、**アメダス地点別JSON（`bosai/amedas/data/point/{code}/{yyyyMMdd}_{HH}.json`）のパス形と CORS ヘッダのみ未実測**。失敗時はスナップショット維持に落ちる設計（コンソールに `Live amedas fetch failed` を出す）だが、公開後に DevTools で要確認。成功していれば NOW カードに「（HH:MM 観測）」が最新スロットで出る。
 
 **関連ファイル**
 

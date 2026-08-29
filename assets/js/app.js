@@ -244,10 +244,16 @@ function amedasPointRef(ms) {
   };
 }
 
-/** "YYYYMMDDHHmmss" 形式のキーを JST の ISO 文字列へ変換する。 */
+/**
+ * "YYYYMMDDHHmmss" 形式のキーを JST の ISO 文字列へ変換する。
+ * 形式が違えば null（呼び出し側でそのスロットを捨てる）。
+ * @param {string} key
+ * @returns {string|null}
+ */
 function amedasKeyToIso(key) {
-  const [, y, mo, d, h, mi, sec] =
-    /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(key);
+  const m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(key);
+  if (!m) return null;
+  const [, y, mo, d, h, mi, sec] = m;
   return `${y}-${mo}-${d}T${h}:${mi}:${sec}+09:00`;
 }
 
@@ -257,7 +263,7 @@ function amedasKeyToIso(key) {
  * （三原則1: 失敗時に推測値・ダミー値を作らない）。
  * @returns {Promise<object|null>} jma_amedas と同形のオブジェクト
  */
-async function fetchLiveAmedas() {
+async function fetchLiveAmedas(force = false) {
   const now = Date.now();
   // 3時間ブロックの切り替わり直後はファイルが未生成・空になり得るため、
   // 現在ブロックで拾えなければ1つ前のブロックまで遡る。
@@ -265,7 +271,7 @@ async function fetchLiveAmedas() {
     const { url, key } = amedasPointRef(ms);
     let data;
     try {
-      data = await fetchCached(url, key, { ttlMs: LIVE_AMEDAS.ttlMs });
+      data = await fetchCached(url, key, { ttlMs: LIVE_AMEDAS.ttlMs, force });
     } catch (e) {
       console.warn("Live amedas fetch failed:", e);
       return null;
@@ -277,8 +283,10 @@ async function fetchLiveAmedas() {
     const slot = slots[slots.length - 1];
     const point = data[slot];
     if (!point || typeof point !== "object") continue;
+    const observedAt = amedasKeyToIso(slot);
+    if (observedAt == null) continue;
     const live = {
-      observed_at: amedasKeyToIso(slot),
+      observed_at: observedAt,
       amedas_code: AMEDAS_CODE,
       temp: amedasQcValue(point.temp),
       wind: amedasQcValue(point.wind),
@@ -1872,11 +1880,21 @@ function pickSeaState(marine) {
         bestIdx = i;
       }
     });
-    if (bestIdx >= 0 && (out.ms == null || bestMs > out.ms)) {
+    // 系列そのものが無い項目（APIが返さなかった場合）は current の値を残す。
+    // 系列はあるが当該時刻が欠測の場合は「データなし」＝実態どおりに出す。
+    const hasWave = Array.isArray(hourly.wave_height);
+    const hasSst = Array.isArray(hourly.sea_surface_temperature);
+    if (
+      bestIdx >= 0 &&
+      (hasWave || hasSst) &&
+      (out.ms == null || bestMs > out.ms)
+    ) {
       out.ms = bestMs;
-      out.wave_height = hourly.wave_height?.[bestIdx] ?? null;
-      out.sea_surface_temperature =
-        hourly.sea_surface_temperature?.[bestIdx] ?? null;
+      if (hasWave) out.wave_height = hourly.wave_height[bestIdx] ?? null;
+      if (hasSst) {
+        out.sea_surface_temperature =
+          hourly.sea_surface_temperature[bestIdx] ?? null;
+      }
     }
   }
   return out;
@@ -1990,10 +2008,15 @@ function renderWeatherCards(wmData) {
  * @param {object|null} wmData スナップショット
  * @returns {Promise<object|null>} 差し替え後のデータ。差し替え不要・失敗時は null
  */
-async function upgradeWithLiveAmedas(wmData) {
-  const f = freshness(amedasTimestamp(wmData), LIVE_AMEDAS.staleAfterMs);
-  if (wmData != null && f.ms != null && !f.isStale) return null;
-  const live = await fetchLiveAmedas();
+async function upgradeWithLiveAmedas(wmData, force = false) {
+  const f = freshness(
+    wmData?.jma_amedas?.observed_at,
+    LIVE_AMEDAS.staleAfterMs,
+  );
+  // jma_amedas 自体が無い場合（気象庁側の取得が失敗し引き継ぎ値も無い）は
+  // updated_at が新しくても表示が Open-Meteo 値のままになるため取得を試みる。
+  if (f.ms != null && !f.isStale && !force) return null;
+  const live = await fetchLiveAmedas(force);
   if (!live) return null;
   return { ...(wmData || {}), jma_amedas: live };
 }
@@ -2066,7 +2089,7 @@ async function fetchWeatherData(isManual = false) {
 
     // アメダスの観測が古い時だけ気象庁から取り直して差し替える。
     // ここまでで描画は完了しているため、失敗してもスナップショット表示が残る。
-    const live = await upgradeWithLiveAmedas(wmData);
+    const live = await upgradeWithLiveAmedas(wmData, isManual);
     if (live) {
       renderWeatherCards(live);
       displayFetchTime(amedasTimestamp(live));

@@ -233,6 +233,25 @@ test("upgradeWithLiveAmedas refreshes a stale observation", async () => {
   assert.equal(result.marine.current.wave_height, 0.5);
 });
 
+test("upgradeWithLiveAmedas fetches when the snapshot has no observation at all", async () => {
+  // updated_at が新しくても jma_amedas が無ければ表示は Open-Meteo 値のまま。
+  // 気象庁を一次ソースに戻すため取得を試みる（三原則1）。
+  const { context, calls } = buildContext({
+    fetchImpl: async () =>
+      jsonResponse({ 20260829102000: { temp: [25.3, 0], wind: [3.2, 0] } }),
+  });
+  const result = await vm.runInContext(
+    `upgradeWithLiveAmedas({
+       updated_at: "2026-08-29T10:32:00+09:00",
+       current_weather: { temperature: 24.7, windspeed: 3.47 },
+     })`,
+    context,
+  );
+  assert.equal(calls.length, 1);
+  assert.equal(result.jma_amedas.temp, 25.3);
+  assert.equal(result.current_weather.temperature, 24.7);
+});
+
 test("upgradeWithLiveAmedas keeps the snapshot when the live fetch fails", async () => {
   const { context } = buildContext({
     fetchImpl: async () => {
@@ -277,6 +296,38 @@ test("pickSeaState falls back to current when no hourly series exists", () => {
   );
   assert.equal(sea.wave_height, 0.5);
   assert.equal(sea.ms, Date.parse("2026-08-29T10:30:00+09:00"));
+});
+
+test("pickSeaState keeps current values for series the API did not return", () => {
+  // hourly に sea_surface_temperature が無い場合でも、wave_height だけ
+  // 新しい行へ更新し、海水温は current の値を残す（値を消さない）。
+  const { context } = buildContext();
+  const sea = vm.runInContext(
+    `pickSeaState({
+       current: { time: "2026-08-29T06:30+09:00", wave_height: 0.9, sea_surface_temperature: 26.0 },
+       hourly: { time: ["2026-08-29T10:00+09:00"], wave_height: [0.5] },
+     })`,
+    context,
+  );
+  assert.equal(sea.wave_height, 0.5);
+  assert.equal(sea.sea_surface_temperature, 26.0);
+});
+
+test("pickSeaState reports a gap in an existing series as missing", () => {
+  const { context } = buildContext();
+  const sea = vm.runInContext(
+    `pickSeaState({
+       current: { time: "2026-08-29T06:30+09:00", wave_height: 0.9 },
+       hourly: {
+         time: ["2026-08-29T10:00+09:00"],
+         wave_height: [null],
+         sea_surface_temperature: [27.3],
+       },
+     })`,
+    context,
+  );
+  assert.equal(sea.wave_height, null);
+  assert.equal(sea.sea_surface_temperature, 27.3);
 });
 
 test("pickSeaState ignores future hourly rows", () => {
