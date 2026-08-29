@@ -13,6 +13,30 @@
   --brand-strong: #0284c7;
   --brand-soft: rgba(14, 116, 144, 0.08);
   --hairline: rgba(14, 116, 144, 0.12);
+  --selection-bg: rgba(14, 116, 144, 0.16);
+  /* 角丸スケール（DESIGN.md 4章と対応） */
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 10px;
+  --radius-xs: 6px;
+  /* 減速カーブ。終端がゆっくり止まるぶん、短い時間でも動きが安っぽくならない */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* 影は「接地影（近距離・濃い）＋環境影（遠距離・薄い）」の2枚重ね。
+     1枚の大きなぼかしより輪郭が締まり、面の高さが読み取りやすい */
+  --shadow-card:
+    0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 24px rgba(15, 23, 42, 0.05);
+  --shadow-card-hover:
+    0 2px 4px rgba(15, 23, 42, 0.05), 0 16px 34px rgba(14, 116, 144, 0.1);
+  --shadow-hero:
+    0 1px 2px rgba(2, 132, 199, 0.18), 0 10px 22px rgba(2, 132, 199, 0.18);
+  --shadow-hero-hover:
+    0 2px 6px rgba(2, 132, 199, 0.2), 0 18px 34px rgba(2, 132, 199, 0.26);
+  --focus-ring: 2px solid var(--brand);
+  accent-color: #0e7490;
+}
+
+::selection {
+  background: var(--selection-bg);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -41,6 +65,16 @@
     --brand-strong: #7dd3fc;
     --brand-soft: rgba(94, 189, 216, 0.12);
     --hairline: rgba(125, 211, 252, 0.14);
+    --selection-bg: rgba(94, 189, 216, 0.26);
+    --shadow-card:
+      0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 28px rgba(0, 0, 0, 0.18);
+    --shadow-card-hover:
+      0 2px 4px rgba(0, 0, 0, 0.34), 0 18px 36px rgba(0, 0, 0, 0.26);
+    --shadow-hero:
+      0 1px 2px rgba(0, 0, 0, 0.34), 0 10px 22px rgba(0, 0, 0, 0.3);
+    --shadow-hero-hover:
+      0 2px 6px rgba(0, 0, 0, 0.38), 0 18px 34px rgba(0, 0, 0, 0.38);
+    accent-color: #5ebdd8;
   }
 }
 
@@ -66,6 +100,8 @@ body {
   overflow-wrap: break-word;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   position: relative;
 }
 body::before {
@@ -117,16 +153,16 @@ body::before {
   padding: 0 16px;
   padding-top: env(safe-area-inset-top);
   background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
   border-bottom: 1px solid var(--hairline);
   box-shadow: 0 4px 16px rgba(14, 116, 144, 0.06);
   opacity: 0;
   transform: translateY(-100%);
   pointer-events: none;
   transition:
-    transform 0.22s ease,
-    opacity 0.22s ease;
+    transform 0.28s var(--ease-out),
+    opacity 0.28s var(--ease-out);
 }
 .site-bar.is-visible {
   opacity: 1;
@@ -155,7 +191,7 @@ body::before {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   padding: 34px 24px 28px;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--container-shadow);
   border: 1px solid rgba(255, 255, 255, 0.62);
   position: relative;
@@ -194,9 +230,9 @@ header {
     var(--brand-soft)
   );
   border: 1px solid var(--hairline);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   box-shadow: 0 8px 24px rgba(14, 116, 144, 0.06);
-  animation: rise-in 0.55s ease-out both;
+  animation: rise-in 0.55s var(--ease-out) both;
 }
 
 .logo-text,
@@ -238,20 +274,26 @@ h1 .title-sub {
   margin-bottom: 22px;
 }
 .hero-card {
+  /* 上辺に寄せたラジアルのハイライトで、面がわずかに湾曲して見える。
+     画像もJSも使わずグラデーション1枚ぶんの追加で立体感を出す。 */
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 46%),
+    radial-gradient(
+      120% 100% at 50% 0%,
+      rgba(255, 255, 255, 0.2),
+      transparent 58%
+    ),
     linear-gradient(135deg, #0e7490 0%, #0284c7 100%);
   border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 15px 8px 13px;
   text-align: center;
   color: #fff;
   font: inherit;
   transition:
-    box-shadow 0.18s ease,
-    transform 0.15s ease;
+    box-shadow 0.24s var(--ease-out),
+    transform 0.18s var(--ease-out);
   cursor: pointer;
-  box-shadow: 0 10px 22px rgba(2, 132, 199, 0.18);
+  box-shadow: var(--shadow-hero);
   min-width: 0;
 }
 .hero-card:focus-visible {
@@ -262,7 +304,7 @@ h1 .title-sub {
 @media (hover: hover) {
   .hero-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 14px 28px rgba(2, 132, 199, 0.24);
+    box-shadow: var(--shadow-hero-hover);
   }
 }
 .hero-card:active {
@@ -348,21 +390,42 @@ h1 .title-sub {
 }
 
 #weather-content > .weather-box {
-  animation: rise-in 0.42s ease-out both;
+  animation: rise-in 0.42s var(--ease-out) both;
 }
-#weather-content > .weather-box:nth-child(2n) {
-  animation-delay: 0.04s;
+/* 上から順にごく短く遅らせる。5枚目で頭打ちにして待ち時間を作らない */
+#weather-content > .weather-box:nth-child(2) {
+  animation-delay: 0.03s;
+}
+#weather-content > .weather-box:nth-child(3) {
+  animation-delay: 0.06s;
+}
+#weather-content > .weather-box:nth-child(4) {
+  animation-delay: 0.09s;
+}
+#weather-content > .weather-box:nth-child(n + 5) {
+  animation-delay: 0.12s;
 }
 .weather-box {
   scroll-margin-top: 56px;
   background: var(--box-bg);
   border: 1px solid var(--box-border);
   padding: 20px 24px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   margin-bottom: 16px;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--shadow-card);
+  transition:
+    box-shadow 0.24s var(--ease-out),
+    border-color 0.24s var(--ease-out);
   position: relative;
   overflow: hidden;
+}
+/* カード自体は操作対象ではないので浮かせず、影と枠だけをわずかに強めて
+   ポインタが乗っている面を示す。タッチ端末には出さない。 */
+@media (hover: hover) {
+  .weather-box:not(.warning-active):not(.heatstroke-box):hover {
+    box-shadow: var(--shadow-card-hover);
+    border-color: var(--hairline);
+  }
 }
 .weather-box::before {
   content: "";
@@ -519,7 +582,7 @@ h1 .title-sub {
   min-height: 44px;
 }
 .current-time:focus-visible {
-  outline: 2px solid var(--brand);
+  outline: var(--focus-ring);
   outline-offset: 2px;
 }
 @media (hover: hover) {
@@ -536,7 +599,7 @@ h1 .title-sub {
   position: fixed;
   bottom: max(24px, env(safe-area-inset-bottom));
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateY(10px);
   font: inherit;
   background: rgba(255, 255, 255, 0.92);
   -webkit-backdrop-filter: blur(8px);
@@ -552,22 +615,25 @@ h1 .title-sub {
   cursor: pointer;
   z-index: 9999;
   opacity: 0;
-  transition: opacity 0.4s;
+  transition:
+    opacity 0.32s var(--ease-out),
+    transform 0.32s var(--ease-out);
   white-space: nowrap;
 }
 #toast.show,
 #refresh-toast.show {
   opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 #refresh-toast {
   cursor: default;
 }
 #toast:focus-visible {
-  outline: 2px solid #0e7490;
+  outline: var(--focus-ring);
   outline-offset: 2px;
 }
-#toast:active {
-  transform: translateX(-50%) scale(0.97);
+#toast.show:active {
+  transform: translateX(-50%) translateY(0) scale(0.97);
 }
 
 .floating-alert {
@@ -611,7 +677,7 @@ body.has-floating-alert #refresh-toast {
   background: var(--brand-soft);
   border: 1px solid var(--hairline);
   color: var(--brand);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   padding: 10px 18px;
   min-height: 44px;
   font-size: 12px;
@@ -621,9 +687,9 @@ body.has-floating-alert #refresh-toast {
   margin-top: 8px;
   letter-spacing: -0.28px;
   transition:
-    background 0.15s,
-    color 0.15s,
-    transform 0.1s;
+    background 0.18s var(--ease-out),
+    color 0.18s var(--ease-out),
+    transform 0.12s var(--ease-out);
 }
 @media (hover: hover) {
   .toggle-btn:hover {
@@ -632,7 +698,7 @@ body.has-floating-alert #refresh-toast {
   }
 }
 .toggle-btn:focus-visible {
-  outline: 2px solid var(--brand);
+  outline: var(--focus-ring);
   outline-offset: 2px;
 }
 .toggle-btn:active {
@@ -759,7 +825,7 @@ p.note strong a {
   flex-direction: column;
   gap: 16px;
   border-top: 1px solid var(--hairline);
-  animation: rise-in 0.55s 0.08s ease-out both;
+  animation: rise-in 0.55s 0.08s var(--ease-out) both;
 }
 .footer a {
   color: var(--text-sub);
@@ -806,7 +872,7 @@ p.note strong a {
 }
 .skeleton-hero-card {
   background: #e2e8f0;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   height: 72px;
 }
 .skeleton-line-spacer {
@@ -899,13 +965,13 @@ p.note strong a {
   font: inherit;
   padding: 8px 6px;
   margin: -8px -6px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   transition:
     opacity 0.2s,
     text-decoration 0.2s;
 }
 .wave-legend-item:focus-visible {
-  outline: 2px solid var(--brand);
+  outline: var(--focus-ring);
   outline-offset: 2px;
 }
 .wave-legend-item.disabled {
