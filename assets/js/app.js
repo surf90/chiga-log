@@ -52,7 +52,7 @@ let waveChartData = null;
 async function fetchCached(
   url,
   key,
-  { store = "session", ttlMs = 30 * 60 * 1000, force = false } = {},
+  { store = "session", ttlMs = 30 * 60 * 1000, force = false, timeoutMs } = {},
 ) {
   const storage = store === "local" ? localStorage : sessionStorage;
   // 同オリジン内の他コードとのキー衝突を避けるためプレフィックスを付与する
@@ -67,7 +67,10 @@ async function fetchCached(
       storage.removeItem(key);
     }
   }
-  const res = await fetchWithTimeout(url, { force });
+  const res = await fetchWithTimeout(url, {
+    force,
+    ...(timeoutMs && { timeoutMs }),
+  });
   if (!res.ok) throw new Error(`fetch failed: ${url}`);
   const data = await res.json();
   try {
@@ -88,8 +91,13 @@ async function fetchCached(
 //   - 予報値: 未来の時系列を含むため、生成が数時間前でも表示行は妥当。
 //             系列が現在時刻をカバーしているかを主判定にし、年齢は
 //             「更新完全停止」の検知用に緩めの値を置く。
+//
+// 警告の閾値とライブ補完のトリガ閾値は分ける。警告は「利用者に伝える価値が
+// あるほど古い」ライン、トリガは「取り直す価値があるか」のラインで、後者の方が
+// 短くてよい。同じ値にすると、ライブ取得が使えない環境（CORS遮断・オフライン）で
+// 通常運用の cron 間隔でも警告が出続け、かえって誤読を招く（オオカミ少年化）。
 const FRESHNESS = {
-  marine: 45 * 60e3, // NOW: アメダス observed_at 基準。ライブ補完の閾値と共通
+  marine: 2 * 3600e3, // NOW: アメダス observed_at 基準の警告ライン
   wind: 6 * 3600e3, // wind_forecast: 主判定は系列カバレッジ。これは停止検知用
   seaState: 12 * 3600e3, // 波高/海水温: 同上（hourly系列を持つため緩め）
   forecast: 18 * 3600e3, // forecast: 1日3回(~8h間隔)
@@ -209,8 +217,11 @@ function formatJstHm(ms) {
 // 使うのは、fetch_openmeteo.py が使う map/{ymdhns}.json が全国分で重く、
 // モバイルの初期表示に載せられないため（三原則2）。
 const LIVE_AMEDAS = {
-  staleAfterMs: FRESHNESS.marine, // observed_at がこれより古い時だけ取得
+  staleAfterMs: 45 * 60e3, // observed_at がこれより古い時だけ取得
   ttlMs: 10 * 60e3, // アメダスの観測周期は10分。これ未満のTTLは無意味
+  // 付加的な取得なので本体より短く切る。ここで待たされる間は
+  // fetchWeatherData が再入を弾くため、手動更新の反応も止まる。
+  timeoutMs: 6000,
 };
 const AMEDAS_CODE = _cfgJma.amedas_code ?? "46141";
 const AMEDAS_POINT_BASE = "https://www.jma.go.jp/bosai/amedas/data/point/";
@@ -258,6 +269,29 @@ function amedasKeyToIso(key) {
 }
 
 /**
+ * 現在のブロック以外のアメダスキャッシュを sessionStorage から捨てる。
+ * キーは3時間ブロックごとに変わるため、PWAで開きっぱなしのタブでは
+ * 掃除しないと1日8件ずつ増え続ける（TTLでは消えない）。
+ * @param {string} keepKey 残すキー（プレフィックス無し）
+ */
+function pruneAmedasCache(keepKey) {
+  const prefix = STORAGE_PREFIX + `cache_amedas_${AMEDAS_CODE}_`;
+  const keep = STORAGE_PREFIX + keepKey;
+  try {
+    // Storage の列挙は key(i)/length を使う（Object.keys は環境依存）。
+    // 削除で添字がずれるため、先に対象を集めてから消す。
+    const doomed = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const k = sessionStorage.key(i);
+      if (k && k.startsWith(prefix) && k !== keep) doomed.push(k);
+    }
+    doomed.forEach((k) => sessionStorage.removeItem(k));
+  } catch {
+    // ストレージ参照が拒否される環境（プライベートモード等）では何もしない
+  }
+}
+
+/**
  * 気象庁アメダス（地点別）の最新観測値を取得する。
  * 取得・解釈に失敗したら null を返し、呼び出し側はスナップショットを維持する
  * （三原則1: 失敗時に推測値・ダミー値を作らない）。
@@ -271,7 +305,12 @@ async function fetchLiveAmedas(force = false) {
     const { url, key } = amedasPointRef(ms);
     let data;
     try {
-      data = await fetchCached(url, key, { ttlMs: LIVE_AMEDAS.ttlMs, force });
+      data = await fetchCached(url, key, {
+        ttlMs: LIVE_AMEDAS.ttlMs,
+        timeoutMs: LIVE_AMEDAS.timeoutMs,
+        force,
+      });
+      pruneAmedasCache(key);
     } catch (e) {
       console.warn("Live amedas fetch failed:", e);
       return null;
@@ -1830,9 +1869,21 @@ async function fetchWindForecast(force = false) {
     // wind_forecast.json は未来48時間分を含むため、生成が数時間前でも
     // 「これから先の行」は妥当なまま。ファイル年齢だけで警告すると
     // Actions の発火遅延のたびに誤警告になるので、系列が現在時刻に
-    // 届いているかを主判定にする（届いていなければ閾値0＝即stale扱い）。
+    // 届いているかを主判定にする。
     const covered = allTs.some((ts) => ts >= now.getTime());
-    markStale("wind-stale", pickTimestamp(data), covered ? FRESHNESS.wind : 0);
+    const windNote = document.getElementById("wind-stale");
+    if (!covered && windNote) {
+      // 系列が現在時刻に届いていない＝表示できる予報が無い。updated_at が
+      // 壊れていて経過時間を出せない場合も警告は必ず出す（markStale は
+      // 時刻を解釈できないと警告しない設計なので、ここは通さない）。
+      const f = freshness(pickTimestamp(data), 0);
+      windNote.textContent = f.ms
+        ? `⚠ データが古い可能性（最終更新 ${f.label}）`
+        : "⚠ 予報データが現在時刻に届いていません";
+      windNote.hidden = false;
+    } else {
+      markStale("wind-stale", pickTimestamp(data), FRESHNESS.wind);
+    }
   } catch (e) {
     console.error("Wind forecast error:", e);
     document.getElementById("wind-forecast-loading").classList.add("hidden");

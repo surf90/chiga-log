@@ -52,7 +52,10 @@ jobs:
             # データ更新が静かに停止する。成否を明示的に持ち回って落とす。
             pushed=false
             for i in 1 2 3; do
-              if git pull --rebase origin main && git push; then
+              # 追従先は実行中のブランチ。main 決め打ちだと workflow_dispatch を
+              # ブランチで実行した際、浅いクローンに main の共通祖先が無く
+              # add/add コンフリクトになり push できない（main 上では同じ挙動）。
+              if git pull --rebase origin "$GITHUB_REF_NAME" && git push; then
                 pushed=true
                 break
               fi

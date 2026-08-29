@@ -6,6 +6,29 @@ updated: 2026-08-29
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
 
+## 完了済み（2026-08-29 追補）
+
+### データ鮮度対策のマージ後監査と積み残しの解消
+
+PR #154 マージ後に本番状態を監査し、残っていた不具合・弱点を全て解消した。
+
+- **監査結果（問題なし）**: `minify.yml` が実行され `app.min.js` に新関数（`fetchLiveAmedas` / `pickSeaState` / `upgradeWithLiveAmedas` / `renderWeatherCards`）が入っていること、`sw.js` が `chigalog-v19` であることを確認。`data/weather_marine.json` の `marine.hourly` は次回の `fetch-openmeteo` 実行から入る（マージ時点の最新 run はマージ前のもの）。
+- **警告閾値とライブ取得トリガを分離（重要）**: `LIVE_AMEDAS.staleAfterMs` が `FRESHNESS.marine` を共有していたため、**アメダスのライブ取得が使えない環境（CORS遮断・オフライン・パス形の相違）では、通常運用の cron 間隔（実効50〜90分）でも45分超で警告が出続ける**状態だった。変更前（3時間）より警告が増える退行になり得るため、警告は `FRESHNESS.marine = 2時間`、取得トリガは `LIVE_AMEDAS.staleAfterMs = 45分` に分離。「取り直す価値があるか」と「利用者に伝える価値があるほど古いか」は別の基準。
+- **風予報の警告が fail-open だった**: 系列が現在時刻に届いていないのに `updated_at` が壊れていると、`markStale()` が時刻を解釈できず**警告を出さないまま「データなし」だけを表示**していた。カバレッジ欠落時は時刻が読めなくても必ず警告するよう分岐（三原則1）。
+- **sessionStorage のキーが増え続ける**: アメダスのキャッシュキーは3時間ブロックごとに変わるため、PWAで開きっぱなしのタブでは1日8件ずつ溜まり TTL でも消えなかった。取得成功時に現在ブロック以外を掃除する `pruneAmedasCache()` を追加。列挙は `length` / `key(i)`（`Object.keys(sessionStorage)` は環境依存のため使わない）。
+- **ライブ取得のタイムアウトを6秒に短縮**: 既定10秒だと、その間 `fetchWeatherData` の再入ガードが効いたままで**手動更新のタップが無反応**になる。付加的な取得なので本体より短く切る。`fetchCached` に `timeoutMs` の受け渡しを追加。
+- **Actions の push がブランチで失敗する問題**: `git pull --rebase origin main` が main 決め打ちで、`workflow_dispatch` をブランチで実行すると浅いクローン（`--depth=1`）に main の共通祖先が無く add/add コンフリクトで push できなかった（PR #154 での実測）。7本すべてを `origin "$GITHUB_REF_NAME"` に変更。**main 上では完全に同じ挙動**で、cron の頻度・本数は不変（三原則3）。
+- **テスト**: `tests/test_live_frontend.cjs` を24→**27件**に拡張。ストレージのスタブを実ブラウザ同様の `length` / `key(i)` を持つ実装に差し替え、(1) 1時間前の観測でライブ取得は走るが警告は出ないこと、(2) 古いブロックのキャッシュが掃除されること、(3) `updated_at` が壊れていても系列欠落なら警告が出ることを固定。pytest 70件・Node 27件・ESLint・Prettier すべて成功。
+
+**関連ファイル**
+
+- `assets/js/app.js`
+- `.github/workflows/*.yml`（データ push を持つ7本）
+- `tests/test_live_frontend.cjs`
+- `DESIGN.md`
+
+---
+
 ## 完了済み（2026-08-29）
 
 ### WIND / NOW / 水温･波高 のデータ鮮度対策（Actions 発火遅延の吸収）

@@ -53,6 +53,27 @@ function makeElement() {
   return el;
 }
 
+/** 実ブラウザの Storage と同じ列挙API（length / key(i)）を持つスタブ。 */
+function makeStorage() {
+  const map = new Map();
+  return {
+    get length() {
+      return map.size;
+    },
+    key(i) {
+      return [...map.keys()][i] ?? null;
+    },
+    getItem: (k) => (map.has(k) ? map.get(k) : null),
+    setItem(k, v) {
+      map.set(k, String(v));
+    },
+    removeItem(k) {
+      map.delete(k);
+    },
+    _map: map,
+  };
+}
+
 function buildContext({ fetchImpl } = {}) {
   const elements = new Map();
   const getElementById = (id) => {
@@ -70,6 +91,7 @@ function buildContext({ fetchImpl } = {}) {
   }
 
   const calls = [];
+  const sessionStorage = makeStorage();
   const context = {
     AbortSignal,
     Chart: function Chart() {},
@@ -82,11 +104,11 @@ function buildContext({ fetchImpl } = {}) {
       if (fetchImpl) return fetchImpl(String(url));
       return { ok: true, json: async () => ({}) };
     },
-    localStorage: { getItem: () => null, removeItem() {}, setItem() {} },
+    localStorage: makeStorage(),
     navigator: {},
     performance,
     requestAnimationFrame() {},
-    sessionStorage: { getItem: () => null, removeItem() {}, setItem() {} },
+    sessionStorage,
     setInterval() {},
     setTimeout() {},
     clearInterval() {},
@@ -113,7 +135,7 @@ function buildContext({ fetchImpl } = {}) {
   context.globalThis = context;
   vm.createContext(context);
   vm.runInContext(APP_SOURCE, context);
-  return { context, elements, calls, getElementById };
+  return { context, elements, calls, getElementById, sessionStorage };
 }
 
 const jsonResponse = (payload) => ({ ok: true, json: async () => payload });
@@ -427,4 +449,70 @@ test("wind card warns once the series no longer reaches the present", async () =
   });
   await vm.runInContext("fetchWindForecast()", context);
   assert.equal(getElementById("wind-stale").hidden, false);
+});
+
+// ─── 警告閾値とライブ取得トリガの分離 ─────────────────────────
+test("a 1-hour-old observation triggers a live fetch but shows no warning", async () => {
+  // 45分超なので取り直しには行くが、2時間以内なので警告は出さない。
+  // ライブ取得が使えない環境で通常運用の cron 間隔でも警告が出続けるのを防ぐ。
+  const { context, getElementById, calls } = buildContext({
+    fetchImpl: async () => {
+      throw new Error("offline");
+    },
+  });
+  const snapshot = `{
+    updated_at: "2026-08-29T09:32:00+09:00",
+    jma_amedas: { observed_at: "2026-08-29T09:30:00+09:00", temp: 24.1 },
+  }`;
+  vm.runInContext(`renderWeatherCards(${snapshot})`, context);
+  assert.equal(getElementById("marine-stale").hidden, true);
+
+  const result = await vm.runInContext(
+    `upgradeWithLiveAmedas(${snapshot})`,
+    context,
+  );
+  assert.equal(calls.length, 1, "45分超なのでライブ取得は試みる");
+  assert.equal(result, null, "失敗したのでスナップショットのまま");
+  assert.equal(getElementById("marine-stale").hidden, true, "警告は出さない");
+});
+
+// ─── アメダスキャッシュの掃除 ─────────────────────────────────
+test("fetchLiveAmedas drops cache entries from earlier 3-hour blocks", async () => {
+  const { context, sessionStorage } = buildContext({
+    fetchImpl: async () =>
+      jsonResponse({ 20260829102000: { temp: [25.3, 0], wind: [3.2, 0] } }),
+  });
+  // 前日・前ブロックの残骸と、無関係なキーを置いておく
+  sessionStorage.setItem("chigalog:v6:cache_amedas_46141_20260828_21", "{}");
+  sessionStorage.setItem("chigalog:v6:cache_amedas_46141_20260829_06", "{}");
+  sessionStorage.setItem("chigalog:v6:cache_weather_marine", "{}");
+
+  await vm.runInContext("fetchLiveAmedas()", context);
+
+  const keys = [...sessionStorage._map.keys()].sort();
+  assert.deepEqual(keys, [
+    "chigalog:v6:cache_amedas_46141_20260829_09",
+    "chigalog:v6:cache_weather_marine",
+  ]);
+});
+
+// ─── 風予報: 系列が尽きたら時刻が読めなくても必ず警告する ──────
+test("wind card warns even when updated_at is unusable", async () => {
+  const { context, getElementById } = buildContext({
+    fetchImpl: async () =>
+      jsonResponse({
+        updated_at: "not-a-date",
+        items: [
+          {
+            time: "2026-08-29T08:00",
+            wind_speed_ms: 3,
+            wind_direction_deg: 180,
+          },
+        ],
+      }),
+  });
+  await vm.runInContext("fetchWindForecast()", context);
+  const note = getElementById("wind-stale");
+  assert.equal(note.hidden, false);
+  assert.match(note.textContent, /現在時刻に届いていません/);
 });
