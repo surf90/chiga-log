@@ -151,7 +151,9 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
 - 目的: 更新停止（Actions 停止・API 障害）や古いデータを閲覧者に明示し、誤読を防ぐ（三原則1）。閾値はデータ種別ごとに個別（`app.js` の `FRESHNESS`）。
 - **警告はカード単位で出し、ページ全体のバナーは使わない**。GitHub Actions のスケジュール遅延・スキップはデータ種別ごとに独立して起きるため、1ソースの遅延で全体バナーを出すと、更新できている他の情報まで古いと誤認させてしまう。旧 `.stale-banner`（`#stale-banner`）は本方針により廃止。
-- `.stale-note`（各セクション見出し直下）/ `.stale-inline`（`#tsunami-error`）: 該当データが閾値超で古い/取得失敗時に小さく赤字（`--warning-border`, 12px）で注記。通常は `hidden`。対象は潮汐・波・警報・天気予報・風（`markStale()`）と現在の気温･風（`#marine-stale`、`weather_marine` の鮮度・取得失敗）。
+- `.stale-note`（各セクション見出し直下）/ `.stale-inline`（`#tsunami-error`）: 該当データが閾値超で古い/取得失敗時に小さく赤字（`--warning-border`, 12px）で注記。通常は `hidden`。対象は潮汐・波・警報・天気予報・風（`markStale()`）、現在の気温･風（`#marine-stale`、アメダス観測時刻の鮮度・取得失敗）、水温･波高（`#sea-stale`、表示中の値の時刻）。
+- **判定軸はデータの性質で分ける**。実測値（アメダス）は観測時刻の年齢で判定し、予報値（風・波高・海水温）は「時系列が現在時刻をカバーしているか」を主判定にする。予報は未来の行を含むため、ファイル生成が数時間前でも表示行は妥当であり、年齢だけで警告すると誤警告になる（`FRESHNESS.wind` / `FRESHNESS.seaState` は更新完全停止の検知用）。
+- `#amedas-observed`（`.note-fine`、NOWカードの注釈内）: アメダスの観測時刻を「（10:20 観測）」の形で常時表示。多少古くても「いつの実測値か」が分かれば閲覧者が自分で判断できる（三原則1）。取得時刻が不明なら `hidden`。
 - `.current-time.is-stale`: データが古い場合に「更新日時」の下線・文字色を `--warning-border` に切替（データ生成時刻＋経過時間を表示）。
 - トグルは `hidden` 属性で行うため、これらは `display` を指定しない。
 - `.section-error`（各カードの「取得に失敗しました」）は**成功時に必ず消す**。`setSectionError(id, show)`（`app.js`）を使い、失敗時 `true` / 成功時 `false` を対で呼ぶ。3時間ごとの自動更新・手動更新で復旧しても消えないと、正常なデータの横にエラーが残り続けて誤読を招く（三原則1）。
