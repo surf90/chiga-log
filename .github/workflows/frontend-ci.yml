@@ -13,6 +13,7 @@ on:
       - "package.json"
       - "package-lock.json"
       - "tests/test_tide_frontend.cjs"
+      - "tests/test_live_frontend.cjs"
       - ".github/workflows/frontend-ci.yml"
   pull_request:
     paths:
@@ -24,6 +25,7 @@ on:
       - "package.json"
       - "package-lock.json"
       - "tests/test_tide_frontend.cjs"
+      - "tests/test_live_frontend.cjs"
   workflow_dispatch:
 
 permissions:

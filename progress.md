@@ -1,10 +1,34 @@
 ---
-updated: 2026-08-25
+updated: 2026-08-29
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-08-29）
+
+### WIND / NOW / 水温･波高 のデータ鮮度対策（Actions 発火遅延の吸収）
+
+- **原因特定**: 「⚠ データが古い可能性（最終更新4時間前）」は実装不具合ではなく、**GitHub Actions の schedule 発火遅延**。`fetch-openmeteo.yml`（`*/30`）の run は #935〜#964 まで全て success で、発火自体が 8/26 20:37 UTC 以降 **4〜12時間間隔**に悪化していた。GitHub 公式（community discussion #156282）が開始ドリフト悪化を認識済みで、2026-08-06 の Actions 大規模障害・08-26 の複数インシデントと同時期。**cron 追加・高頻度化では解決しない**（三原則3でも禁止）。
+- **判定軸の誤り**: 従来は全データを「ファイル生成時刻の年齢」で古いと判定していた。`wind_forecast.json` は未来48時間分を含むため、生成が4時間前でも表示行は妥当であり、**⚠ は誤警告**だった。実測値（アメダス）と予報値で「古い」の意味が違うことを踏まえ、判定軸を分離。
+- **NOW（アメダス）＝ Snapshot First / Live Fallback**: スナップショットで先に描画し、`jma_amedas.observed_at` が45分超の時だけ気象庁 bosai の**地点別**JSON（`bosai/amedas/data/point/{code}/{yyyyMMdd}_{HH}.json`）を直接取得して差し替え。全国分の `map/{ymdhns}.json` はモバイルには重いため使わない（三原則2）。失敗時はスナップショットと ⚠ を維持（三原則1）。sessionStorage 10分TTL（観測周期と一致）。**十分新しければ外部リクエストは1本も出さない**（三原則3）。CSP は `www.jma.go.jp` が津波カードで許可済みのため変更不要。
+- **WIND**: ライブ取得は行わず、鮮度判定を「系列が現在時刻に届いているか」（カバレッジ）へ変更。年齢閾値は更新停止検知用に 3h→6h。
+- **水温･波高**: ブラウザからの追加取得ではなく、`fetch_openmeteo.py` の Marine URL に `hourly=wave_height,sea_surface_temperature&forecast_days=2` を追加（**同一URLのパラメータ追加でリクエスト数は増えない**）。フロントは `marine.hourly` から現在時刻以前の最新行を選ぶ。hourly が仕様変更で弾かれた場合に current だけで再試行する退避経路（`fetch_marine()`）を用意し、更新停止を防ぐ。MARINEカードに `#sea-stale` を新設（従来は注記が無く、古い値を無表示で出していた）。
+- **表示**: 「LIVE」バッジは追加せず（`.section-source` と「更新日時」と重複）、NOWカードに観測時刻「（10:20 観測）」を常時表示。`updated_at`（ジョブ実行時刻）ではなく `observed_at` を鮮度判定と「更新日時」の基準に変更。
+- **検討して見送り**: WIND/波の Open-Meteo ブラウザ直fetch（費用対効果が低く、Python/JS のロジック二重化・CSP 追加・混在整合性の問題を招く）。外部scheduler＋`workflow_dispatch`（閲覧者不在でも更新が要る日次系のみ有効。別件）。
+- **テスト**: `tests/test_live_frontend.cjs` を新設（17件）。QCフラグ処理、3時間ブロックのフォールバック、**新鮮な時に外部fetchが0本であること**、失敗時のスナップショット維持、hourly 行選択、風のカバレッジ判定を固定。`tests/test_fetch_openmeteo.py` に `fetch_marine()` の退避経路3件を追加。pytest 70件・Node 21件・ESLint・Prettier すべて成功。`sw.js` を `chigalog-v19` へバンプ。
+- **未検証（実ブラウザでの確認が必要）**: 実行環境から `www.jma.go.jp` / `marine-api.open-meteo.com` へ到達できずエンドポイントを実測できていない。(1) アメダス地点別JSONのパス形・CORS ヘッダ、(2) Marine API の `hourly=sea_surface_temperature` 受理。いずれも失敗時はスナップショット維持・current のみ再試行に落ちる設計だが、公開後に DevTools で要確認。
+
+**関連ファイル**
+
+- `assets/js/app.js` / `index.html` / `sw.js`
+- `scripts/fetch_openmeteo.py`
+- `tests/test_live_frontend.cjs`（新規） / `tests/test_fetch_openmeteo.py`
+- `package.json` / `.github/workflows/frontend-ci.yml`
+- `CLAUDE.md` / `DESIGN.md`
+
+---
 
 ## 完了済み（2026-08-25）
 

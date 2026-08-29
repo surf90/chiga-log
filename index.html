@@ -485,6 +485,7 @@ lang: ja
               >水温･波高<small class="section-sub">&nbsp;予測</small
               ><span class="section-source">Open-Meteo</span>
             </h2>
+            <p id="sea-stale" class="stale-note" data-nosnippet hidden></p>
             <dl class="data-list">
               <div class="data-row">
                 <dt>平均波高:</dt>
@@ -689,7 +690,13 @@ lang: ja
                 target="_blank"
                 rel="noopener noreferrer"
                 >アメダス（辻堂）</a
-              >の観測値です。<span id="amedas-stale" class="note-fine" hidden
+              >の観測値です。<span
+                id="amedas-observed"
+                class="note-fine"
+                data-nosnippet
+                hidden
+              ></span
+              ><span id="amedas-stale" class="note-fine" hidden
                 >（取得失敗のため前回の観測値を表示中）</span
               >
             </p>
