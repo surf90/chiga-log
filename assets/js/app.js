@@ -52,7 +52,7 @@ let waveChartData = null;
 async function fetchCached(
   url,
   key,
-  { store = "session", ttlMs = 30 * 60 * 1000, force = false } = {},
+  { store = "session", ttlMs = 30 * 60 * 1000, force = false, timeoutMs } = {},
 ) {
   const storage = store === "local" ? localStorage : sessionStorage;
   // 同オリジン内の他コードとのキー衝突を避けるためプレフィックスを付与する
@@ -67,7 +67,10 @@ async function fetchCached(
       storage.removeItem(key);
     }
   }
-  const res = await fetchWithTimeout(url, { force });
+  const res = await fetchWithTimeout(url, {
+    force,
+    ...(timeoutMs && { timeoutMs }),
+  });
   if (!res.ok) throw new Error(`fetch failed: ${url}`);
   const data = await res.json();
   try {
@@ -82,9 +85,21 @@ async function fetchCached(
 // 各データJSONの updated_at / fetchedAt を読み、更新停止や古いデータを
 // UI上で明示する（三原則1: 誤読を誘発しない）。閾値は cron 頻度＋余裕で
 // データ種別ごとに個別設定（数回のスキップは許容）。
+//
+// 実測値（アメダス）と予報値では「古い」の意味が違うため、判定軸も分ける。
+//   - 実測値: 観測時刻そのものが古い＝表示値が過去のもの。年齢で判定する。
+//   - 予報値: 未来の時系列を含むため、生成が数時間前でも表示行は妥当。
+//             系列が現在時刻をカバーしているかを主判定にし、年齢は
+//             「更新完全停止」の検知用に緩めの値を置く。
+//
+// 警告の閾値とライブ補完のトリガ閾値は分ける。警告は「利用者に伝える価値が
+// あるほど古い」ライン、トリガは「取り直す価値があるか」のラインで、後者の方が
+// 短くてよい。同じ値にすると、ライブ取得が使えない環境（CORS遮断・オフライン）で
+// 通常運用の cron 間隔でも警告が出続け、かえって誤読を招く（オオカミ少年化）。
 const FRESHNESS = {
-  marine: 3 * 3600e3, // weather_marine: */30 → 3時間で更新停止疑い
-  wind: 3 * 3600e3, // wind_forecast: */30
+  marine: 2 * 3600e3, // NOW: アメダス observed_at 基準の警告ライン
+  wind: 6 * 3600e3, // wind_forecast: 主判定は系列カバレッジ。これは停止検知用
+  seaState: 12 * 3600e3, // 波高/海水温: 同上（hourly系列を持つため緩め）
   forecast: 18 * 3600e3, // forecast: 1日3回(~8h間隔)
   wave: 15 * 3600e3, // wave_guid: 1日3回(~6h間隔)
   warning: 3 * 3600e3, // warning: */30 (fetchedAt基準)
@@ -110,6 +125,19 @@ function parseIso(s) {
   if (!s || typeof s !== "string") return null;
   const ms = Date.parse(s);
   return Number.isNaN(ms) ? null : ms;
+}
+
+/**
+ * TZ表記が無いISO日時（例: "2026-06-03T00:00"）をJSTとして解釈する。
+ * Open-Meteo は timezone=Asia/Tokyo でもオフセットを付けないため、
+ * ブラウザTZ依存の解釈になるのを防ぐ。
+ * @param {string} s
+ * @returns {number|null} epochミリ秒。解釈不能なら null
+ */
+function parseJstIso(s) {
+  if (!s || typeof s !== "string") return null;
+  const suffix = /[zZ]|[+-]\d{2}:?\d{2}$/.test(s) ? "" : "+09:00";
+  return parseIso(s + suffix);
 }
 
 /**
@@ -176,6 +204,142 @@ function formatJstHhMm(ms) {
 function formatJstHm(ms) {
   const jst = new Date(ms + JST_OFFSET_MS);
   return jst.getUTCHours() + ":" + String(jst.getUTCMinutes()).padStart(2, "0");
+}
+
+// ─── 1.6 ライブ補完（アメダス実測値） ────────────────────────
+// GitHub Actions の schedule 発火は最大12時間まで遅延する実測があり
+// （2026-08、cron 頻度では解決できない＝三原則3で追加も禁止）、
+// スナップショットの jma_amedas が「数時間前の実測値」になり得る。
+// NOW カードだけは表示中に気象庁 bosai から直接取り直して現在値へ寄せる。
+// 予報系（風・波）は未来の時系列を含み表示行が妥当なままなので対象外。
+//
+// 取得先は津波カードと同じ bosai（CORS対応・CSPで許可済み）。地点別JSONを
+// 使うのは、fetch_openmeteo.py が使う map/{ymdhns}.json が全国分で重く、
+// モバイルの初期表示に載せられないため（三原則2）。
+const LIVE_AMEDAS = {
+  staleAfterMs: 45 * 60e3, // observed_at がこれより古い時だけ取得
+  ttlMs: 10 * 60e3, // アメダスの観測周期は10分。これ未満のTTLは無意味
+  // 付加的な取得なので本体より短く切る。ここで待たされる間は
+  // fetchWeatherData が再入を弾くため、手動更新の反応も止まる。
+  timeoutMs: 6000,
+};
+const AMEDAS_CODE = _cfgJma.amedas_code ?? "46141";
+const AMEDAS_POINT_BASE = "https://www.jma.go.jp/bosai/amedas/data/point/";
+
+/**
+ * 気象庁アメダスの品質管理フラグ付き配列から値を取り出す。
+ * fetch_openmeteo.py の _qc_value と同じ規則（flag が 0 以外は欠測扱い）。
+ * @param {unknown} field [値, フラグ, ...] 形式の配列
+ * @returns {number|null}
+ */
+function amedasQcValue(field) {
+  if (!Array.isArray(field) || field.length < 2) return null;
+  const [value, flag] = field;
+  if (flag !== 0 || value == null) return null;
+  return value;
+}
+
+/**
+ * 地点別アメダスJSONのURLとキャッシュキーを組み立てる。
+ * ファイルは JST の3時間ブロック単位（00,03,...,21）。
+ * @param {number} ms epochミリ秒
+ */
+function amedasPointRef(ms) {
+  const jst = new Date(ms + JST_OFFSET_MS);
+  const ymd = jst.toISOString().slice(0, 10).replace(/-/g, "");
+  const block = String(Math.floor(jst.getUTCHours() / 3) * 3).padStart(2, "0");
+  const name = `${ymd}_${block}`;
+  return {
+    url: `${AMEDAS_POINT_BASE}${AMEDAS_CODE}/${name}.json`,
+    key: `cache_amedas_${AMEDAS_CODE}_${name}`,
+  };
+}
+
+/**
+ * "YYYYMMDDHHmmss" 形式のキーを JST の ISO 文字列へ変換する。
+ * 形式が違えば null（呼び出し側でそのスロットを捨てる）。
+ * @param {string} key
+ * @returns {string|null}
+ */
+function amedasKeyToIso(key) {
+  const m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(key);
+  if (!m) return null;
+  const [, y, mo, d, h, mi, sec] = m;
+  return `${y}-${mo}-${d}T${h}:${mi}:${sec}+09:00`;
+}
+
+/**
+ * 現在のブロック以外のアメダスキャッシュを sessionStorage から捨てる。
+ * キーは3時間ブロックごとに変わるため、PWAで開きっぱなしのタブでは
+ * 掃除しないと1日8件ずつ増え続ける（TTLでは消えない）。
+ * @param {string} keepKey 残すキー（プレフィックス無し）
+ */
+function pruneAmedasCache(keepKey) {
+  const prefix = STORAGE_PREFIX + `cache_amedas_${AMEDAS_CODE}_`;
+  const keep = STORAGE_PREFIX + keepKey;
+  try {
+    // Storage の列挙は key(i)/length を使う（Object.keys は環境依存）。
+    // 削除で添字がずれるため、先に対象を集めてから消す。
+    const doomed = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const k = sessionStorage.key(i);
+      if (k && k.startsWith(prefix) && k !== keep) doomed.push(k);
+    }
+    doomed.forEach((k) => sessionStorage.removeItem(k));
+  } catch {
+    // ストレージ参照が拒否される環境（プライベートモード等）では何もしない
+  }
+}
+
+/**
+ * 気象庁アメダス（地点別）の最新観測値を取得する。
+ * 取得・解釈に失敗したら null を返し、呼び出し側はスナップショットを維持する
+ * （三原則1: 失敗時に推測値・ダミー値を作らない）。
+ * @returns {Promise<object|null>} jma_amedas と同形のオブジェクト
+ */
+async function fetchLiveAmedas(force = false) {
+  const now = Date.now();
+  // 3時間ブロックの切り替わり直後はファイルが未生成・空になり得るため、
+  // 現在ブロックで拾えなければ1つ前のブロックまで遡る。
+  for (const ms of [now, now - 3 * 3600e3]) {
+    const { url, key } = amedasPointRef(ms);
+    let data;
+    try {
+      data = await fetchCached(url, key, {
+        ttlMs: LIVE_AMEDAS.ttlMs,
+        timeoutMs: LIVE_AMEDAS.timeoutMs,
+        force,
+      });
+      pruneAmedasCache(key);
+    } catch (e) {
+      console.warn("Live amedas fetch failed:", e);
+      return null;
+    }
+    const slots = Object.keys(data || {})
+      .filter((k) => /^\d{14}$/.test(k))
+      .sort();
+    if (slots.length === 0) continue;
+    const slot = slots[slots.length - 1];
+    const point = data[slot];
+    if (!point || typeof point !== "object") continue;
+    const observedAt = amedasKeyToIso(slot);
+    if (observedAt == null) continue;
+    const live = {
+      observed_at: observedAt,
+      amedas_code: AMEDAS_CODE,
+      temp: amedasQcValue(point.temp),
+      wind: amedasQcValue(point.wind),
+      windDirection: amedasQcValue(point.windDirection),
+      humidity: amedasQcValue(point.humidity),
+      precipitation1h: amedasQcValue(point.precipitation1h),
+    };
+    // 全項目が欠測なら差し替える意味がない（スナップショットの方がまだ読める）
+    if (live.temp == null && live.wind == null && live.humidity == null) {
+      continue;
+    }
+    return live;
+  }
+  return null;
 }
 
 // ─── 2. ユーティリティ ──────────────────────────────────────
@@ -1650,13 +1814,14 @@ async function fetchWindForecast(force = false) {
     const cutoff = now.getTime() - 60 * 60 * 1000;
     // JST基準の日付文字列で比較（ブラウザTZがJST以外でも安定）
     const todayJst = toJstDateStr(now);
+    // 表示用フィルタ（当日4-23時）とは別に、系列全体の時刻を保持する。
+    // 深夜など「今日の表示行が無い」状態と「系列自体が古い」状態を区別するため。
+    const allTs = [];
     const items = (data.items || [])
       .map((item) => {
         // item.time は TZ無しISO（例: "2026-06-03T00:00"）。JST固定で解釈する。
-        const tzSuffix = /[zZ]|[+-]\d{2}:?\d{2}$/.test(item.time)
-          ? ""
-          : "+09:00";
-        const dt = new Date(item.time + tzSuffix);
+        const dt = new Date(parseJstIso(item.time) ?? NaN);
+        if (Number.isFinite(dt.getTime())) allTs.push(dt.getTime());
         // ブラウザTZ非依存にJST時刻を抽出
         const jstMs = dt.getTime() + JST_OFFSET_MS;
         const jstDate = new Date(jstMs);
@@ -1701,7 +1866,24 @@ async function fetchWindForecast(force = false) {
     document.getElementById("wind-forecast-loading").classList.add("hidden");
     document.getElementById("wind-forecast-content").classList.remove("hidden");
     setSectionError("wind-forecast-error", false);
-    markStale("wind-stale", pickTimestamp(data), FRESHNESS.wind);
+    // wind_forecast.json は未来48時間分を含むため、生成が数時間前でも
+    // 「これから先の行」は妥当なまま。ファイル年齢だけで警告すると
+    // Actions の発火遅延のたびに誤警告になるので、系列が現在時刻に
+    // 届いているかを主判定にする。
+    const covered = allTs.some((ts) => ts >= now.getTime());
+    const windNote = document.getElementById("wind-stale");
+    if (!covered && windNote) {
+      // 系列が現在時刻に届いていない＝表示できる予報が無い。updated_at が
+      // 壊れていて経過時間を出せない場合も警告は必ず出す（markStale は
+      // 時刻を解釈できないと警告しない設計なので、ここは通さない）。
+      const f = freshness(pickTimestamp(data), 0);
+      windNote.textContent = f.ms
+        ? `⚠ データが古い可能性（最終更新 ${f.label}）`
+        : "⚠ 予報データが現在時刻に届いていません";
+      windNote.hidden = false;
+    } else {
+      markStale("wind-stale", pickTimestamp(data), FRESHNESS.wind);
+    }
   } catch (e) {
     console.error("Wind forecast error:", e);
     document.getElementById("wind-forecast-loading").classList.add("hidden");
@@ -1710,6 +1892,186 @@ async function fetchWindForecast(force = false) {
 }
 
 // ─── 9. 統合フェッチ ────────────────────────────────────────
+/**
+ * NOWカードの鮮度判定に使う時刻を返す。
+ * updated_at はジョブ実行時刻でしかないため、実測の観測時刻を優先する。
+ * @param {object|null|undefined} wmData weather_marine.json のデータ
+ * @returns {string|null} ISO日時文字列
+ */
+function amedasTimestamp(wmData) {
+  return wmData?.jma_amedas?.observed_at ?? pickTimestamp(wmData);
+}
+
+/**
+ * 波高・海水温として表示する値を選ぶ。
+ *
+ * marine.current は生成時刻に固定された1点なので、Actions の発火が
+ * 数時間遅れるとそのまま「数時間前の波高」になる。hourly 系列があれば
+ * 「現在時刻以前で最新の行」を優先し、遅延の影響を受けないようにする。
+ * @param {object|null|undefined} marine weather_marine.json の marine
+ * @returns {{ms: number|null, wave_height: number|null, sea_surface_temperature: number|null}}
+ */
+function pickSeaState(marine) {
+  const out = { ms: null, wave_height: null, sea_surface_temperature: null };
+  const cur = marine?.current;
+  if (cur) {
+    out.ms = parseJstIso(cur.time);
+    out.wave_height = cur.wave_height ?? null;
+    out.sea_surface_temperature = cur.sea_surface_temperature ?? null;
+  }
+  const hourly = marine?.hourly;
+  if (hourly && Array.isArray(hourly.time)) {
+    const now = Date.now();
+    let bestIdx = -1;
+    let bestMs = -Infinity;
+    hourly.time.forEach((t, i) => {
+      const ms = parseJstIso(t);
+      if (ms != null && ms <= now && ms > bestMs) {
+        bestMs = ms;
+        bestIdx = i;
+      }
+    });
+    // 系列そのものが無い項目（APIが返さなかった場合）は current の値を残す。
+    // 系列はあるが当該時刻が欠測の場合は「データなし」＝実態どおりに出す。
+    const hasWave = Array.isArray(hourly.wave_height);
+    const hasSst = Array.isArray(hourly.sea_surface_temperature);
+    if (
+      bestIdx >= 0 &&
+      (hasWave || hasSst) &&
+      (out.ms == null || bestMs > out.ms)
+    ) {
+      out.ms = bestMs;
+      if (hasWave) out.wave_height = hourly.wave_height[bestIdx] ?? null;
+      if (hasSst) {
+        out.sea_surface_temperature =
+          hourly.sea_surface_temperature[bestIdx] ?? null;
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * NOW（気温･風）・MARINE（水温･波高）カードとヒーローの数値を描画する。
+ * スナップショット描画とライブ差し替え描画の両方から同じ関数を通すため、
+ * 副作用はDOM反映のみに留める。
+ * @param {object|null} wmData weather_marine.json 相当のデータ
+ */
+function renderWeatherCards(wmData) {
+  const jma = wmData?.jma_amedas;
+  const cw = wmData?.current_weather;
+
+  // 鮮度の警告はページ上部にまとめず、影響を受けるカード内にのみ出す。
+  // Actions のスケジュール遅延は種別ごとに独立して起きるため、全体バナーだと
+  // 更新できている他の情報まで古いと誤認させてしまう（三原則1: 誤読を防ぐ）。
+  const marineFresh = freshness(amedasTimestamp(wmData), FRESHNESS.marine);
+  const marineStale = wmData == null || marineFresh.isStale;
+  const marineNote = document.getElementById("marine-stale");
+  if (marineNote) {
+    if (marineStale) {
+      marineNote.textContent = marineFresh.ms
+        ? `⚠ データが古い可能性（最終更新 ${marineFresh.label}）`
+        : "⚠ 最新データを取得できませんでした（表示中の値は古い可能性）";
+      marineNote.hidden = false;
+    } else {
+      marineNote.hidden = true;
+    }
+  }
+
+  // 観測時刻を明示する。「いつの実測値か」が分かれば、多少古くても
+  // 利用者が自分で判断できる（三原則1）。
+  const observedEl = document.getElementById("amedas-observed");
+  if (observedEl) {
+    const observedMs = parseIso(jma?.observed_at);
+    if (observedMs != null) {
+      observedEl.textContent = `（${formatJstHhMm(observedMs)} 観測）`;
+      observedEl.hidden = false;
+    } else {
+      observedEl.hidden = true;
+    }
+  }
+
+  // アメダスstale(前回値引き継ぎ)またはweather_marine取得失敗時に注記を点灯。
+  const staleEl = document.getElementById("amedas-stale");
+  if (staleEl)
+    staleEl.hidden = !((jma && jma.stale === true) || wmData == null);
+
+  if (jma) {
+    setText("temp", jma.temp != null ? `${jma.temp}℃` : "--℃");
+    setText("humidity", jma.humidity != null ? `${jma.humidity} %` : "-- %");
+    setText("wind", jma.wind != null ? `${jma.wind} m/s` : "-- m/s");
+    setText("wind-dir", getWindDirectionJma(jma.windDirection));
+    setText(
+      "precip-1h",
+      jma.precipitation1h != null ? `${jma.precipitation1h} mm` : "0 mm",
+    );
+    setText("hero-temp", jma.temp != null ? jma.temp : "--");
+    setText("hero-wind", jma.wind != null ? jma.wind : "--");
+  } else if (cw) {
+    setText("temp", `${cw.temperature}℃`);
+    setText("humidity", "-- %");
+    setText("wind", `${cw.windspeed} m/s`);
+    setText("wind-dir", getWindDirection16(cw.winddirection));
+    setText("precip-1h", "-- mm");
+    setText("hero-temp", cw.temperature);
+    setText("hero-wind", cw.windspeed);
+  } else {
+    setText("temp", "データなし");
+    setText("humidity", "--");
+    setText("wind", "データなし");
+    setText("wind-dir", "--");
+    setText("precip-1h", "--");
+    setText("hero-temp", "--");
+    setText("hero-wind", "--");
+  }
+
+  const sea = pickSeaState(wmData?.marine);
+  setText(
+    "wave-height",
+    sea.wave_height != null ? `${sea.wave_height} m` : "データなし",
+  );
+  if (sea.sea_surface_temperature != null) {
+    setText("sea-temp", `${sea.sea_surface_temperature}℃`);
+    setText("hero-sea-temp", sea.sea_surface_temperature);
+  } else {
+    setText("sea-temp", "データなし");
+    setText("hero-sea-temp", "--");
+  }
+  // 予測値なので系列が現在時刻に届いていれば古くない。届かない時だけ警告する。
+  const seaNote = document.getElementById("sea-stale");
+  if (seaNote) {
+    const ageMs = sea.ms == null ? null : Date.now() - sea.ms;
+    if (wmData != null && ageMs != null && ageMs <= FRESHNESS.seaState) {
+      seaNote.hidden = true;
+    } else {
+      seaNote.textContent =
+        ageMs != null
+          ? `⚠ データが古い可能性（${humanAge(ageMs)}の値）`
+          : "⚠ 最新データを取得できませんでした（表示中の値は古い可能性）";
+      seaNote.hidden = false;
+    }
+  }
+}
+
+/**
+ * アメダスの観測が古い場合だけ、気象庁から実測値を取り直して差し替える。
+ * 十分新しければ外部リクエストを1本も出さない（三原則3: API節約）。
+ * @param {object|null} wmData スナップショット
+ * @returns {Promise<object|null>} 差し替え後のデータ。差し替え不要・失敗時は null
+ */
+async function upgradeWithLiveAmedas(wmData, force = false) {
+  const f = freshness(
+    wmData?.jma_amedas?.observed_at,
+    LIVE_AMEDAS.staleAfterMs,
+  );
+  // jma_amedas 自体が無い場合（気象庁側の取得が失敗し引き継ぎ値も無い）は
+  // updated_at が新しくても表示が Open-Meteo 値のままになるため取得を試みる。
+  if (f.ms != null && !f.isStale && !force) return null;
+  const live = await fetchLiveAmedas(force);
+  if (!live) return null;
+  return { ...(wmData || {}), jma_amedas: live };
+}
+
 async function fetchWeatherData(isManual = false) {
   if (_isFetching) return;
   _isFetching = true;
@@ -1755,72 +2117,10 @@ async function fetchWeatherData(isManual = false) {
       }),
     ]);
     const wmData = wmResult.status === "fulfilled" ? wmResult.value : null;
-    const jma = wmData?.jma_amedas;
-    const cw = wmData?.current_weather;
 
-    // 鮮度の警告はページ上部にまとめず、影響を受けるカード内にのみ出す。
-    // Actions のスケジュール遅延は種別ごとに独立して起きるため、全体バナーだと
-    // 更新できている他の情報まで古いと誤認させてしまう（三原則1: 誤読を防ぐ）。
-    const marineFresh = freshness(pickTimestamp(wmData), FRESHNESS.marine);
-    const marineStale = wmData == null || marineFresh.isStale;
-    const marineNote = document.getElementById("marine-stale");
-    if (marineNote) {
-      if (marineStale) {
-        marineNote.textContent = marineFresh.ms
-          ? `⚠ データが古い可能性（最終更新 ${marineFresh.label}）`
-          : "⚠ 最新データを取得できませんでした（表示中の値は古い可能性）";
-        marineNote.hidden = false;
-      } else {
-        marineNote.hidden = true;
-      }
-    }
-
-    // アメダスstale(前回値引き継ぎ)またはweather_marine取得失敗時に注記を点灯。
-    const staleEl = document.getElementById("amedas-stale");
-    if (staleEl)
-      staleEl.hidden = !((jma && jma.stale === true) || wmData == null);
-
-    if (jma) {
-      setText("temp", jma.temp != null ? `${jma.temp}℃` : "--℃");
-      setText("humidity", jma.humidity != null ? `${jma.humidity} %` : "-- %");
-      setText("wind", jma.wind != null ? `${jma.wind} m/s` : "-- m/s");
-      setText("wind-dir", getWindDirectionJma(jma.windDirection));
-      setText(
-        "precip-1h",
-        jma.precipitation1h != null ? `${jma.precipitation1h} mm` : "0 mm",
-      );
-      setText("hero-temp", jma.temp != null ? jma.temp : "--");
-      setText("hero-wind", jma.wind != null ? jma.wind : "--");
-    } else if (cw) {
-      setText("temp", `${cw.temperature}℃`);
-      setText("humidity", "-- %");
-      setText("wind", `${cw.windspeed} m/s`);
-      setText("wind-dir", getWindDirection16(cw.winddirection));
-      setText("precip-1h", "-- mm");
-      setText("hero-temp", cw.temperature);
-      setText("hero-wind", cw.windspeed);
-    } else {
-      setText("temp", "データなし");
-      setText("humidity", "--");
-      setText("wind", "データなし");
-      setText("wind-dir", "--");
-      setText("precip-1h", "--");
-      setText("hero-temp", "--");
-      setText("hero-wind", "--");
-    }
-
-    const cur = wmData?.marine?.current;
-    setText(
-      "wave-height",
-      cur?.wave_height != null ? `${cur.wave_height} m` : "データなし",
-    );
-    if (cur?.sea_surface_temperature != null) {
-      setText("sea-temp", `${cur.sea_surface_temperature}℃`);
-      setText("hero-sea-temp", cur.sea_surface_temperature);
-    } else {
-      setText("sea-temp", "データなし");
-      setText("hero-sea-temp", "--");
-    }
+    // まずスナップショットで描画する。ライブ補完は表示確定後に回し、
+    // 初期表示を外部APIの応答で待たせない（三原則2）。
+    renderWeatherCards(wmData);
 
     const skeletonEl = document.getElementById("skeleton-loading");
     if (skeletonEl) skeletonEl.style.display = "none";
@@ -1834,9 +2134,17 @@ async function fetchWeatherData(isManual = false) {
       requestAnimationFrame(scrollChartsToNow);
     }
     _lastFetchTime = Date.now();
-    displayFetchTime(pickTimestamp(wmData));
+    displayFetchTime(amedasTimestamp(wmData));
     // 手動更新時はデータが同一でも完了フィードバックを表示する
     if (isManual) showRefreshDone();
+
+    // アメダスの観測が古い時だけ気象庁から取り直して差し替える。
+    // ここまでで描画は完了しているため、失敗してもスナップショット表示が残る。
+    const live = await upgradeWithLiveAmedas(wmData, isManual);
+    if (live) {
+      renderWeatherCards(live);
+      displayFetchTime(amedasTimestamp(live));
+    }
   } catch (error) {
     console.error("Fetch error:", error);
     _showGlobalError();

@@ -21,21 +21,24 @@
 
 ### CSS 変数（Light / Dark）
 
-| 変数                 | Light                                             | Dark                                              | 用途                             |
-| -------------------- | ------------------------------------------------- | ------------------------------------------------- | -------------------------------- |
-| `--bg-gradient`      | `linear-gradient(160deg,#FFFBEB 0%,#EFF6FF 100%)` | `linear-gradient(160deg,#121212 0%,#1e1e1e 100%)` | ページ背景                       |
-| `--text-main`        | `#222222`                                         | `#e2e8f0`                                         | 本文・見出し                     |
-| `--text-sub`         | `#707070`                                         | `#94a3b8`                                         | 補足・ラベル                     |
-| `--container-bg`     | `rgba(255,255,255,0.75)`                          | `rgba(30,30,30,0.85)`                             | 外枠コンテナ（ガラス調）         |
-| `--container-shadow` | `0 4px 24px rgba(0,86,120,0.10)`                  | `0 4px 24px rgba(0,0,0,0.4)`                      | コンテナの影                     |
-| `--box-bg`           | `#ffffff`                                         | `#2a2a2a`                                         | カード/ボックス背景              |
-| `--box-border`       | `rgba(0,0,0,0.06)`                                | `rgba(255,255,255,0.08)`                          | ボックス境界                     |
-| `--warning-bg`       | `#fff5f5`                                         | `#3f1d1d`                                         | 警報ボックス背景                 |
-| `--warning-border`   | `#c0392b`                                         | `#ef4444`                                         | 警報ボックス枠                   |
-| `--brand`            | `#0e7490`                                         | `#5ebdd8`                                         | 主要アクセント・リンク・操作色   |
-| `--brand-strong`     | `#0284c7`                                         | `#7dd3fc`                                         | グラデーション終端・強アクセント |
-| `--brand-soft`       | `rgba(14,116,144,0.08)`                           | `rgba(94,189,216,0.12)`                           | ラベル/ボタンの薄い背景          |
-| `--hairline`         | `rgba(14,116,144,0.12)`                           | `rgba(125,211,252,0.14)`                          | 薄い罫線・操作部品境界           |
+| 変数                 | Light                                             | Dark                                              | 用途                              |
+| -------------------- | ------------------------------------------------- | ------------------------------------------------- | --------------------------------- |
+| `--bg-gradient`      | `linear-gradient(160deg,#FFFBEB 0%,#EFF6FF 100%)` | `linear-gradient(160deg,#121212 0%,#1e1e1e 100%)` | ページ背景                        |
+| `--text-main`        | `#222222`                                         | `#e2e8f0`                                         | 本文・見出し                      |
+| `--text-sub`         | `#707070`                                         | `#94a3b8`                                         | 補足・ラベル                      |
+| `--container-bg`     | `rgba(255,255,255,0.75)`                          | `rgba(30,30,30,0.85)`                             | 外枠コンテナ（ガラス調）          |
+| `--container-shadow` | `0 4px 24px rgba(0,86,120,0.10)`                  | `0 4px 24px rgba(0,0,0,0.4)`                      | コンテナの影                      |
+| `--box-bg`           | `#ffffff`                                         | `#2a2a2a`                                         | カード/ボックス背景               |
+| `--box-border`       | `rgba(0,0,0,0.06)`                                | `rgba(255,255,255,0.08)`                          | ボックス境界                      |
+| `--warning-bg`       | `#fff5f5`                                         | `#3f1d1d`                                         | 警報ボックス背景                  |
+| `--warning-border`   | `#c0392b`                                         | `#ef4444`                                         | 警報ボックス枠                    |
+| `--brand`            | `#0e7490`                                         | `#5ebdd8`                                         | 主要アクセント・リンク・操作色    |
+| `--brand-strong`     | `#0284c7`                                         | `#7dd3fc`                                         | グラデーション終端・強アクセント  |
+| `--brand-soft`       | `rgba(14,116,144,0.08)`                           | `rgba(94,189,216,0.12)`                           | ラベル/ボタンの薄い背景           |
+| `--hairline`         | `rgba(14,116,144,0.12)`                           | `rgba(125,211,252,0.14)`                          | 薄い罫線・操作部品境界            |
+| `--selection-bg`     | `rgba(14,116,144,0.16)`                           | `rgba(94,189,216,0.26)`                           | テキスト選択範囲（`::selection`） |
+
+`:root` には `accent-color`（ライト `#0e7490` / ダーク `#5ebdd8`）も宣言し、UA 既定のフォーム部品色をブランドに合わせる。
 
 ### ブランド/アクセント（変数化されていない固定値）
 
@@ -62,6 +65,7 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 ```
 
 - 欧文を Inter、和文を Zen Kaku Gothic New にフォールバック。
+- `body` に `-webkit-font-smoothing:antialiased` / `-moz-osx-font-smoothing:grayscale` を指定し、macOS/iOS での過剰な太りを抑える。
 - フォントは可変フォント＋サブセットで最小化（三原則2）。Web フォント追加は要相談。
 
 ### サイズ・ウェイト階層（実測）
@@ -91,7 +95,7 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
 - 目的: 縦に長い1ページ構成でヒーローヘッダー（サイト名）が画面外に出た後も、サイト名を見失わせないための最小限のバー。
 - 配置: `.container` は `overflow:hidden` のため `position:sticky` は効かない。コンテナの**外**（`body` 直下）に `position:fixed; inset:0 0 auto; z-index:900` で配置する（`.skip-link` の 1000 より下、`#toast` の 9999 より下）。
-- 見た目: 高さ 44px 目安、背景 `rgba(255,255,255,0.82)`（ダーク `rgba(30,30,30,0.88)`）＋ `backdrop-filter:blur(10px)`、下端 `1px solid var(--hairline)`。内容は「サイト名｜地域ラベル」のみ（更新日時・進捗・トップへ戻るは置かない＝情報過多にしない）。
+- 見た目: 高さ 44px 目安、背景 `rgba(255,255,255,0.82)`（ダーク `rgba(30,30,30,0.88)`）＋ `backdrop-filter:blur(12px) saturate(150%)`（背後の色を保ったまま曇らせる）、下端 `1px solid var(--hairline)`。内容は「サイト名｜地域ラベル」のみ（更新日時・進捗・トップへ戻るは置かない＝情報過多にしない）。
 - サイト名は `.logo-text` と同じブランドグラデ文字（フォントサイズのみ差し替え）。
 - 表示制御: 既定で `transform:translateY(-100%); opacity:0` の非表示。`IntersectionObserver` が `<header>` の可視性を監視し、非表示になったら `.is-visible` を付与してスライドイン（`app.js`）。scroll イベント購読は使わない。IntersectionObserver 非対応・要素欠如時は常に非表示のまま（安全側の劣化）。
 - `h1` と同一内容の再掲のため `aria-hidden="true"`。
@@ -99,9 +103,9 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
 ### カード / ボックス
 
-- ヒーローカード: ブランドグラデ背景・文字 `#fff`・`border-radius:12px`・`padding:15px 8px 13px`・薄い白境界・影。hover は `translateY(-2px)` と影の増加。
-- 情報ボックス: `background:var(--box-bg)`・`border:1px solid var(--box-border)`・`border-radius:10px`・`padding:20px 24px`・薄い影・左端 3px のブランドグラデーションバー。
-- 初期表示: ヘッダー、データカード、フッターを `opacity` と `translateY(8px)` のみで短くフェードアップする。偶数番目のカードだけ `0.04s` 遅らせ、過度な待ち時間を作らない。`prefers-reduced-motion: reduce` では既存の全体ルールにより実質無効化する。
+- ヒーローカード: ブランドグラデ背景の上に**上辺へ寄せたラジアルのハイライト**（`radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,0.2), transparent 58%)`）を重ね、画像もJSも使わずに面のわずかな湾曲を出す。文字 `#fff`・`border-radius:var(--radius-md)`・`padding:15px 8px 13px`・薄い白境界・`--shadow-hero`。hover は `translateY(-2px)` と `--shadow-hero-hover`。**ハイライトは強めすぎない**（白文字ラベルのコントラストが落ちる。pa11y WCAG2AA を必ず通すこと）。
+- 情報ボックス: `background:var(--box-bg)`・`border:1px solid var(--box-border)`・`border-radius:var(--radius-sm)`・`padding:20px 24px`・`--shadow-card`・左端 3px のブランドグラデーションバー。**hover ではカードを浮かせず**（操作対象ではないため）、影を `--shadow-card-hover`、枠を `--hairline` へ変えるだけにする。警報カード・熱中症カードは色で意味を持つため除外する。
+- 初期表示: ヘッダー、データカード、フッターを `opacity` と `translateY(8px)` のみで短くフェードアップする。カードは上から `0.03s` 刻みで遅らせ、**5枚目以降は `0.12s` で頭打ち**にして待ち時間を作らない。`prefers-reduced-motion: reduce` では既存の全体ルールにより実質無効化する。
 
 ### ボタン
 
@@ -147,7 +151,10 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
 - 目的: 更新停止（Actions 停止・API 障害）や古いデータを閲覧者に明示し、誤読を防ぐ（三原則1）。閾値はデータ種別ごとに個別（`app.js` の `FRESHNESS`）。
 - **警告はカード単位で出し、ページ全体のバナーは使わない**。GitHub Actions のスケジュール遅延・スキップはデータ種別ごとに独立して起きるため、1ソースの遅延で全体バナーを出すと、更新できている他の情報まで古いと誤認させてしまう。旧 `.stale-banner`（`#stale-banner`）は本方針により廃止。
-- `.stale-note`（各セクション見出し直下）/ `.stale-inline`（`#tsunami-error`）: 該当データが閾値超で古い/取得失敗時に小さく赤字（`--warning-border`, 12px）で注記。通常は `hidden`。対象は潮汐・波・警報・天気予報・風（`markStale()`）と現在の気温･風（`#marine-stale`、`weather_marine` の鮮度・取得失敗）。
+- `.stale-note`（各セクション見出し直下）/ `.stale-inline`（`#tsunami-error`）: 該当データが閾値超で古い/取得失敗時に小さく赤字（`--warning-border`, 12px）で注記。通常は `hidden`。対象は潮汐・波・警報・天気予報・風（`markStale()`）、現在の気温･風（`#marine-stale`、アメダス観測時刻の鮮度・取得失敗）、水温･波高（`#sea-stale`、表示中の値の時刻）。
+- **判定軸はデータの性質で分ける**。実測値（アメダス）は観測時刻の年齢で判定し、予報値（風・波高・海水温）は「時系列が現在時刻をカバーしているか」を主判定にする。予報は未来の行を含むため、ファイル生成が数時間前でも表示行は妥当であり、年齢だけで警告すると誤警告になる（`FRESHNESS.wind` / `FRESHNESS.seaState` は更新完全停止の検知用）。系列が現在時刻に届いていない場合は、生成時刻が読めなくても必ず警告する（表示できる予報が無い状態のため）。
+- **警告の閾値（`FRESHNESS.marine` = 2時間）とライブ補完のトリガ（`LIVE_AMEDAS.staleAfterMs` = 45分）は別物**。トリガは「取り直す価値があるか」、警告は「利用者に伝える価値があるほど古いか」で、同じ値にすると、ライブ取得が使えない環境（CORS遮断・オフライン）では通常運用の cron 間隔でも警告が出続けて誤読を招く。
+- `#amedas-observed`（`.note-fine`、NOWカードの注釈内）: アメダスの観測時刻を「（10:20 観測）」の形で常時表示。多少古くても「いつの実測値か」が分かれば閲覧者が自分で判断できる（三原則1）。取得時刻が不明なら `hidden`。
 - `.current-time.is-stale`: データが古い場合に「更新日時」の下線・文字色を `--warning-border` に切替（データ生成時刻＋経過時間を表示）。
 - トグルは `hidden` 属性で行うため、これらは `display` を指定しない。
 - `.section-error`（各カードの「取得に失敗しました」）は**成功時に必ず消す**。`setSectionError(id, show)`（`app.js`）を使い、失敗時 `true` / 成功時 `false` を対で呼ぶ。3時間ごとの自動更新・手動更新で復旧しても消えないと、正常なデータの横にエラーが残り続けて誤読を招く（三原則1）。
@@ -155,12 +162,39 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
 ### 角丸スケール
 
-| 用途     | radius |
-| -------- | ------ |
-| コンテナ | 16px   |
-| カード   | 12px   |
-| ボックス | 10px   |
-| 小要素   | 6px    |
+CSS 変数として定義し、各コンポーネントは変数を参照する（実数値の直書きは避ける）。
+
+| 変数          | radius | 用途                                     |
+| ------------- | ------ | ---------------------------------------- |
+| `--radius-lg` | 16px   | コンテナ                                 |
+| `--radius-md` | 12px   | カード（ヘッダー・ヒーローカード）       |
+| `--radius-sm` | 10px   | 情報ボックス                             |
+| `--radius-xs` | 6px    | 小要素（ボタン・凡例トグル・スケルトン） |
+
+※ `max-width:420px` ではコンテナのみ 14px に縮める。
+
+### 影（エレベーション）
+
+影は**「接地影（近距離・濃い）＋環境影（遠距離・薄い）」の2枚重ね**で定義する。1枚の大きなぼかしより輪郭が締まり、面の高さが読み取りやすい。値は CSS 変数化し、ダークでは黒を強めた値に差し替える。
+
+| 変数                  | 用途                                 |
+| --------------------- | ------------------------------------ |
+| `--shadow-card`       | 情報ボックス（`.weather-box`）の既定 |
+| `--shadow-card-hover` | 同上、ポインタが乗っているとき       |
+| `--shadow-hero`       | ヒーローカードの既定                 |
+| `--shadow-hero-hover` | 同上、hover 時                       |
+
+コンテナは従来どおり `--container-shadow`、ヘッダーは固定値の単層影を使う。
+
+### モーション
+
+- **イージング**: `--ease-out: cubic-bezier(0.22, 1, 0.36, 1)`。終端がゆっくり止まるため、短い duration でも動きが安っぽくならない。フェードイン・トースト・hover・ボタン押下はこれに揃える。
+- **duration**: hover/影 `0.18〜0.24s`、押下 `0.12s`、トースト `0.32s`、サイトバー `0.28s`、初期表示 `0.42〜0.55s`。
+- `prefers-reduced-motion: reduce` では既存の全体ルールで実質無効化される（個別対応は不要）。
+
+### フォーカスリング
+
+`--focus-ring: 2px solid var(--brand)` を定義し、全ての `:focus-visible` は `outline: var(--focus-ring)` ＋ `outline-offset: 2px` で統一する（ヒーローカードのみ白 `#fff` を使う）。
 
 ---
 
@@ -177,6 +211,7 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 ### Do
 
 - 色は CSS 変数とブランドアクセント `#0e7490` / グラデ `#0e7490→#0284c7` を再利用する。
+- 角丸・影・イージング・フォーカスリングは `--radius-*` / `--shadow-*` / `--ease-out` / `--focus-ring` を参照する。
 - ダークモード（`prefers-color-scheme: dark`）の見え方を必ず確認する。
 - 数値・単位・ラベルは等幅フォントで揃える。
 - テキスト色は `#222222`（ライト）/ `#e2e8f0`（ダーク）。
@@ -188,3 +223,4 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - JS ライブラリ・Web フォントを安易に追加しない（三原則2、要相談）。
 - データ未取得時にダミー値を入れない。取得失敗を UI で明示する（三原則1）。
 - 新規カラートークンの乱立を避ける。
+- 角丸・影・イージングの実数値を各セレクタへ直書きしない（トークンを増やすか、既存を再利用する）。

@@ -10,6 +10,7 @@ from fetch_openmeteo import (
     _normalize_current_weather,
     _normalize_marine,
     _qc_value,
+    fetch_marine,
 )
 
 
@@ -151,3 +152,38 @@ def test_carry_forward_returns_none_when_no_previous(monkeypatch):
     assert _carry_forward_amedas(None) is None
     monkeypatch.setattr(fetch_openmeteo, "load_json", lambda *_: None)
     assert _carry_forward_amedas(None) is None
+
+
+# ─── fetch_marine ──────────────────────────────────────────────
+def test_fetch_marine_uses_hourly_url_first(monkeypatch):
+    called = []
+
+    def fake(url):
+        called.append(url)
+        return {"current": {}, "hourly": {}}
+
+    monkeypatch.setattr(fetch_openmeteo, "http_get_json", fake)
+    assert fetch_marine() == {"current": {}, "hourly": {}}
+    assert called == [fetch_openmeteo.MARINE_URL]
+    assert "hourly=wave_height,sea_surface_temperature" in called[0]
+
+
+def test_fetch_marine_falls_back_to_current_only(monkeypatch):
+    """hourly が弾かれても current だけは取得を続ける（更新停止を防ぐ）。"""
+    called = []
+
+    def fake(url):
+        called.append(url)
+        return None if url == fetch_openmeteo.MARINE_URL else {"current": {}}
+
+    monkeypatch.setattr(fetch_openmeteo, "http_get_json", fake)
+    assert fetch_marine() == {"current": {}}
+    assert called == [
+        fetch_openmeteo.MARINE_URL,
+        fetch_openmeteo.MARINE_URL_CURRENT_ONLY,
+    ]
+
+
+def test_fetch_marine_returns_none_when_both_fail(monkeypatch):
+    monkeypatch.setattr(fetch_openmeteo, "http_get_json", lambda url: None)
+    assert fetch_marine() is None

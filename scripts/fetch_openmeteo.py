@@ -21,11 +21,17 @@ WIND_FORECAST_URL = (
     f"&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m"
     f"&forecast_days=2&timezone=Asia%2FTokyo&windspeed_unit=ms"
 )
-MARINE_URL = (
+# current(1点)だけだと Actions の発火が数時間遅れた際に「数時間前の波高」が
+# そのまま表示され続ける。hourly 系列も併せて保存し、フロント側が
+# 「現在時刻の行」を選べるようにする（ブラウザからの追加API取得を不要にする＝三原則3）。
+_MARINE_BASE = (
     f"https://marine-api.open-meteo.com/v1/marine"
     f"?latitude={LAT}&longitude={LON}&current=wave_height,sea_surface_temperature"
     f"&timezone=Asia%2FTokyo"
 )
+MARINE_URL = _MARINE_BASE + "&hourly=wave_height,sea_surface_temperature&forecast_days=2"
+# hourly 変数が仕様変更で弾かれた場合でも current だけは取得を続ける退避先。
+MARINE_URL_CURRENT_ONLY = _MARINE_BASE
 # Open-Meteo の time フィールドは timezone=Asia/Tokyo 指定時に JST だが
 # 文字列には TZ オフセットが含まれない。フロントが new Date() で
 # ブラウザTZ依存に解釈してしまうのを防ぐため、生成側で "+09:00" を付与する。
@@ -136,6 +142,20 @@ def _build_wind_items(hourly: dict) -> list[dict]:
     return items
 
 
+def fetch_marine() -> dict | None:
+    """Marine APIから現在値と時系列を取得する。
+
+    hourly 付きURLで失敗した場合は current のみのURLで再試行する。
+    hourly はフロントの鮮度対策のための追加情報であり、これが取れないことを
+    理由に current まで落として更新を止めないための退避経路。
+    """
+    marine = http_get_json(MARINE_URL)
+    if marine is not None:
+        return marine
+    print("[warn] marine(hourly付き)の取得に失敗。currentのみで再試行します。")
+    return http_get_json(MARINE_URL_CURRENT_ONLY)
+
+
 def _normalize_current_weather(cw: dict) -> dict:
     """current_weather オブジェクトの time に JST オフセットを付与する。"""
     if not isinstance(cw, dict):
@@ -169,7 +189,7 @@ def main() -> None:
     print("Open-Meteo データの取得を開始します...")
 
     weather = http_get_json(WEATHER_URL)
-    marine = http_get_json(MARINE_URL)
+    marine = fetch_marine()
     jma_amedas = _carry_forward_amedas(fetch_jma_amedas())
     wind_fc = http_get_json(WIND_FORECAST_URL)
 
