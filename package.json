@@ -9,5 +9,10 @@
     "prettier": "3.9.6",
     "terser": "5.50.0",
     "wait-on": "9.1.0"
+  },
+  "overrides": {
+    "puppeteer": {
+      "@puppeteer/browsers": "^3.2.1"
+    }
   }
 }
