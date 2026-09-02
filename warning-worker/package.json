@@ -7,7 +7,7 @@
     "check": "wrangler deploy --dry-run"
   },
   "devDependencies": {
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.4.0",
     "wrangler": "^4.114.0"
   }
 }
