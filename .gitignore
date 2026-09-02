@@ -7,6 +7,8 @@ node_modules/
 
 # Jekyll ローカルビルド成果物
 _site/
+# pa11y ローカル実行時の baseurl 再現用ディレクトリ（_site の写し）
+_serve/
 .jekyll-cache/
 .jekyll-metadata
 # Bundler（ローカル依存。Gemfile.lock はGitHub Pages非使用のため追跡しない）

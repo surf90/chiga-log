@@ -8,6 +8,40 @@ updated: 2026-09-02
 
 ## 完了済み（2026-09-02）
 
+### スマホのスクロール量削減（縦余白の圧縮, PR #164 / #165 / 本PR）
+
+閲覧時のスクロール量が多いという指摘を受け、可読性（フォントサイズ・`line-height:1.7`）はそのままに、縦方向の余白のみを段階的に圧縮した。375px 幅での実測で `document.body.scrollHeight` **2455px → 2389px**（本PR分。#164/#165 を含めた累計はさらに大きい）。
+
+**PR #164 — カード余白**
+
+- `.weather-box`: `padding` `20px 24px`→`16px 24px`、カード間 `margin-bottom` `16px`→`12px`（420px以下は `padding` `14px 16px` / `margin-bottom` `10px`）
+- `.weather-box h2` `margin-bottom` `12px`→`10px`、`.hero-card` / `.hero-cards` / 420px以下の `.container` も同様に微調整
+
+**PR #165 — グラフ高さ（第1段）**
+
+- 潮汐 160→144px、波高・周期 200→180px
+
+**本PR — 積み残しの微調整**
+
+- グラフ第2段: 潮汐 144→**134px**、波高・周期 180→**164px**
+- `header`: `padding` `18px 20px 16px`→`15px 20px 13px`、`margin-bottom` `22px`→`18px`（420px以下は `12px 10px 11px` / `14px`）
+- `.data-row` `padding` `6px 0`→`5px 0`（全カードの各行に効くため累積効果が大きい）
+- `.tide-chart-scroll-wrap` `margin-top` `20px`→`14px`
+
+**実装上の注意（DESIGN.md に追記済み）**
+
+- Chart.js は両グラフとも `responsive:false` / `maintainAspectRatio:false`。キャンバス高は **CSS（`.tide-chart-area` / `.wave-chart-area`）と JS（`canvas.height`）の2箇所に重複**して持つため、変更時は必ず両方を揃える。
+- 高さ固定値に依存する処理は無い（`nowLinePlugin` は `chart.height`、`stickyYAxisPlugin` はキャンバス全高、横幅は `CHART_TOTAL_PX`）。
+
+**検証（ローカル、Chromium 実描画）**
+
+- `bundle exec jekyll build` → `_serve/chiga-log` 配信 → Puppeteer（375px, DPR2）で実測。JS エラー・`pageerror` なし（ネットワーク fetch 失敗のみ＝サンドボックス起因で変更前後とも同一）、横スクロール発生なし、両グラフとも描画され目盛り（潮位 m / 波高 m / 周期 秒）が判読可能なことをスクリーンショットで確認。
+- `npx eslint` / `npm test`（潮汐フロントエンド単体）/ `node --test warning-worker/test/*.test.js` / Chart.js SRI 一致 / `prettier --check` / `pa11y-ci`（WCAG2AA, 0 errors）すべて green。
+
+**関連ファイル**
+
+- `assets/css/style.css` / `assets/js/app.js` / `DESIGN.md`（`.min` 版は `minify.yml` が自動生成）
+
 ### GitHub Pages 配信設定の検証とリポジトリ全体監査（PR #157 / #158 / #159）
 
 最新の GitHub Pages 推奨構成・各配信形式に照らして全体を点検し、実効していない設定と CI の検査漏れを解消した。**コード上の実害となるエラー・脆弱性は検出されず**、修正はいずれも設定・CI 側。
@@ -218,7 +252,7 @@ PR #154 マージ後に本番状態を監査し、残っていた不具合・弱
 
 ### コード全体レビュー：取得先との齟齬・時刻境界バグの是正
 
-- **Actions の相互キャンセル（本命・実害確認済み）**: 全7ワークフローが `concurrency: group: data-push` を共有していた。GitHub は1グループにつき *running 1 + pending 1* しか保持せず、新しい run が入ると**待機中の run を別ワークフローのものでもキャンセルする**（`cancel-in-progress: false` は「実行中を守る」だけで待機中は守らない）。実測: `Update Daily Data`（run 31121321206）は 16:52 UTC 投入 → 17:19 に 30分cronの Open-Meteo に押し出されて `cancelled`、`runner_name` は空＝ランナー未割当。同様に Open-Meteo 自身も 18:25 投入分が 18:40 に次回分で潰されていた。結果 `moon_daily.json` / `tide_widget.json` が 8/6 のまま停止。→ `group: data-push-${{ github.workflow }}` にスコープを分離。跨ワークフローの push 競合は既存の `git pull --rebase` リトライループが吸収する（cron の頻度・本数は不変＝三原則3順守）。
+- **Actions の相互キャンセル（本命・実害確認済み）**: 全7ワークフローが `concurrency: group: data-push` を共有していた。GitHub は1グループにつき _running 1 + pending 1_ しか保持せず、新しい run が入ると**待機中の run を別ワークフローのものでもキャンセルする**（`cancel-in-progress: false` は「実行中を守る」だけで待機中は守らない）。実測: `Update Daily Data`（run 31121321206）は 16:52 UTC 投入 → 17:19 に 30分cronの Open-Meteo に押し出されて `cancelled`、`runner_name` は空＝ランナー未割当。同様に Open-Meteo 自身も 18:25 投入分が 18:40 に次回分で潰されていた。結果 `moon_daily.json` / `tide_widget.json` が 8/6 のまま停止。→ `group: data-push-${{ github.workflow }}` にスコープを分離。跨ワークフローの push 競合は既存の `git pull --rebase` リトライループが吸収する（cron の頻度・本数は不変＝三原則3順守）。
 - **日次ジョブの部分成功が捨てられる**: `extract_daily_data.py` は月齢・潮汐の片方でも失敗すると `sys.exit(1)`。書き出し済みの成功分があっても後続の「Commit and push」ステップが丸ごとスキップされていた。→ 該当ステップに `if: always()`（異常通知は exit code のまま維持）。
 - **潮汐の年跨ぎ空表示**: `build_tide_widget()` の分岐が `if all_tides:` だったため、`tide_data.json` が前年ぶんしか無い1/1 JST は「真だが当日キーは引けない」状態を素通しし、`today`/`forecast` が空のウィジェットを出力 → フロントが「潮汐データの取得に失敗しました」になる（`update-jma-tide` の cron は 1/1 15:05 UTC ＝ JST 1/2 0:05 のため、JST 1/1 は丸一日この状態）。→ 判定を「当日分の極値があるか」に変更し Stormglass フォールバックへ正しく抜けるよう是正。`ok_tide` の成否判定も同基準に揃え、フォールバックした事実を握り潰さないようにした。回帰テスト3件を追加（修正前は落ちることを確認済み）。
 - **キャッシュバスターの UTC/JST 齟齬**: `calculateTide()` / `fetchTideExtremes()` の日付キーが `toISOString().slice(0,10)`（UTC基準）。日次ジョブは JST 0:05 更新のため、**JST 0〜9時のあいだキーが前日のまま**で、更新済みの月齢・潮汐表を最大9時間拾えなかった。→ 既存の `toJstDateStr()` に統一。

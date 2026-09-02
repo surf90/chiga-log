@@ -222,8 +222,8 @@ h1 {
 }
 
 header {
-  margin-bottom: 22px;
-  padding: 18px 20px 16px;
+  margin-bottom: 18px;
+  padding: 15px 20px 13px;
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.58),
@@ -527,7 +527,7 @@ h1 .title-sub {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 0;
-  padding: 6px 0;
+  padding: 5px 0;
   font-size: 15px;
   color: var(--text-main);
   border-bottom: 1px solid var(--box-border);
@@ -1012,14 +1012,14 @@ p.note strong a {
   );
 }
 .tide-chart-scroll-wrap {
-  margin-top: 20px;
+  margin-top: 14px;
 }
 .tide-chart-area {
   display: none;
-  height: 144px;
+  height: 134px;
 }
 .wave-chart-area {
-  height: 180px;
+  height: 164px;
   margin-top: 12px;
 }
 
@@ -1121,8 +1121,8 @@ p.note strong a {
     border-radius: 14px;
   }
   header {
-    padding: 14px 10px 13px;
-    margin-bottom: 18px;
+    padding: 12px 10px 11px;
+    margin-bottom: 14px;
   }
   h1 {
     gap: 8px;
