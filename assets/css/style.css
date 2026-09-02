@@ -1016,10 +1016,10 @@ p.note strong a {
 }
 .tide-chart-area {
   display: none;
-  height: 160px;
+  height: 144px;
 }
 .wave-chart-area {
-  height: 200px;
+  height: 180px;
   margin-top: 12px;
 }
 
