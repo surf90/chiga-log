@@ -29,12 +29,16 @@ lang: ja
       type="image/png"
       sizes="48x48"
     />
-    <link rel="icon" href="favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ site.baseurl }}/favicon.ico" sizes="any" />
     <link
       rel="apple-touch-icon"
       href="{{ site.baseurl }}/assets/icons/apple-touch-icon.png"
     />
     <link rel="manifest" href="{{ site.baseurl }}/site.webmanifest" />
+    <!-- frame-ancestors は meta 版 CSP では仕様上無視される（ブラウザが
+         コンソールに警告を出すだけ）。GitHub Pages はレスポンスヘッダを
+         設定できないため、クリックジャッキング対策はここでは付与できない。
+         代わりに meta で有効な frame-src / form-action を明示する。 -->
     <!-- connect-src の警報BFFは _data/site.json の jma.warning_api_url から生成する。
          リテラル直書きだと URL を差し替えたときだけ CSP に取り残され、
          ライブ取得が黙ってブロックされてスナップショットに落ちる。 -->
@@ -42,7 +46,7 @@ lang: ja
     default: "" | split: "/" | slice: 0, 3 | join: "/" -%}
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self' https://www.jma.go.jp {{ warning_api_origin }}; manifest-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+      content="default-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self' https://www.jma.go.jp {{ warning_api_origin }}; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'"
     />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />

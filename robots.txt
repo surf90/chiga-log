@@ -1,5 +1,9 @@
+# 注意: robots.txt はオリジン直下 (https://surf90.github.io/robots.txt) のみ
+# クローラに参照される。プロジェクトページ配下の本ファイルは参照されないため、
+# 実効的なクロール制御は行えない（公開したくないファイルは _config.yml の
+# exclude でビルドから外すこと）。パスは誤読防止のため baseurl 付きで記述する。
 User-agent: *
-Allow: /
-Disallow: /reports/
-Disallow: /.claude/
+Allow: /chiga-log/
+Disallow: /chiga-log/reports/
+
 Sitemap: https://surf90.github.io/chiga-log/sitemap.xml

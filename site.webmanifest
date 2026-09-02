@@ -1,6 +1,7 @@
 {
   "name": "ちがログ｜茅ヶ崎の海情報",
   "short_name": "ちがログ",
+  "id": "/chiga-log/",
   "description": "茅ヶ崎の海情報をログするデータサイト。天気、波、水温、タイドグラフ、気温をリアルタイムで網羅。",
   "start_url": "/chiga-log/?mode=standalone",
   "scope": "/chiga-log/",
