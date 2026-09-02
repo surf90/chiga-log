@@ -888,7 +888,7 @@ function drawTideChart(extremes, hasHeightData) {
   setChartContainerWidth("tide-chart-container", CHART_TOTAL_PX);
 
   canvas.width = CHART_TOTAL_PX;
-  canvas.height = 160;
+  canvas.height = 144;
   const ctx = canvas.getContext("2d");
 
   extremes.sort((a, b) => a.timeMs - b.timeMs);
@@ -1145,7 +1145,7 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
 
   const waveCanvas = document.getElementById(canvasId);
   waveCanvas.width = CHART_TOTAL_PX;
-  waveCanvas.height = 200;
+  waveCanvas.height = 180;
   const ctx = waveCanvas.getContext("2d");
   const chart = new Chart(ctx, {
     type: "line",
