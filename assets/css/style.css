@@ -271,7 +271,7 @@ h1 .title-sub {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 }
 .hero-card {
   /* 上辺に寄せたラジアルのハイライトで、面がわずかに湾曲して見える。
@@ -285,7 +285,7 @@ h1 .title-sub {
     linear-gradient(135deg, #0e7490 0%, #0284c7 100%);
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: var(--radius-md);
-  padding: 15px 8px 13px;
+  padding: 13px 8px 11px;
   text-align: center;
   color: #fff;
   font: inherit;
@@ -409,9 +409,9 @@ h1 .title-sub {
   scroll-margin-top: 56px;
   background: var(--box-bg);
   border: 1px solid var(--box-border);
-  padding: 20px 24px;
+  padding: 16px 24px;
   border-radius: var(--radius-sm);
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   box-shadow: var(--shadow-card);
   transition:
     box-shadow 0.24s var(--ease-out),
@@ -476,7 +476,7 @@ h1 .title-sub {
   font-size: 1rem;
   font-weight: 600;
   margin-top: 0;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   color: var(--text-main);
   letter-spacing: -0.28px;
   display: flex;
@@ -1117,7 +1117,7 @@ p.note strong a {
     font-size: 14px;
   }
   .container {
-    padding: 28px 14px 22px;
+    padding: 24px 14px 18px;
     border-radius: 14px;
   }
   header {
@@ -1150,13 +1150,14 @@ p.note strong a {
     gap: 8px;
   }
   .hero-card {
-    padding: 13px 5px 11px;
+    padding: 11px 5px 9px;
   }
   .hero-card-value {
     font-size: 1.42rem;
   }
   .weather-box {
-    padding: 18px 16px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
   }
   .footer {
     padding-inline: 12px;

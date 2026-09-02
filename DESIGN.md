@@ -103,8 +103,8 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
 ### カード / ボックス
 
-- ヒーローカード: ブランドグラデ背景の上に**上辺へ寄せたラジアルのハイライト**（`radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,0.2), transparent 58%)`）を重ね、画像もJSも使わずに面のわずかな湾曲を出す。文字 `#fff`・`border-radius:var(--radius-md)`・`padding:15px 8px 13px`・薄い白境界・`--shadow-hero`。hover は `translateY(-2px)` と `--shadow-hero-hover`。**ハイライトは強めすぎない**（白文字ラベルのコントラストが落ちる。pa11y WCAG2AA を必ず通すこと）。
-- 情報ボックス: `background:var(--box-bg)`・`border:1px solid var(--box-border)`・`border-radius:var(--radius-sm)`・`padding:20px 24px`・`--shadow-card`・左端 3px のブランドグラデーションバー。**hover ではカードを浮かせず**（操作対象ではないため）、影を `--shadow-card-hover`、枠を `--hairline` へ変えるだけにする。警報カード・熱中症カードは色で意味を持つため除外する。
+- ヒーローカード: ブランドグラデ背景の上に**上辺へ寄せたラジアルのハイライト**（`radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,0.2), transparent 58%)`）を重ね、画像もJSも使わずに面のわずかな湾曲を出す。文字 `#fff`・`border-radius:var(--radius-md)`・`padding:13px 8px 11px`（`max-width:420px` で `11px 5px 9px`）・薄い白境界・`--shadow-hero`。hover は `translateY(-2px)` と `--shadow-hero-hover`。**ハイライトは強めすぎない**（白文字ラベルのコントラストが落ちる。pa11y WCAG2AA を必ず通すこと）。
+- 情報ボックス: `background:var(--box-bg)`・`border:1px solid var(--box-border)`・`border-radius:var(--radius-sm)`・`padding:16px 24px`（`max-width:420px` で `14px 16px`）・`--shadow-card`・左端 3px のブランドグラデーションバー。**hover ではカードを浮かせず**（操作対象ではないため）、影を `--shadow-card-hover`、枠を `--hairline` へ変えるだけにする。警報カード・熱中症カードは色で意味を持つため除外する。
 - 初期表示: ヘッダー、データカード、フッターを `opacity` と `translateY(8px)` のみで短くフェードアップする。カードは上から `0.03s` 刻みで遅らせ、**5枚目以降は `0.12s` で頭打ち**にして待ち時間を作らない。`prefers-reduced-motion: reduce` では既存の全体ルールにより実質無効化する。
 
 ### ボタン
@@ -112,7 +112,7 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - アウトライン型（`.toggle-btn`）: `border:1px solid #0e7490` / `color:#0e7490` / 背景透明 / `min-height:44px`。
 - 全ボタン共通: `touch-action:manipulation`・`-webkit-tap-highlight-color:transparent`。`:hover` スタイルは必ず `@media (hover: hover)` 内に置く（タッチ端末でタップ後にホバー状態が残るのを防ぐ）。押下時は `:active`（`scale(0.97〜0.98)` または opacity 低下）、キーボード時は `:focus-visible`（2px アウトライン）で必ずフィードバックする。
 - タップターゲット: `.toggle-btn` / `#toast` / `.current-time` は `min-height:44px`。`.wave-legend-item`（グラフ凡例トグル、`<button aria-pressed>`）は padding＋負マージンでヒット領域を拡張。
-- セクションへのスクロール移動先（`.weather-box`）は `scroll-margin-top:12px` で上端に余白を確保。
+- セクションへのスクロール移動先（`.weather-box`）は `scroll-margin-top:56px` でサイトバー下に余白を確保。
 - 「更新日時」ボタン（`.current-time`）の右寄せは、親 `.float-alert-wrap` の `display:flex; justify-content:flex-end` で行う。`float`＋`overflow:hidden` のクリアフィックスは使わない（`overflow:hidden` が `outline-offset` のフォーカスリングを欠けさせる）。
 
 ### チャート（潮汐・波高/周期）
@@ -201,7 +201,7 @@ CSS 変数として定義し、各コンポーネントは変数を参照する�
 ## 5. Layout & Responsive
 
 - **レイアウト**: 単一カラム、中央寄せ（`max-width:600px`）。PC でも 600px 固定。`max-width:420px` で小型端末向けに余白・ロゴ・カード数値を縮小し、タイトルの地域ラベルと情報源ラベルを折り返す。
-- **余白/gap**: カード間 `gap:10px`、要素内 `gap:4〜7px`、body `padding:24px 16px`。
+- **余白/gap**: カード間は `.weather-box` の `margin-bottom:12px`（`max-width:420px` で `10px`）、要素内 `gap:4〜7px`、body `padding:24px 16px`。
 - **タッチターゲット**: 屋外・指操作前提で十分な高さを確保（最小 44px 目安）。
 
 ---
