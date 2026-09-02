@@ -7,6 +7,9 @@ on:
     paths:
       - "assets/js/**"
       - "assets/css/**"
+      - "sw.js"
+      - "warning-worker/src/**"
+      - "warning-worker/test/**"
       - "**/*.html"
       - "eslint.config.js"
       - ".pa11yci"
@@ -19,6 +22,9 @@ on:
     paths:
       - "assets/js/**"
       - "assets/css/**"
+      - "sw.js"
+      - "warning-worker/src/**"
+      - "warning-worker/test/**"
       - "**/*.html"
       - "eslint.config.js"
       - ".pa11yci"
@@ -44,9 +50,25 @@ jobs:
       - name: Install pinned frontend tools
         run: npm ci
       - name: ESLint (source JS)
-        run: npx --no-install eslint assets/js/app.js
+        run: npx --no-install eslint assets/js/app.js sw.js assets/js/sw-register.js
       - name: Tide frontend unit tests
         run: npm test
+      - name: Warning BFF (Cloudflare Worker) unit tests
+        # Worker は Pages とは別デプロイだがソースは本リポジトリにあり、
+        # 壊れると警報表示が黙って落ちる。標準の node --test のみで追加依存なし。
+        run: node --test "warning-worker/test/*.test.js"
+      - name: Verify Chart.js SRI hash
+        # index.html の integrity と自ホストの実ファイルがずれると、
+        # ブラウザがスクリプトを丸ごと拒否しグラフが全て描画されなくなる。
+        # 差分が出た時点で CI を落として気付けるようにする。
+        run: |
+          expected=$(grep -o 'sha384-[A-Za-z0-9+/=]*' index.html | head -n1)
+          actual="sha384-$(openssl dgst -sha384 -binary assets/vendor/chart.umd.min.js | openssl base64 -A)"
+          if [ "$expected" != "$actual" ]; then
+            echo "::error::SRI 不一致: index.html=$expected 実ファイル=$actual"
+            exit 1
+          fi
+          echo "SRI OK: $actual"
       - name: Prettier check
         run: npx --no-install prettier --check "**/*.{html,css,js,cjs,json}"
 
