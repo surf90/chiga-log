@@ -340,7 +340,7 @@ npx --yes wait-on -t 60000 http://localhost:4000/chiga-log/
 npx --yes pa11y-ci
 ```
 
-**CI:** `.github/workflows/frontend-ci.yml` が `assets/js`・`assets/css`・`*.html` 変更時の push/PR で `lint`（ESLint+Prettier）と `a11y`（Jekyll build → pa11y-ci）を自動実行します。**cron は追加していません**（三原則3: API/Actions節約）。
+**CI:** `.github/workflows/frontend-ci.yml` が `assets/js`・`assets/css`・`sw.js`・`warning-worker/`・`*.html` 変更時の push/PR で `lint`（ESLint+Prettier＋フロント/Worker ユニットテスト＋Chart.js の SRI 一致検証）と `a11y`（Jekyll build → pa11y-ci）を自動実行します。**cron は追加していません**（三原則3: API/Actions節約）。
 
 </details>
 
@@ -350,7 +350,7 @@ npx --yes pa11y-ci
 - **PWA**: `site.webmanifest` + Service Worker（`sw.js`）。ホーム画面へ追加でき、オフラインでも App Shell を表示。キャッシュ戦略は「[オフライン対応とキャッシュ戦略（PWA）](#オフライン対応とキャッシュ戦略pwa)」参照
 - **SEO・構造化データ**: OGP / Twitter Card / canonical に加え、JSON-LD（`@graph`: Person・WebSite・WebPage・WebApplication）で著者・地理情報・公開/更新日を宣言。サイト名の表記ゆれ（ちがろぐ／チガログ／chigalog 等）は `alternateName` で網羅。`jekyll-sitemap` で sitemap.xml 自動生成。
 - **グラフ描画**: Chart.js（自ホスト版 `assets/vendor/chart.umd.min.js`。CDN通信を排除し、サードパーティ依存を最小化）
-- **品質ゲート**: ESLint（`eslint.config.js`）/ Prettier / pa11y-ci（WCAG2AA）を `frontend-ci.yml` で push・PR 時に自動実行
+- **品質ゲート**: ESLint（`eslint.config.js`。app.js / sw.js / sw-register.js が対象）/ Prettier / ユニットテスト（フロント＋Worker）/ Chart.js の SRI 一致検証 / pa11y-ci（WCAG2AA）を `frontend-ci.yml` で push・PR 時に自動実行
 - **自動化・ホスティング**: GitHub Actions / GitHub Pages / Cloudflare Workers（注意報・警報の閲覧時取得BFF）
 - **気象庁データ (天気予報・注意報・潮汐)**: 気象庁公式データ（注意報・警報はCloudflare Worker経由で閲覧時取得、その他はGitHub ActionsによるJSON定期取得および年次更新データを利用）
 - **月齢データ**: NASA SVS (年次更新のJSONデータを利用)
