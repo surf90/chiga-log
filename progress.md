@@ -38,6 +38,11 @@ updated: 2026-09-02
 - `bundle exec jekyll build` → `_serve/chiga-log` 配信 → Puppeteer（375px, DPR2）で実測。JS エラー・`pageerror` なし（ネットワーク fetch 失敗のみ＝サンドボックス起因で変更前後とも同一）、横スクロール発生なし、両グラフとも描画され目盛り（潮位 m / 波高 m / 周期 秒）が判読可能なことをスクリーンショットで確認。
 - `npx eslint` / `npm test`（潮汐フロントエンド単体）/ `node --test warning-worker/test/*.test.js` / Chart.js SRI 一致 / `prettier --check` / `pa11y-ci`（WCAG2AA, 0 errors）すべて green。
 
+**追補 — 波グラフ下の空白（PR #167）**
+
+- 波グラフのみ `layout.padding.bottom: 24` が残っており、X軸ラベルの下に 24px の死に領域ができて直下の注記との間が間延びしていた（潮汐グラフには無い）。凡例を `.chart-scroll` の外へ出した際の残骸と判断し `layout: { padding: 0 }` へ。あわせてキャンバス高 164→140px とし、**プロット領域（chartArea 高 112px）は変えずに** 24px 短縮。
+- 計測: `Chart.getChart()` で `scales.x.bottom` がキャンバス高と一致（=下に空白なし）することを確認。
+
 **関連ファイル**
 
 - `assets/css/style.css` / `assets/js/app.js` / `DESIGN.md`（`.min` 版は `minify.yml` が自動生成）

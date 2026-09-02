@@ -1145,7 +1145,7 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
 
   const waveCanvas = document.getElementById(canvasId);
   waveCanvas.width = CHART_TOTAL_PX;
-  waveCanvas.height = 164;
+  waveCanvas.height = 140;
   const ctx = waveCanvas.getContext("2d");
   const chart = new Chart(ctx, {
     type: "line",
@@ -1185,7 +1185,9 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
     options: {
       responsive: false,
       maintainAspectRatio: false,
-      layout: { padding: { top: 0, left: 0, right: 0, bottom: 24 } },
+      // 下パディングは不要（凡例は .chart-scroll の外に出したため）。
+      // 残すとX軸ラベルの下に空白が生まれ、注記との間が間延びする。
+      layout: { padding: 0 },
       interaction: { mode: "index", intersect: false },
       plugins: {
         legend: { display: false },
