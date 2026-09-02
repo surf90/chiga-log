@@ -1,10 +1,57 @@
 ---
-updated: 2026-08-29
+updated: 2026-09-02
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-09-02）
+
+### GitHub Pages 配信設定の検証とリポジトリ全体監査（PR #157 / #158 / #159）
+
+最新の GitHub Pages 推奨構成・各配信形式に照らして全体を点検し、実効していない設定と CI の検査漏れを解消した。**コード上の実害となるエラー・脆弱性は検出されず**、修正はいずれも設定・CI 側。
+
+**配信設定の修正（PR #157）**
+
+- **CSP の `frame-ancestors` が無効だった**: meta 版 CSP では仕様上このディレクティブは無視され、ブラウザはコンソール警告を出すだけ。GitHub Pages はレスポンスヘッダを設定できないため、クリックジャッキング対策はそもそも付与できない。削除し、meta でも有効な `frame-src 'none'` / `form-action 'none'` を追加（サイト内に `<form>` は無し）。
+- **`favicon.ico` が相対パス**: `index.html` のこの1行だけ `{{ site.baseurl }}` が無く、サブパス配信の 404 ページから解決が外れる。baseurl 付きに統一。
+- **robots.txt が実効していない**: プロジェクトページ配下の `/chiga-log/robots.txt` はクローラに読まれない（オリジン直下のみ有効）。さらに `Disallow: /reports/` は baseurl 欠落で別サイト領域を指していた。パスを訂正し、実効範囲をファイル冒頭に明記（`reports/` は `_config.yml` の exclude で既にビルド除外済みのため実害は無かった）。
+- **`site.webmanifest` に `id` 追加**: `start_url` にクエリが付くため、PWA のアプリ同一性を `"id": "/chiga-log/"` で固定。
+
+**CI の検査漏れを解消（PR #158）**
+
+- **ESLint が SW を検査していなかった**: `eslint.config.js` の `files` は `assets/js/app.js` のみで、`sw.js` と `assets/js/sw-register.js` はどのブロックにも一致せず `no-undef` すら適用されていなかった（未定義参照が素通り）。SW 用 globals を追加し、ルールを `sharedRules` として共有。CI の lint も 3 ファイル対象に。
+- **Worker のテストが未実行だった**: `warning-worker/test/` がどのワークフローからも呼ばれていなかった。Worker は Pages とは別デプロイだがソースは本リポジトリにあり、壊れると警報表示が黙って落ちる。追加依存なしの `node --test` を lint ジョブに追加（`node --test <dir>` は Node 22 で未対応のため glob 指定）。
+- **Chart.js の SRI 未検証**: `index.html` の `integrity` と自ホスト実ファイルの SHA-384 がずれると、ブラウザがスクリプトを丸ごと拒否しグラフが全滅する。CI で照合して検知（現状は一致）。
+
+**保守性の追補（PR #159）**
+
+- **Dependabot が `warning-worker/` を見ていなかった**: ルートとは別の `package-lock.json` を持つため `directory: "/"` では更新されず、2026-08 の undici 系アラートは手動対応になっていた。`/warning-worker` を個別登録して自動追従させる。
+- **`persist-credentials: false`**: 読み取り専用ジョブ（`frontend-ci` の lint / a11y、`test`）の checkout で認証情報を `.git/config` に残さない。
+- **paths に `_data/**` を追加**: `_data/site.json` は `site-config.js` の生成元かつ Python スクリプトの設定元だが、変更しても CI が起動しなかった。
+
+**監査して問題なしだった箇所**
+
+- ワークフロー: 全 action が SHA ピン止め、`permissions` 明示（read/write 最小）、`pull_request_target` 不使用、`${{ github.event.* }}` を `run` に展開するインジェクション経路なし。
+- Python: 標準ライブラリのみ、`subprocess`/shell 不使用、`save_json` は tmp + `os.replace` の原子的置換、HTTP はタイムアウト＋バックオフ付きリトライ。
+- フロント JS: `innerHTML` は空文字クリアのみ（挿入なし）、`eval`/`document.write` なし、fetch は `AbortSignal.timeout` 付き、`JSON.parse` は try 内。
+- Service Worker: オリジンを `URL` で厳密比較、データ JSON はネットワーク優先＋クエリ除去キー、静的資産は SWR。
+- Cloudflare Worker: CORS はオリジン許可リスト、`X-Content-Type-Options: nosniff`、上流スキーマ検証あり、エラー詳細を漏らさない。
+- 依存: root / warning-worker とも `npm audit` 0 件。**2026-08-18 の申し送りだった `extract-zip`（GHSA-x7jf-2287-qcpf）は解消済み**（`@puppeteer/browsers` の overrides と `PUPPETEER_SKIP_DOWNLOAD` により検出されなくなった）。Chart.js 4.4.7 に該当 CVE なし。
+- HTML: 重複 id なし・タグの閉じ漏れなし。テストは Python 70 / フロント 27 / Worker 3 すべて green。
+
+**今後の候補（未着手・要相談）**
+
+- Chart.js 4.4.7 → 4.5 系の更新（現状セキュリティ上の必要性は無く、グラフ全面の再検証コストが見合わないため見送り）。
+- `wrangler deploy --dry-run` による Worker のビルド検証を CI に追加（wrangler のインストールが必要で、実行時間と依存が増えるため保留）。
+- cron の追加・頻度変更は今回も一切なし（三原則3）。
+
+**関連ファイル**
+
+- `index.html` / `robots.txt` / `site.webmanifest`
+- `eslint.config.js` / `.github/workflows/frontend-ci.yml` / `.github/workflows/test.yml` / `.github/dependabot.yml`
+- `README.md` / `CLAUDE.md` / `AGENTS.md`
 
 ## 完了済み（2026-08-29 追補）
 
