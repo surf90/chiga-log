@@ -1,18 +1,18 @@
 {
-  "updated_at": "2026-09-04T08:50:48.621847+09:00",
+  "updated_at": "2026-09-04T12:36:35.208453+09:00",
   "current_weather": {
-    "time": "2026-09-04T08:45+09:00",
+    "time": "2026-09-04T12:30+09:00",
     "interval": 900,
-    "temperature": 24.7,
-    "windspeed": 2.31,
-    "winddirection": 18,
+    "temperature": 24.5,
+    "windspeed": 3.07,
+    "winddirection": 19,
     "is_day": 1,
-    "weathercode": 3
+    "weathercode": 61
   },
   "marine": {
     "latitude": 35.291664,
     "longitude": 139.37502,
-    "generationtime_ms": 0.15246868133544922,
+    "generationtime_ms": 0.23663043975830078,
     "utc_offset_seconds": 32400,
     "timezone": "Asia/Tokyo",
     "timezone_abbreviation": "GMT+9",
@@ -24,10 +24,10 @@
       "sea_surface_temperature": "°C"
     },
     "current": {
-      "time": "2026-09-04T08:45+09:00",
+      "time": "2026-09-04T12:30+09:00",
       "interval": 900,
-      "wave_height": 0.62,
-      "sea_surface_temperature": 27.0
+      "wave_height": 0.64,
+      "sea_surface_temperature": 27.2
     },
     "hourly_units": {
       "time": "iso8601",
@@ -86,8 +86,8 @@
         "2026-09-05T23:00+09:00"
       ],
       "wave_height": [
-        0.56,
-        0.56,
+        0.54,
+        0.54,
         0.56,
         0.56,
         0.56,
@@ -97,9 +97,15 @@
         0.6,
         0.62,
         0.62,
-        0.62,
-        0.62,
-        0.62,
+        0.64,
+        0.64,
+        0.64,
+        0.64,
+        0.64,
+        0.64,
+        0.66,
+        0.66,
+        0.66,
         0.64,
         0.64,
         0.64,
@@ -109,9 +115,6 @@
         0.64,
         0.64,
         0.64,
-        0.62,
-        0.62,
-        0.62,
         0.62,
         0.62,
         0.62,
@@ -120,19 +123,16 @@
         0.62,
         0.6,
         0.6,
-        0.6,
-        0.58,
-        0.58,
-        0.58,
-        0.58,
         0.58,
         0.58,
         0.56,
         0.56,
+        0.54,
+        0.54,
+        0.54,
         0.56,
-        0.58,
-        0.58,
-        0.58,
+        0.56,
+        0.56,
         0.58
       ],
       "sea_surface_temperature": [
@@ -188,12 +188,12 @@
     }
   },
   "jma_amedas": {
-    "observed_at": "2026-09-04T08:40:00+09:00",
+    "observed_at": "2026-09-04T12:20:00+09:00",
     "amedas_code": "46141",
-    "temp": 25.8,
-    "wind": 2.2,
+    "temp": 27.1,
+    "wind": 3.1,
     "windDirection": 16,
-    "humidity": 81,
+    "humidity": 72,
     "precipitation1h": 0.0
   }
 }
