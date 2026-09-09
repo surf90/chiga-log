@@ -18,6 +18,7 @@ exclude:
   - DESIGN.md
   - progress.md
   - CLAUDE.md
+  - AGENTS.md
   - README.md
   - FORK.md
   - reports/
