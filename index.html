@@ -17,6 +17,10 @@ lang: ja
     <title>{{ site.data.site.title }}</title>
 
     <meta name="description" content="{{ site.data.site.description }}" />
+    <!-- index,follow は既定なので書かない。検索結果での画像プレビュー拡大と
+         スニペット長の上限解除のみ明示する（Google 公式 robots meta 仕様）。
+         個別に出したくない動的値には各所で data-nosnippet を付与済み。 -->
+    <meta name="robots" content="max-image-preview:large, max-snippet:-1" />
 
     <link
       rel="icon"
@@ -93,10 +97,9 @@ lang: ja
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="{{ site.data.site.name }} OGP画像" />
 
-    <meta
-      name="twitter:title"
-      content="{{ site.data.site.title }} | {{ site.data.site.name }}"
-    />
+    <!-- title には既にサイト名が含まれるため連結しない（旧: "…｜… | ちがログ"
+         とサイト名が二重に出ていた）。 -->
+    <meta name="twitter:title" content="{{ site.data.site.title }}" />
     <meta
       name="twitter:description"
       content="{{ site.data.site.description }}"
