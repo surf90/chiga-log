@@ -6,3 +6,8 @@
 #   pytest tests
 
 pytest>=8.0
+
+# Windows は zoneinfo のタイムゾーンDBを同梱しないため、ZoneInfo("Asia/Tokyo") を
+# 使うテスト（tests/test_fetch_heatstroke_alert.py 等）に必要。
+# 本番の GitHub Actions（Linux）は OS 側の DB を使うので条件付きで入れる。
+tzdata>=2024.1; sys_platform == "win32"

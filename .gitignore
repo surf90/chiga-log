@@ -20,3 +20,8 @@ Gemfile.lock
 warning-worker/node_modules/
 warning-worker/.wrangler/
 warning-worker/worker-configuration.d.ts
+
+# ローカル開発環境（scripts/requirements.txt 用の仮想環境とテスト一時領域）
+.venv/
+.test-tmp/
+.pytest_cache/
