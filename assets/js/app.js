@@ -38,6 +38,8 @@ const PX_PER_HOUR = 14;
 const CHART_TOTAL_PX = PX_PER_HOUR * 24 * CHART_DAYS;
 let chartScrollSynced = false;
 let windForecastRange = "";
+// 風予報バーの固定上限(m/s)。行ごとの最大値で正規化すると行同士を比較できない。
+const WIND_BAR_MAX_MS = 15;
 // 波グラフの描画元データ。潮汐が後着でx軸原点を確定させた場合に、
 // 同じ原点で描き直すため保持する（下の drawTideChart 参照）。
 let waveChartData = null;
@@ -682,6 +684,8 @@ async function calculateTide(force = false) {
   if (age < 0) age += synodicMonth;
   let ageSource = "計算値";
   let lunarDay = approximateLunarDay(dayKey, knownNewMoon, synodicMonthMs);
+  // 照度（0-1）。月相アイコンの描画にのみ使う。NASA の phase(%) を優先する。
+  let illumination = null;
 
   try {
     // 日付キーはJST基準。toISOString()(UTC)だと 0-9時JSTの間だけ前日キーのまま
@@ -704,6 +708,15 @@ async function calculateTide(force = false) {
       if (isToday && Number.isFinite(nasaAge) && nasaAge >= 0 && nasaAge < 30) {
         age = nasaAge;
         ageSource = "NASA";
+      }
+      const nasaPhase = moonToday?.phase;
+      if (
+        isToday &&
+        Number.isFinite(nasaPhase) &&
+        nasaPhase >= 0 &&
+        nasaPhase <= 100
+      ) {
+        illumination = nasaPhase / 100;
       }
       // 日次更新が遅れて date が前日のままでも、生成済みのNASA由来カレンダー
       // に当日キーがあれば潮回りは概算へ落とさず維持する。
@@ -737,10 +750,35 @@ async function calculateTide(force = false) {
   if (!tideTypeEl) return;
   tideTypeEl.textContent = "";
   tideTypeEl.appendChild(document.createTextNode(tideType + " "));
+  tideTypeEl.appendChild(buildMoonPhase(age, illumination, synodicMonth));
   const ageSpan = document.createElement("span");
   ageSpan.className = "tide-age-label";
   ageSpan.textContent = `(${ageLabel})`;
   tideTypeEl.appendChild(ageSpan);
+}
+
+/**
+ * 月相アイコンを作る（CSS のみで満ち欠けを描画。画像・ライブラリ不要）。
+ * 月齢はテキストで併記されるため、アイコン自体は支援技術から隠す。
+ * @param {number} age 月齢（日）
+ * @param {number|null} illumination 照度 0-1。null なら月齢から近似する
+ * @param {number} synodicMonth 朔望月（日）
+ * @returns {HTMLElement}
+ */
+function buildMoonPhase(age, illumination, synodicMonth) {
+  const el = document.createElement("span");
+  el.className = "moon-phase";
+  el.setAttribute("aria-hidden", "true");
+  const f =
+    illumination != null
+      ? illumination
+      : (1 - Math.cos((2 * Math.PI * age) / synodicMonth)) / 2;
+  // |1 - 2f|: 0 = 上弦/下弦（半月）、1 = 新月/満月。
+  el.style.setProperty("--term", Math.abs(1 - 2 * f).toFixed(3));
+  if (f > 0.5) el.classList.add("is-gibbous");
+  // 朔望月の後半は欠けていく側。北半球基準で明側が左になるため反転する。
+  if (age >= synodicMonth / 2) el.classList.add("is-waning");
+  return el;
 }
 
 function updateTideSource(sourceName) {
@@ -1734,7 +1772,19 @@ function toggleOverview() {
 const WIND_VISIBLE_COUNT = 3;
 
 /** 風予報1行（時刻・風向・風速）を生成する。 */
-function createWindRow({ time, dir, speed }) {
+/**
+ * 風速を行背景バーの長さ（0-100%）へ正規化する。
+ * 行ごとの最大値で正規化すると行同士を比べられないため、固定上限を使う。
+ * @param {number|string|null|undefined} v m/s
+ * @returns {number} 0-100
+ */
+function windBarPercent(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(100, Math.round((n / WIND_BAR_MAX_MS) * 100));
+}
+
+function createWindRow({ time, dir, deg, speed, gust }) {
   const row = document.createElement("div");
   row.className = "wind-row";
   const mkSpan = (cls, text) => {
@@ -1743,11 +1793,42 @@ function createWindRow({ time, dir, speed }) {
     s.textContent = text;
     return s;
   };
-  row.append(
-    mkSpan("wind-time", time),
-    mkSpan("wind-dir", dir || "データなし"),
-    mkSpan("wind-speed", `${speed ?? "-"} m/s`),
+
+  const dirEl = mkSpan("wind-dir", dir || "データなし");
+  if (Number.isFinite(Number(deg))) {
+    // 風向は「風が吹いてくる方位」。矢印は進行方向（+180°）を指す。
+    const arrow = document.createElement("span");
+    arrow.className = "wind-arrow";
+    arrow.setAttribute("aria-hidden", "true");
+    arrow.style.setProperty("--deg", `${(Number(deg) + 180) % 360}deg`);
+    dirEl.prepend(arrow);
+  }
+
+  // 単位と「平均/最大」の別は列見出し（.wind-head）で一度だけ示し、行には
+  // 数値だけを置く。見出しとの対応は支援技術には伝わらないため、読み上げ用の
+  // 語と単位だけを視覚的に隠して添える。
+  const speedEl = mkSpan("wind-speed", "");
+  speedEl.append(
+    mkSpan("visually-hidden", "平均 "),
+    document.createTextNode(speed ?? "-"),
+    mkSpan("visually-hidden", " m/s"),
   );
+
+  const gustEl = mkSpan("wind-gust", "");
+  if (gust != null) {
+    gustEl.append(
+      mkSpan("visually-hidden", "最大 "),
+      document.createTextNode(String(gust)),
+      mkSpan("visually-hidden", " m/s"),
+    );
+  }
+
+  // 平均と最大を1本のバーに重ねる（CSS 側 .wind-row の背景グラデーション）。
+  const avgPct = windBarPercent(speed);
+  row.style.setProperty("--w", String(avgPct));
+  row.style.setProperty("--g", String(Math.max(windBarPercent(gust), avgPct)));
+
+  row.append(mkSpan("wind-time", time), dirEl, speedEl, gustEl);
   return row;
 }
 
@@ -1766,7 +1847,13 @@ function renderWindForecast(entries) {
 
   if (!entries || entries.length === 0) {
     grid.appendChild(
-      createWindRow({ time: "--:--", dir: "データなし", speed: null }),
+      createWindRow({
+        time: "--:--",
+        dir: "データなし",
+        deg: null,
+        speed: null,
+        gust: null,
+      }),
     );
     if (toggle) toggle.hidden = true;
     return;
@@ -1839,9 +1926,17 @@ async function fetchWindForecast(force = false) {
             (item.wind_direction_deg != null
               ? getWindDirection16(Number(item.wind_direction_deg))
               : "データなし"),
+          deg:
+            item.wind_direction_deg != null
+              ? Number(item.wind_direction_deg)
+              : null,
           speed:
             item.wind_speed_ms != null
               ? Number(item.wind_speed_ms).toFixed(1)
+              : null,
+          gust:
+            item.wind_gust_ms != null
+              ? Number(item.wind_gust_ms).toFixed(1)
               : null,
         };
       })

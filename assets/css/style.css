@@ -14,6 +14,13 @@
   --brand-soft: rgba(14, 116, 144, 0.08);
   --hairline: rgba(14, 116, 144, 0.12);
   --selection-bg: rgba(14, 116, 144, 0.16);
+  /* 風予報バー: 濃い面が平均、薄い面が最大(ガスト)。行の下端の細い帯に描き、
+     文字を載せないぶん濃度を上げて2色の差をはっきりさせる */
+  --wind-bar-avg: rgba(14, 116, 144, 0.55);
+  --wind-bar-gust: rgba(14, 116, 144, 0.18);
+  /* 月相の影側。明側は --brand を使う。明側の半円をターミネータの楕円で
+     塗り消す描き方のため、半透明だと新月が塗り潰せない＝必ず不透明色にする */
+  --moon-dark: #cfe3ea;
   /* 角丸スケール（DESIGN.md 4章と対応） */
   --radius-lg: 16px;
   --radius-md: 12px;
@@ -66,6 +73,9 @@
     --brand-soft: rgba(94, 189, 216, 0.12);
     --hairline: rgba(125, 211, 252, 0.14);
     --selection-bg: rgba(94, 189, 216, 0.26);
+    --wind-bar-avg: rgba(94, 189, 216, 0.6);
+    --wind-bar-gust: rgba(94, 189, 216, 0.22);
+    --moon-dark: #3c4a50;
     --shadow-card:
       0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 28px rgba(0, 0, 0, 0.18);
     --shadow-card-hover:
@@ -708,31 +718,91 @@ body.has-floating-alert #refresh-toast {
 .wind-grid {
   margin-top: 10px;
 }
+/* 見出し行の直後は詰める（見出しと1行目を1つのまとまりとして見せる） */
+.wind-head + .wind-grid {
+  margin-top: 0;
+}
 /* 折りたたむのは4件目以降のみ（直近3件は常時表示する） */
 .wind-grid-more {
   display: none;
 }
+/* 見出し行とデータ行で同じ列定義を共有する（数値の縦位置を揃えるため） */
+.wind-head,
 .wind-row {
   display: grid;
-  grid-template-columns: 64px 1fr auto;
-  gap: 8px;
+  grid-template-columns: 48px 1fr 52px 52px;
+  gap: 6px;
   align-items: center;
+}
+/* 「平均」「最大」の意味は列見出しで示す。行ごとに語を繰り返すと
+   屋外で読む文字量が増え、狭幅端末では列も潰れる。 */
+.wind-head {
+  margin-top: 10px;
+  font-size: 10px;
+  color: var(--text-sub);
+  letter-spacing: 0.02em;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--box-border);
+}
+.wind-head > span:nth-child(3),
+.wind-head > span:nth-child(4) {
+  text-align: right;
+}
+.wind-row {
   border-bottom: 1px dashed var(--hairline);
-  padding: 6px 0;
+  padding: 6px 0 9px;
   font-size: 14px;
+  /* 0〜WIND_BAR_MAX_MS(app.js) を 0〜100% に正規化した1本のバーを、行の下端に
+     4px の帯として敷く。濃い側が平均、その先の薄い側が最大(ガスト)で、
+     ガストは常に平均以上なので「伸びた先が最大」と読める。
+     文字の背面ではなく帯にすることで、本文のコントラストを一切落とさない。 */
+  background-image: linear-gradient(
+    90deg,
+    var(--wind-bar-avg) 0 calc(var(--w, 0) * 1%),
+    var(--wind-bar-gust) calc(var(--w, 0) * 1%) calc(var(--g, 0) * 1%),
+    transparent calc(var(--g, 0) * 1%)
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 4px;
+  background-position: 0 100%;
 }
 .wind-time {
   color: var(--text-sub);
+  white-space: nowrap;
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 }
 .wind-dir {
   color: var(--text-main);
   font-weight: 500;
+  min-width: 0;
+}
+/* 風向の矢印。絵文字・記号フォントに依存しないよう CSS の三角形で描く。
+   既定で上（北）向き、--deg は「風が向かう方位」を指す。 */
+.wind-arrow {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-right: 5px;
+  vertical-align: middle;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 7px solid var(--brand);
+  opacity: 0.75;
+  transform: rotate(var(--deg, 0deg));
+}
+/* 単位は列見出しに1度だけ出し、行では数値のみにする（折り返し防止・視線短縮）。 */
+.wind-speed,
+.wind-gust {
+  text-align: right;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 }
 .wind-speed {
   color: var(--brand);
   font-weight: 600;
-  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+.wind-gust {
+  color: var(--text-sub);
+  font-size: 12px;
 }
 .warning-none {
   font-size: 14px;
@@ -918,6 +988,59 @@ p.note strong a {
 .note-z {
   position: relative;
   z-index: 10;
+}
+
+/* 月相アイコン（潮回りの右）。画像もJSライブラリも使わず、円 + 明側の半円 +
+   明暗境界(ターミネータ)の楕円の3層で満ち欠けを描く。
+   --term = |1 - 2 × 照度| （0=上弦/下弦, 1=新月/満月）。
+   照度が半分を超えたら楕円は明側の色になる（.is-gibbous）。
+   北半球基準で明側は右。下弦側は .is-waning で左右反転する。 */
+.moon-phase {
+  position: relative;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 4px;
+  vertical-align: -1px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--moon-dark);
+}
+.moon-phase::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 50%;
+  background: var(--brand);
+}
+.moon-phase::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: calc(var(--term, 0) * 12px);
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: var(--moon-dark);
+}
+.moon-phase.is-gibbous::after {
+  background: var(--brand);
+}
+.moon-phase.is-waning {
+  transform: scaleX(-1);
+}
+
+/* 視覚的には隠すが支援技術には読ませる。数値だけの列に単位・見出し語を補う。 */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* 潮汐表示の文字スタイル */
@@ -1167,5 +1290,10 @@ p.note strong a {
   }
   .data-row {
     gap: 10px;
+  }
+  .wind-head,
+  .wind-row {
+    grid-template-columns: 46px 1fr 46px 46px;
+    gap: 4px;
   }
 }

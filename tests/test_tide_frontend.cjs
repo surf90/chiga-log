@@ -57,7 +57,32 @@ function buildContext(moonPayload) {
     },
     document: {
       addEventListener() {},
-      createElement: () => ({ className: "", textContent: "" }),
+      createElement: () =>
+        ({
+          className: "",
+          textContent: "",
+          classes: new Set(),
+          attributes: {},
+          styles: {},
+          classList: {
+            add(c) {
+              this._owner.classes.add(c);
+            },
+          },
+          style: {
+            setProperty(k, v) {
+              this._owner.styles[k] = v;
+            },
+          },
+          setAttribute(k, v) {
+            this.attributes[k] = v;
+          },
+          _init() {
+            this.classList._owner = this;
+            this.style._owner = this;
+            return this;
+          },
+        })._init(),
       createTextNode: (textContent) => ({ textContent }),
       currentScript: null,
       getElementById: (id) => (id === "tide-type" ? tideElement : null),
@@ -83,7 +108,47 @@ test("stale moon JSON uses its NASA-derived calendar for today's tide type", asy
   await vm.runInContext("calculateTide()", context);
 
   assert.equal(tideElement.children[0].textContent, "大潮 ");
-  assert.match(tideElement.children[1].textContent, /計算値/);
+  // 潮回りと月齢ラベルの間に月相アイコンが入るため、末尾を見る。
+  assert.match(tideElement.children.at(-1).textContent, /計算値/);
+});
+
+test("moon phase icon reflects illumination and waxing/waning", () => {
+  const { context } = buildContext({});
+  // 照度0.25・月齢3日（満ちていく側）: |1-2f|=0.5、明側は右のまま。
+  const waxing = vm.runInContext(
+    "buildMoonPhase(3, 0.25, 29.530588853)",
+    context,
+  );
+  assert.equal(waxing.styles["--term"], "0.500");
+  assert.equal(waxing.classes.has("is-gibbous"), false);
+  assert.equal(waxing.classes.has("is-waning"), false);
+  assert.equal(waxing.attributes["aria-hidden"], "true");
+
+  // 照度0.9・月齢20日（欠けていく側）: 楕円は明側の色、左右反転。
+  const waning = vm.runInContext(
+    "buildMoonPhase(20, 0.9, 29.530588853)",
+    context,
+  );
+  assert.equal(waning.styles["--term"], "0.800");
+  assert.equal(waning.classes.has("is-gibbous"), true);
+  assert.equal(waning.classes.has("is-waning"), true);
+});
+
+test("moon phase falls back to an age-derived illumination", () => {
+  const { context } = buildContext({});
+  // 満月(月齢≒14.77)は照度1.0 → |1-2f| = 1（真円）。
+  const full = vm.runInContext(
+    "buildMoonPhase(14.765294426, null, 29.530588853)",
+    context,
+  );
+  assert.equal(full.styles["--term"], "1.000");
+  // 新月(月齢0)も真円だが、こちらは影側のまま（.is-gibbous を付けない）。
+  const dark = vm.runInContext(
+    "buildMoonPhase(0, null, 29.530588853)",
+    context,
+  );
+  assert.equal(dark.styles["--term"], "1.000");
+  assert.equal(dark.classes.has("is-gibbous"), false);
 });
 
 test("out-of-range calendar values are ignored", async () => {
