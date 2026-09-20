@@ -1796,10 +1796,16 @@ function createWindRow({ time, dir, deg, speed, gust }) {
   const dirEl = mkSpan("wind-dir", dir || "データなし");
   if (Number.isFinite(Number(deg))) {
     // 風向は「風が吹いてくる方位」。矢印は進行方向（+180°）を指す。
+    // 角度は隣のテキストと同じ16方位へ丸める。生の度数のままだと「北(4°)」と
+    // 「北北東(14°)」の矢印が 10° しか違わず、別方位に見えない。
+    const snapped = Math.round(Number(deg) / 22.5) * 22.5;
     const arrow = document.createElement("span");
     arrow.className = "wind-arrow";
     arrow.setAttribute("aria-hidden", "true");
-    arrow.style.setProperty("--deg", `${(Number(deg) + 180) % 360}deg`);
+    arrow.style.setProperty(
+      "--deg",
+      `${(((snapped + 180) % 360) + 360) % 360}deg`,
+    );
     dirEl.prepend(arrow);
   }
 
