@@ -28,6 +28,9 @@
      mask で描いて currentColor に追従させる（CSP: img-src 'self' data: 配下）。 */
   --icon-warning: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
   --icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21.8 10A10 10 0 1 1 17 3.34'/%3E%3Cpath d='m9 11 3 3L22 4'/%3E%3C/svg%3E");
+  /* 風向矢印。軸と鏃（やじり）を持つ非対称な形にして、正三角形では読めない
+     「どちらが先端か」を明示する（0deg = 上＝北向き）。 */
+  --icon-wind-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000'%3E%3Cpath d='M12 1.5 20 12h-5v10.5H9V12H4Z'/%3E%3C/svg%3E");
   --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8'/%3E%3Cpath d='M21 3v5h-5'/%3E%3C/svg%3E");
   /* 角丸スケール（DESIGN.md 4章と対応） */
   --radius-lg: 16px;
@@ -781,16 +784,17 @@ body.has-floating-alert #refresh-toast {
 }
 /* 風向の矢印。絵文字・記号フォントに依存しないよう CSS の三角形で描く。
    既定で上（北）向き、--deg は「風が向かう方位」を指す。 */
+/* 風向矢印。border の正三角形は上下がほぼ対称で、22.5°刻みの回転差が読めな
+   かったため、軸付きの矢印を mask で敷く（注記アイコンと同じ方式）。 */
 .wind-arrow {
   display: inline-block;
-  width: 0;
-  height: 0;
+  width: 13px;
+  height: 13px;
   margin-right: 5px;
-  vertical-align: middle;
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-bottom: 7px solid var(--brand);
-  opacity: 0.75;
+  vertical-align: -0.16em;
+  background-color: var(--brand);
+  -webkit-mask: var(--icon-wind-arrow) center / contain no-repeat;
+  mask: var(--icon-wind-arrow) center / contain no-repeat;
   transform: rotate(var(--deg, 0deg));
 }
 /* 単位は列見出しに1度だけ出し、行では数値のみにする（折り返し防止・視線短縮）。 */
