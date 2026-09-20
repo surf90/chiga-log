@@ -185,7 +185,7 @@ function markStale(noteElId, iso, thresholdMs) {
   if (!el) return;
   const f = freshness(iso, thresholdMs);
   if (f.isStale) {
-    el.textContent = `⚠ データが古い可能性（最終更新 ${f.label}）`;
+    el.textContent = `データが古い可能性（最終更新 ${f.label}）`;
     el.hidden = false;
   } else {
     el.hidden = true;
@@ -472,7 +472,7 @@ function toJstDateStr(date) {
  * 「更新日時」表示を更新する。
  * リロード・手動更新でデータを参照できた時点の現在時刻を表示する
  * （Actions側のデータ生成を待たず、参照の成功を示す）。
- * データ生成時刻(iso)が閾値超過なら「（データ: X前）⚠」を併記して
+ * データ生成時刻(iso)が閾値超過なら「（データ: X前）＋警告アイコン」を併記して
  * 古いデータであることを警告する。
  * @param {string|null} [iso] weather_marine 等の updated_at
  * @param {number} [thresholdMs] 古いと判定する閾値
@@ -490,10 +490,10 @@ function displayFetchTime(iso = null, thresholdMs = FRESHNESS.marine) {
   const dt = new Date().toLocaleString("ja-JP", options);
   const f = iso ? freshness(iso, thresholdMs) : null;
   if (f && f.isStale) {
-    el.textContent = `更新日時: ${dt}（データ: ${f.label}）⚠`;
+    el.textContent = `更新日時: ${dt}（データ: ${f.label}）`;
     el.classList.add("is-stale");
   } else {
-    el.textContent = `更新日時: ${dt} 🔄`;
+    el.textContent = `更新日時: ${dt}`;
     el.classList.remove("is-stale");
   }
 }
@@ -872,21 +872,20 @@ function displayTideData(extremes, chartExtremes) {
     const labelSpan = document.createElement("dt");
     labelSpan.textContent = label + ":";
     const valueSpan = document.createElement("dd");
-    valueSpan.className = cssClass;
-    list.forEach((entry, idx) => {
-      if (idx > 0) {
-        const sep = document.createElement("span");
-        sep.className = "tide-sep";
-        sep.textContent = " , ";
-        valueSpan.appendChild(sep);
-      }
-      valueSpan.appendChild(document.createTextNode(entry.timeStr));
+    // 時刻と潮位の対ごとにチップへ分ける。読点で1行に詰めると縦に揃わず、
+    // 屋外で目的の時刻を拾いにくい。
+    valueSpan.className = `tide-chips ${cssClass}`;
+    list.forEach((entry) => {
+      const chip = document.createElement("span");
+      chip.className = "tide-chip";
+      chip.appendChild(document.createTextNode(entry.timeStr));
       if (entry.height != null) {
         const h = document.createElement("span");
         h.className = "tide-height";
-        h.textContent = ` (${parseFloat(entry.height).toFixed(1)} m)`;
-        valueSpan.appendChild(h);
+        h.textContent = `${parseFloat(entry.height).toFixed(1)} m`;
+        chip.appendChild(h);
       }
+      valueSpan.appendChild(chip);
     });
     row.append(labelSpan, " ", valueSpan);
     container.appendChild(row);
@@ -1408,7 +1407,7 @@ async function fetchJmaWarning(force = false) {
     if (activeWarnings.length === 0) {
       const none = document.createElement("div");
       none.className = "warning-none";
-      none.textContent = "✅ 現在、注意報・警報はありません";
+      none.textContent = "現在、注意報・警報はありません";
       listEl.appendChild(none);
       warningBox.classList.remove("warning-active");
       setFloatingAlert(floatingBar, "");
@@ -1451,8 +1450,8 @@ async function fetchJmaWarning(force = false) {
         });
         const barText =
           severeList.length === 1
-            ? `⚠ ${severeList[0].name} 発令中`
-            : `⚠ ${hasTokubetsu ? "特別警報・警報" : "警報"} 発令中`;
+            ? `${severeList[0].name} 発令中`
+            : `${hasTokubetsu ? "特別警報・警報" : "警報"} 発令中`;
         setFloatingAlert(
           floatingBar,
           barText,
@@ -1975,8 +1974,8 @@ async function fetchWindForecast(force = false) {
       // 時刻を解釈できないと警告しない設計なので、ここは通さない）。
       const f = freshness(pickTimestamp(data), 0);
       windNote.textContent = f.ms
-        ? `⚠ データが古い可能性（最終更新 ${f.label}）`
-        : "⚠ 予報データが現在時刻に届いていません";
+        ? `データが古い可能性（最終更新 ${f.label}）`
+        : "予報データが現在時刻に届いていません";
       windNote.hidden = false;
     } else {
       markStale("wind-stale", pickTimestamp(data), FRESHNESS.wind);
@@ -2067,8 +2066,8 @@ function renderWeatherCards(wmData) {
   if (marineNote) {
     if (marineStale) {
       marineNote.textContent = marineFresh.ms
-        ? `⚠ データが古い可能性（最終更新 ${marineFresh.label}）`
-        : "⚠ 最新データを取得できませんでした（表示中の値は古い可能性）";
+        ? `データが古い可能性（最終更新 ${marineFresh.label}）`
+        : "最新データを取得できませんでした（表示中の値は古い可能性）";
       marineNote.hidden = false;
     } else {
       marineNote.hidden = true;
@@ -2143,8 +2142,8 @@ function renderWeatherCards(wmData) {
     } else {
       seaNote.textContent =
         ageMs != null
-          ? `⚠ データが古い可能性（${humanAge(ageMs)}の値）`
-          : "⚠ 最新データを取得できませんでした（表示中の値は古い可能性）";
+          ? `データが古い可能性（${humanAge(ageMs)}の値）`
+          : "最新データを取得できませんでした（表示中の値は古い可能性）";
       seaNote.hidden = false;
     }
   }

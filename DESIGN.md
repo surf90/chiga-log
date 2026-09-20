@@ -40,6 +40,9 @@
 | `--wind-bar-avg`     | `rgba(14,116,144,0.55)`                           | `rgba(94,189,216,0.6)`                            | 風予報バーの平均側（濃）          |
 | `--wind-bar-gust`    | `rgba(14,116,144,0.18)`                           | `rgba(94,189,216,0.22)`                           | 風予報バーの最大側（薄）          |
 | `--moon-dark`        | `#cfe3ea`                                         | `#3c4a50`                                         | 月相アイコンの影側（**不透明**）  |
+| `--divider`          | `#cbd5e1`                                         | `#475569`                                         | 区切り記号（サイトバー・見出し）  |
+| `--skeleton-base`    | `#e2e8f0`                                         | `#2a2a2a`                                         | スケルトンの地                    |
+| `--skeleton-sheen`   | `#f1f5f9`                                         | `#3a3a3a`                                         | スケルトンの走査光                |
 
 `:root` には `accent-color`（ライト `#0e7490` / ダーク `#5ebdd8`）も宣言し、UA 既定のフォーム部品色をブランドに合わせる。
 
@@ -48,8 +51,12 @@
 - **ブランドグラデ**: `linear-gradient(135deg,#0e7490 0%,#0284c7 100%)`（ティール→ブルー）。ヒーロータイトル文字（`background-clip:text`）とヒーローカード背景に使用。ヒーローカードは白の薄いハイライトを重ねて、屋外でも押せる面として認識しやすくする。グラデ文字は `-webkit-background-clip` と**標準 `background-clip` を必ず併記**する。接頭辞のみだと、将来の接頭辞廃止時に `-webkit-text-fill-color:transparent` だけが残りロゴが不可視になる。
 - **アクセント文字/リンク**: `--brand`（ライトは `#0e7490`、ダークは `#5ebdd8`）。数値ハイライト・リンク・点線下線・アウトラインボタン枠。
 - **警報系**: 通常警報 `#c0392b`、特別警報 `#7c3aed`（紫）、注意報レベルは橙系（`#e67e22` / `#d97706`）。注意報バッジは橙背景で白文字だとコントラスト不足になるため、文字色は `#222222`。
-- **ダーク時の明色置換**: 固定色の文字はダーク背景で沈むため、ダークでは満潮 `#0275d8→#60a5fa`、干潮 `#ce4844→#f87171`、エラー文字 `#c0392b→#ef4444` に切替（`@media (prefers-color-scheme: dark)` で上書き。Chart.js のグラフ色は変更しない）。補足灰色（潮位・区切り・「警報なし」）は固定値でなく `var(--text-sub)` を使う。
+- **ダーク時の明色置換**: 固定色の文字はダーク背景で沈むため、ダークでは満潮 `#0275d8→#60a5fa`、干潮 `#ce4844→#f87171`、エラー文字 `#c0392b→#ef4444`、ライフセービングリンク `#b4453a→#f0857a` に切替（`@media (prefers-color-scheme: dark)` で上書き。Chart.js のグラフ色は変更しない）。補足灰色（潮位・区切り・「警報なし」）は固定値でなく `var(--text-sub)` を使う。
 - **テキストのコントラスト（WCAG2AA・pa11y ゲート）**: 本文テキスト色は白背景で 4.5:1 以上を満たすこと。干潮文字は `#d9534f`(3.96:1) では不足のため **`#ce4844`(4.5:1)** を使用。系列色をテキスト色に用いない（波グラフ凡例の緑 `#27ae60` は 2.87:1 で不足）——**凡例の系列色は文字ではなくスウォッチ（丸）で示し、文字は既定色**にする。Chart.js の線・点・スウォッチ（＝グラフィック要素）は 1.4.3 の対象外のため従来色のまま。
+- **エラー文字色は `var(--warning-border)` に集約**する（`.error` / `.section-error` / `.tide-error` /
+  `.typhoon-notice`）。同じ赤を各セレクタへ直書きすると、ダーク用の上書きを別途並べる必要が生じる。
+  一方で**バッジ/バーの背景色は固定値のまま**にする（`.badge-keiho` / `.floating-alert.level-keiho` の
+  `#c0392b` 等）。ダークの `--warning-border`(`#ef4444`) を背景にすると白文字のコントラストが 4.5:1 を割る。
 
 > **原則**: 純黒 `#000000` は使わず `#222222`。新規色の追加は避け、上記変数/アクセントを再利用する。
 
@@ -106,9 +113,10 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
 ### カード / ボックス
 
-- ヒーローカード: ブランドグラデ背景の上に**上辺へ寄せたラジアルのハイライト**（`radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,0.2), transparent 58%)`）を重ね、画像もJSも使わずに面のわずかな湾曲を出す。文字 `#fff`・`border-radius:var(--radius-md)`・`padding:13px 8px 11px`（`max-width:420px` で `11px 5px 9px`）・薄い白境界・`--shadow-hero`。hover は `translateY(-2px)` と `--shadow-hero-hover`。**ハイライトは強めすぎない**（白文字ラベルのコントラストが落ちる。pa11y WCAG2AA を必ず通すこと）。
+- ヒーローカード: ブランドグラデ背景の上に**上辺へ寄せたラジアルのハイライト**（`radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,0.2), transparent 58%)`）を重ね、画像もJSも使わずに面のわずかな湾曲を出す。文字 `#fff`・`border-radius:var(--radius-md)`・`padding:13px 8px 11px`（`max-width:420px` で `11px 5px 9px`）・薄い白境界・`--shadow-hero`。hover は `translateY(-2px)` と `--shadow-hero-hover`。`:active` は `scale(0.98)` ＋ `--shadow-card`（影を `none` にすると「沈む」ではなく「消える」印象になる）。**ハイライトは強めすぎない**（白文字ラベルのコントラストが落ちる。pa11y WCAG2AA を必ず通すこと）。
 - 情報ボックス: `background:var(--box-bg)`・`border:1px solid var(--box-border)`・`border-radius:var(--radius-sm)`・`padding:16px 24px`（`max-width:420px` で `14px 16px`）・`--shadow-card`・左端 3px のブランドグラデーションバー。**hover ではカードを浮かせず**（操作対象ではないため）、影を `--shadow-card-hover`、枠を `--hairline` へ変えるだけにする。警報カード・熱中症カードは色で意味を持つため除外する。
 - 初期表示: ヘッダー、データカード、フッターを `opacity` と `translateY(8px)` のみで短くフェードアップする。カードは上から `0.03s` 刻みで遅らせ、**5枚目以降は `0.12s` で頭打ち**にして待ち時間を作らない。`prefers-reduced-motion: reduce` では既存の全体ルールにより実質無効化する。
+- **ローディングのスケルトンはカード型**（`.skeleton-card`、既定 132px / `.tall` 196px を3枚）にする。実レイアウトはカードの連なりなので、細い線（旧 `.skeleton-line`）を並べると読込完了で高さが急増し、レイアウトシフトになる。ヒーロー3枚ぶん（`.skeleton-hero-card`）は据え置き。
 
 ### ボタン
 
@@ -126,7 +134,7 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - **Y軸の固定表示**: `stickyYAxisPlugin` が、スクロール量ぶん平行移動した位置に軸幅ぶんの下地（`--box-bg`）をキャンバス全高で塗り、Chart.js の scale を再描画する。左軸（潮位 m・波高 m）は表示領域の左端、右軸（周期 秒）は右端へ貼り付く。スクロール中は `requestAnimationFrame` で1フレーム1回に間引いて再描画する。
 - **右端フェード**: `.chart-scroll` に `mask-image` を当て、右端20pxを不透明度 `0.45` まで落として「横に続きがある」ことを示す（モバイルはスクロールバーが出ないため）。固定表示の周期軸が重なるので、完全な透明までは落とさない。
 - **キャンバス高**: 潮汐 134px / 波高・周期 140px。`layout.padding` は両グラフとも 0（下パディングを入れるとX軸ラベルの下に空白が残り、直下の注記との間が間延びする）。`responsive:false` のため **CSS（`.tide-chart-area` / `.wave-chart-area`）と JS（`canvas.height`）の両方に同じ値**を持つ。変更時は必ず2箇所を揃える。
-- **凡例**: 波グラフのカスタム凡例（`.wave-legend`）は **`.chart-scroll` の外側**に置く。内側に入れると凡例も一緒にスクロールし、2項目目が画面外へ出る。
+- **凡例**: 波グラフのカスタム凡例（`.wave-legend`）は **`.chart-scroll` の外側**に置く。内側に入れると凡例も一緒にスクロールし、2項目目が画面外へ出る。 項目は2つだけなので `justify-content:flex-start` ＋ `gap:16px` で左に寄せる（`space-between` で左右端へ離すと視線移動が無駄に大きい）。
 
 ### 風予報（`#wind-forecast-box`）
 
@@ -149,6 +157,28 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - **風向矢印**（`.wind-arrow`）: CSS の三角形（border 方式）で描き、絵文字・記号フォントに依存
   させない。`--deg` は**風が向かう方位**（風向 + 180°）で、気象アプリ一般の慣習に合わせる。
   方位そのものは隣のテキストが示すため、矢印は `aria-hidden="true"`。
+
+### 注記アイコン（絵文字の代替）
+
+- **UI に絵文字（⚠ / ✅ / 🔄 など）を使わない**。端末のフォントで字形・サイズ・色がばらつき、
+  ダークモードでは絵文字だけが浮く。`:root` の `--icon-warning` / `--icon-check` / `--icon-refresh`
+  （インライン SVG の data URI）を `mask` で敷き、`background-color:currentColor` で文字色に追従させる。
+- 付与先は `::before` / `::after`。**文言そのものはテキストが持ち**、アイコンは装飾に留める
+  （JS 側の文字列に記号を混ぜない）。
+- 対象: `.stale-note` / `.stale-inline` / `.typhoon-notice` / `.floating-alert`（警告）、
+  `.warning-none`（チェック、`--brand`）、`#toast`（更新）、`.current-time`（通常＝更新／`.is-stale`＝警告）。
+- `.current-time` は JS が文言を入れるまで空。`:empty::after { content: none }` でアイコンだけが浮くのを防ぐ。
+- `.typhoon-notice` は `.data-row`（`space-between`）と併用するため、`justify-content:flex-start` を
+  上書きする。上書きしないとアイコンと文言が左右に割れる。
+- CSP は `img-src 'self' data:` のため data URI の mask は通る。外部アイコンフォントは追加しない（三原則2）。
+
+### 潮汐の満潮・干潮チップ（`.tide-chips` / `.tide-chip`）
+
+- 時刻と潮位の対ごとに小さなピルへ分ける。読点区切りで1行に詰めると等幅でも縦に揃わず、
+  屋外で目的の時刻を拾いにくい。
+- `dd` を `display:flex; flex-wrap:wrap; justify-content:flex-end` にし、狭幅では自然に折り返す。
+- チップの枠は `--hairline`、地は `--brand-soft`。満潮/干潮の色分け（`.tide-high` / `.tide-low`）は
+  `dd` 側のクラスで継承させ、チップ自体には色を持たせない。
 
 ### 月相アイコン（`.moon-phase`）
 
@@ -234,6 +264,21 @@ CSS 変数として定義し、各コンポーネントは変数を参照する�
 - **レイアウト**: 単一カラム、中央寄せ（`max-width:600px`）。PC でも 600px 固定。`max-width:420px` で小型端末向けに余白・ロゴ・カード数値を縮小し、タイトルの地域ラベルと情報源ラベルを折り返す。
 - **余白/gap**: カード間は `.weather-box` の `margin-bottom:12px`（`max-width:420px` で `10px`）、要素内 `gap:4〜7px`、body `padding:24px 16px`。
 - **タッチターゲット**: 屋外・指操作前提で十分な高さを確保（最小 44px 目安）。
+- **`max-width:360px`（320px 級端末）**: `.weather-box h2` を `flex-wrap:wrap` にし、情報源ラベル
+  （`.section-source`）を2行目へ逃がす。逃がさないと `.section-source` が `flex-shrink:0` のまま
+  残るため、見出し本体だけが潰れて「風予 / 報」のように語中で折れる。ラベル自体は消さない
+  （どのソースの値かは三原則1の要）。
+- **`prefers-contrast: more`**: 追加の UI は出さず、`--text-sub` / `--box-border` / `--hairline` /
+  `--brand-soft` / `--wind-bar-gust` を強めた値へ差し替えるだけにする。砂浜の照り返し環境を想定した
+  申告への応答で、配色の意味（ブランド＝ティール、警報＝赤）は変えない。
+
+### 404 ページ（`404.html`）
+
+- 本体と同じ `.container` ＋ ロゴ付き `<header>` を使い、外観の連続性を保つ。
+- **Web フォントは読み込まない**。エラーページにリクエストを増やさず、ロゴは system sans の
+  weight 900 へフォールバックさせる（グラデ文字はそのまま成立する／三原則2）。
+- ページ固有のスタイル（`.nf-*`）は `<style>` にインラインで持ち、`style.css` を膨らませない。
+  色・角丸・フォーカスリングは本体のトークンを参照する。
 
 ---
 
@@ -251,6 +296,8 @@ CSS 変数として定義し、各コンポーネントは変数を参照する�
 ### Don't
 
 - 純黒 `#000000` を使わない。
+- **UI に絵文字を使わない**（⚠ / ✅ / 🔄 など）。`--icon-*` の mask アイコンを使う。
+- 補足・注記を 11px 未満にしない（屋外・直射日光下で読めない）。
 - JS ライブラリ・Web フォントを安易に追加しない（三原則2、要相談）。
 - データ未取得時にダミー値を入れない。取得失敗を UI で明示する（三原則1）。
 - 新規カラートークンの乱立を避ける。
