@@ -14,6 +14,21 @@
   --brand-soft: rgba(14, 116, 144, 0.08);
   --hairline: rgba(14, 116, 144, 0.12);
   --selection-bg: rgba(14, 116, 144, 0.16);
+  /* 風予報バー: 濃い面が平均、薄い面が最大(ガスト)。行の下端の細い帯に描き、
+     文字を載せないぶん濃度を上げて2色の差をはっきりさせる */
+  --wind-bar-avg: rgba(14, 116, 144, 0.55);
+  --wind-bar-gust: rgba(14, 116, 144, 0.18);
+  /* 月相の影側。明側は --brand を使う。明側の半円をターミネータの楕円で
+     塗り消す描き方のため、半透明だと新月が塗り潰せない＝必ず不透明色にする */
+  --moon-dark: #cfe3ea;
+  --divider: #cbd5e1;
+  --skeleton-base: #e2e8f0;
+  --skeleton-sheen: #f1f5f9;
+  /* 注記アイコン。絵文字は端末のフォントで字形・サイズ・色がばらつくため、
+     mask で描いて currentColor に追従させる（CSP: img-src 'self' data: 配下）。 */
+  --icon-warning: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
+  --icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21.8 10A10 10 0 1 1 17 3.34'/%3E%3Cpath d='m9 11 3 3L22 4'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8'/%3E%3Cpath d='M21 3v5h-5'/%3E%3C/svg%3E");
   /* 角丸スケール（DESIGN.md 4章と対応） */
   --radius-lg: 16px;
   --radius-md: 12px;
@@ -66,6 +81,12 @@
     --brand-soft: rgba(94, 189, 216, 0.12);
     --hairline: rgba(125, 211, 252, 0.14);
     --selection-bg: rgba(94, 189, 216, 0.26);
+    --wind-bar-avg: rgba(94, 189, 216, 0.6);
+    --wind-bar-gust: rgba(94, 189, 216, 0.22);
+    --moon-dark: #3c4a50;
+    --divider: #475569;
+    --skeleton-base: #2a2a2a;
+    --skeleton-sheen: #3a3a3a;
     --shadow-card:
       0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 28px rgba(0, 0, 0, 0.18);
     --shadow-card-hover:
@@ -173,7 +194,7 @@ body::before {
   letter-spacing: 0.04em;
 }
 .site-bar-divider {
-  color: #cbd5e1;
+  color: var(--divider);
   font-size: 12px;
   opacity: 0.7;
 }
@@ -261,7 +282,7 @@ h1 .title-sub {
 }
 
 .title-divider {
-  color: #cbd5e1;
+  color: var(--divider);
   font-weight: 400;
   font-size: 1.2rem;
   opacity: 0.7;
@@ -309,7 +330,7 @@ h1 .title-sub {
 }
 .hero-card:active {
   transform: scale(0.98);
-  box-shadow: none;
+  box-shadow: var(--shadow-card);
 }
 .hero-card-label {
   font-size: 12px;
@@ -349,23 +370,15 @@ h1 .title-sub {
   }
 }
 .skeleton {
-  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base) 25%,
+    var(--skeleton-sheen) 50%,
+    var(--skeleton-base) 75%
+  );
   background-size: 800px 100%;
   animation: shimmer 1.4s infinite linear;
   border-radius: 6px;
-}
-.skeleton-line {
-  height: 14px;
-  margin-bottom: 12px;
-}
-.skeleton-line.wide {
-  width: 100%;
-}
-.skeleton-line.mid {
-  width: 70%;
-}
-.skeleton-line.short {
-  width: 45%;
 }
 #skeleton-loading {
   padding: 4px 0;
@@ -559,7 +572,7 @@ h1 .title-sub {
   text-align: left;
 }
 .error {
-  color: #c0392b;
+  color: var(--warning-border);
   text-align: center;
   font-size: 14px;
 }
@@ -708,38 +721,102 @@ body.has-floating-alert #refresh-toast {
 .wind-grid {
   margin-top: 10px;
 }
+/* 見出し行の直後は詰める（見出しと1行目を1つのまとまりとして見せる） */
+.wind-head + .wind-grid {
+  margin-top: 0;
+}
 /* 折りたたむのは4件目以降のみ（直近3件は常時表示する） */
 .wind-grid-more {
   display: none;
 }
+/* 見出し行とデータ行で同じ列定義を共有する（数値の縦位置を揃えるため） */
+.wind-head,
 .wind-row {
   display: grid;
-  grid-template-columns: 64px 1fr auto;
-  gap: 8px;
+  grid-template-columns: 48px 1fr 52px 52px;
+  gap: 6px;
   align-items: center;
+}
+/* 「平均」「最大」の意味は列見出しで示す。行ごとに語を繰り返すと
+   屋外で読む文字量が増え、狭幅端末では列も潰れる。 */
+.wind-head {
+  margin-top: 10px;
+  font-size: 10px;
+  color: var(--text-sub);
+  letter-spacing: 0.02em;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--box-border);
+}
+.wind-head > span:nth-child(3),
+.wind-head > span:nth-child(4) {
+  text-align: right;
+}
+.wind-row {
   border-bottom: 1px dashed var(--hairline);
-  padding: 6px 0;
+  padding: 6px 0 9px;
   font-size: 14px;
+  /* 0〜WIND_BAR_MAX_MS(app.js) を 0〜100% に正規化した1本のバーを、行の下端に
+     4px の帯として敷く。濃い側が平均、その先の薄い側が最大(ガスト)で、
+     ガストは常に平均以上なので「伸びた先が最大」と読める。
+     文字の背面ではなく帯にすることで、本文のコントラストを一切落とさない。 */
+  background-image: linear-gradient(
+    90deg,
+    var(--wind-bar-avg) 0 calc(var(--w, 0) * 1%),
+    var(--wind-bar-gust) calc(var(--w, 0) * 1%) calc(var(--g, 0) * 1%),
+    transparent calc(var(--g, 0) * 1%)
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 4px;
+  background-position: 0 100%;
 }
 .wind-time {
   color: var(--text-sub);
+  white-space: nowrap;
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 }
 .wind-dir {
   color: var(--text-main);
   font-weight: 500;
+  min-width: 0;
+}
+/* 風向の矢印。絵文字・記号フォントに依存しないよう CSS の三角形で描く。
+   既定で上（北）向き、--deg は「風が向かう方位」を指す。 */
+.wind-arrow {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-right: 5px;
+  vertical-align: middle;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 7px solid var(--brand);
+  opacity: 0.75;
+  transform: rotate(var(--deg, 0deg));
+}
+/* 単位は列見出しに1度だけ出し、行では数値のみにする（折り返し防止・視線短縮）。 */
+.wind-speed,
+.wind-gust {
+  text-align: right;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 }
 .wind-speed {
   color: var(--brand);
   font-weight: 600;
-  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+.wind-gust {
+  color: var(--text-sub);
+  font-size: 12px;
 }
 .warning-none {
   font-size: 14px;
   color: var(--text-sub);
   display: flex;
-  align-items: center;
+  /* 狭幅で文言が2行になるとき、アイコンが行間の中央へ落ちないよう上揃え */
+  align-items: flex-start;
   gap: 6px;
+}
+.warning-none::before {
+  margin-top: 0.2em;
 }
 .warning-item {
   display: flex;
@@ -789,7 +866,7 @@ body.has-floating-alert #refresh-toast {
   font-weight: 500;
 }
 p.note {
-  font-size: 9px;
+  font-size: 11px;
   color: var(--text-sub);
   margin-top: 6px;
   margin-bottom: 0;
@@ -837,7 +914,7 @@ p.note strong a {
     opacity: 0.7;
     text-decoration: underline;
   }
-  .lifesaving-link:hover {
+  .footer .lifesaving-link:hover {
     opacity: 1;
   }
 }
@@ -854,9 +931,11 @@ p.note strong a {
   letter-spacing: -0.28px;
   margin-top: 8px;
 }
-.lifesaving-link {
-  color: #c0392b !important;
-  opacity: 0.75;
+/* 警報色と紛れないよう、footer の他リンクより強いが警報より穏やかな赤。
+   !important ではなく .footer a に勝つ詳細度で上書きする。 */
+.footer .lifesaving-link {
+  color: #b4453a;
+  opacity: 0.85;
 }
 #weather-content {
   transition: opacity 0.3s ease;
@@ -866,17 +945,24 @@ p.note strong a {
   pointer-events: none;
 }
 
-/* スケルトンローディング */
+/* スケルトンローディング。
+   実レイアウトはカードの連なりなので、細い線を並べると読込完了で高さが急増し
+   レイアウトシフトになる。カード型で実際の高さに寄せる。 */
 .hero-cards-skeleton {
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 .skeleton-hero-card {
-  background: #e2e8f0;
+  background: var(--skeleton-base);
   border-radius: var(--radius-md);
   height: 72px;
 }
-.skeleton-line-spacer {
-  margin-top: 20px;
+.skeleton-card {
+  height: 132px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-sm);
+}
+.skeleton-card.tall {
+  height: 196px;
 }
 
 /* 状態表示 */
@@ -886,7 +972,7 @@ p.note strong a {
 }
 .section-error {
   display: none;
-  color: #c0392b;
+  color: var(--warning-border);
   font-size: 14px;
 }
 /* データ鮮度の警告表示（更新停止・古いデータの明示）。
@@ -920,6 +1006,110 @@ p.note strong a {
   z-index: 10;
 }
 
+/* 月相アイコン（潮回りの右）。画像もJSライブラリも使わず、円 + 明側の半円 +
+   明暗境界(ターミネータ)の楕円の3層で満ち欠けを描く。
+   --term = |1 - 2 × 照度| （0=上弦/下弦, 1=新月/満月）。
+   照度が半分を超えたら楕円は明側の色になる（.is-gibbous）。
+   北半球基準で明側は右。下弦側は .is-waning で左右反転する。 */
+.moon-phase {
+  position: relative;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 4px;
+  vertical-align: -1px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--moon-dark);
+}
+.moon-phase::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 50%;
+  background: var(--brand);
+}
+.moon-phase::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: calc(var(--term, 0) * 12px);
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: var(--moon-dark);
+}
+.moon-phase.is-gibbous::after {
+  background: var(--brand);
+}
+.moon-phase.is-waning {
+  transform: scaleX(-1);
+}
+
+/* 注記アイコン。絵文字（⚠ / ✅ / 🔄）は端末のフォントで字形・サイズ・色が
+   ばらつき、ダークモードでは絵文字だけが浮く。mask + currentColor に置き換えて
+   文字色に追従させる。文言は各要素のテキストが持つため、アイコンは装飾のみ。 */
+.stale-note::before,
+.stale-inline::before,
+.typhoon-notice::before,
+.floating-alert::before,
+.warning-none::before,
+.current-time::after,
+#toast::before {
+  content: "";
+  display: inline-block;
+  flex: none;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.14em;
+  background-color: currentColor;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+}
+.stale-note::before,
+.stale-inline::before,
+.typhoon-notice::before,
+.floating-alert::before {
+  --icon: var(--icon-warning);
+  margin-right: 5px;
+}
+/* .warning-none は flex なので gap が間隔を持つ（margin は付けない） */
+.warning-none::before {
+  --icon: var(--icon-check);
+  color: var(--brand);
+}
+#toast::before {
+  --icon: var(--icon-refresh);
+  margin-right: 6px;
+}
+/* 「更新日時」ボタンは通常＝更新アイコン、鮮度警告時＝警告アイコン。 */
+.current-time::after {
+  --icon: var(--icon-refresh);
+  margin-left: 5px;
+  align-self: flex-end;
+  margin-bottom: 3px;
+}
+.current-time.is-stale::after {
+  --icon: var(--icon-warning);
+}
+/* 初期表示（JSが更新日時を入れる前）は文言が無い。アイコンだけが浮かないよう隠す。 */
+.current-time:empty::after {
+  content: none;
+}
+
+/* 視覚的には隠すが支援技術には読ませる。数値だけの列に単位・見出し語を補う。 */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* 潮汐表示の文字スタイル */
 .tide-age-label {
   font-weight: normal;
@@ -931,9 +1121,24 @@ p.note strong a {
   font-weight: normal;
   font-size: 0.85em;
 }
-.tide-sep {
-  color: var(--text-sub);
-  font-weight: normal;
+/* 満潮・干潮は時刻と潮位の対を複数持つ。読点で1行に詰めると縦に揃わず、
+   屋外で目的の時刻を拾いにくい。対ごとにチップへ分けて拾いやすくする。 */
+.tide-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px 6px;
+}
+.tide-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 500px;
+  border: 1px solid var(--hairline);
+  background: var(--brand-soft);
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  white-space: nowrap;
 }
 .tide-high {
   color: #0275d8;
@@ -944,14 +1149,15 @@ p.note strong a {
   font-weight: bold;
 }
 .tide-error {
-  color: #c0392b;
+  color: var(--warning-border);
   font-size: 0.9rem;
 }
 
 /* 波グラフ凡例 */
 .wave-legend {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 16px;
   font-size: 11px;
   font-weight: 500;
   margin-bottom: 8px;
@@ -1024,9 +1230,12 @@ p.note strong a {
 }
 
 /* 台風通知行 */
+/* .data-row（space-between）と併用するため、アイコンと文言が左右に
+   割れないよう並びを上書きする。 */
 .typhoon-notice {
   display: none;
-  color: #c0392b;
+  justify-content: flex-start;
+  color: var(--warning-border);
   font-weight: bold;
 }
 
@@ -1076,19 +1285,12 @@ p.note strong a {
   .weather-box {
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
   }
-  .skeleton {
-    background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
-    background-size: 800px 100%;
-  }
-  .skeleton-hero-card {
-    background: #2a2a2a;
-  }
   .site-bar {
     background: rgba(30, 30, 30, 0.88);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   }
-  .site-bar-divider {
-    color: #475569;
+  .footer .lifesaving-link {
+    color: #f0857a;
   }
   #toast,
   #refresh-toast {
@@ -1102,12 +1304,6 @@ p.note strong a {
   }
   .tide-low {
     color: #f87171;
-  }
-  .error,
-  .section-error,
-  .tide-error,
-  .typhoon-notice {
-    color: #ef4444;
   }
 }
 
@@ -1167,5 +1363,52 @@ p.note strong a {
   }
   .data-row {
     gap: 10px;
+  }
+  .wind-head,
+  .wind-row {
+    grid-template-columns: 46px 1fr 46px 46px;
+    gap: 4px;
+  }
+}
+
+/* 320px 級の端末では、見出しが1行に収まらず「風予 / 報」のように語中で折れる。
+   情報源ラベルを2行目へ逃がして見出し本体に幅を返す（ラベルは消さない）。 */
+@media (max-width: 360px) {
+  .weather-box h2 {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+  .weather-box h2 > span:not(.section-label):not(.section-source) {
+    overflow-wrap: normal;
+  }
+}
+
+/* 砂浜の照り返しなど、コントラストを上げたい環境の申告に応える。
+   追加のUIは出さず、境界と補助文字だけを強める。 */
+@media (prefers-contrast: more) {
+  :root {
+    --text-sub: #4b5563;
+    --box-border: rgba(0, 0, 0, 0.22);
+    --hairline: rgba(14, 116, 144, 0.4);
+    --brand-soft: rgba(14, 116, 144, 0.16);
+    --wind-bar-gust: rgba(14, 116, 144, 0.32);
+  }
+  .container {
+    border-color: var(--hairline);
+  }
+  .data-row {
+    border-bottom-color: var(--box-border);
+  }
+  p.note a {
+    text-decoration: underline;
+  }
+}
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+  :root {
+    --text-sub: #cbd5e1;
+    --box-border: rgba(255, 255, 255, 0.28);
+    --hairline: rgba(125, 211, 252, 0.42);
+    --brand-soft: rgba(94, 189, 216, 0.22);
+    --wind-bar-gust: rgba(94, 189, 216, 0.36);
   }
 }

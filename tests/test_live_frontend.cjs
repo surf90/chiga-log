@@ -24,7 +24,12 @@ function makeElement() {
     innerHTML: "",
     hidden: false,
     children: [],
-    style: {},
+    style: {
+      _props: {},
+      setProperty(k, v) {
+        this._props[k] = v;
+      },
+    },
     attributes: {},
     classList: {
       _set: new Set(),
@@ -44,6 +49,9 @@ function makeElement() {
     },
     append(...nodes) {
       this.children.push(...nodes);
+    },
+    prepend(...nodes) {
+      this.children.unshift(...nodes);
     },
     setAttribute(name, value) {
       this.attributes[name] = value;
@@ -449,6 +457,53 @@ test("wind card warns once the series no longer reaches the present", async () =
   });
   await vm.runInContext("fetchWindForecast()", context);
   assert.equal(getElementById("wind-stale").hidden, false);
+});
+
+// ─── 風予報の行表示（平均/最大バー・風向矢印） ─────────────────
+test("wind rows carry an average bar, a gust bar and a direction arrow", async () => {
+  const { context, getElementById } = buildContext({
+    fetchImpl: async () =>
+      jsonResponse({
+        updated_at: "2026-08-29T10:00:00+09:00",
+        items: [
+          {
+            time: "2026-08-29T11:00",
+            wind_speed_ms: 6.0,
+            wind_gust_ms: 12.0,
+            wind_direction_deg: 180,
+          },
+        ],
+      }),
+  });
+  await vm.runInContext("fetchWindForecast()", context);
+
+  const row = getElementById("wind-forecast-list").children[0];
+  // 固定上限15m/s: 平均6.0→40%、最大12.0→80%。バーは行背景なので列幅を奪わない。
+  assert.equal(row.style._props["--w"], "40");
+  assert.equal(row.style._props["--g"], "80");
+
+  const dirEl = row.children.find((c) => c.className === "wind-dir");
+  const arrow = dirEl.children[0];
+  // 南(180°)から吹く風は北へ向かう＝矢印は0°（上向き）。
+  assert.equal(arrow.className, "wind-arrow");
+  assert.equal(arrow.style._props["--deg"], "0deg");
+  assert.equal(arrow.attributes["aria-hidden"], "true");
+});
+
+test("a row without gust data stops the bar at the average", async () => {
+  const { context, getElementById } = buildContext({
+    fetchImpl: async () =>
+      jsonResponse(
+        windPayload("2026-08-29T10:00:00+09:00", ["2026-08-29T11:00"]),
+      ),
+  });
+  await vm.runInContext("fetchWindForecast()", context);
+
+  const row = getElementById("wind-forecast-list").children[0];
+  // 最大が無い行は平均と同じ位置で止める（伸びた先が最大、という読みを壊さない）。
+  assert.equal(row.style._props["--g"], row.style._props["--w"]);
+  const gustEl = row.children.find((c) => c.className === "wind-gust");
+  assert.equal(gustEl.children.length, 0);
 });
 
 // ─── 警告閾値とライブ取得トリガの分離 ─────────────────────────

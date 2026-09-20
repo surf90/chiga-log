@@ -38,6 +38,8 @@ const PX_PER_HOUR = 14;
 const CHART_TOTAL_PX = PX_PER_HOUR * 24 * CHART_DAYS;
 let chartScrollSynced = false;
 let windForecastRange = "";
+// 風予報バーの固定上限(m/s)。行ごとの最大値で正規化すると行同士を比較できない。
+const WIND_BAR_MAX_MS = 15;
 // 波グラフの描画元データ。潮汐が後着でx軸原点を確定させた場合に、
 // 同じ原点で描き直すため保持する（下の drawTideChart 参照）。
 let waveChartData = null;
@@ -183,7 +185,7 @@ function markStale(noteElId, iso, thresholdMs) {
   if (!el) return;
   const f = freshness(iso, thresholdMs);
   if (f.isStale) {
-    el.textContent = `⚠ データが古い可能性（最終更新 ${f.label}）`;
+    el.textContent = `データが古い可能性（最終更新 ${f.label}）`;
     el.hidden = false;
   } else {
     el.hidden = true;
@@ -470,7 +472,7 @@ function toJstDateStr(date) {
  * 「更新日時」表示を更新する。
  * リロード・手動更新でデータを参照できた時点の現在時刻を表示する
  * （Actions側のデータ生成を待たず、参照の成功を示す）。
- * データ生成時刻(iso)が閾値超過なら「（データ: X前）⚠」を併記して
+ * データ生成時刻(iso)が閾値超過なら「（データ: X前）＋警告アイコン」を併記して
  * 古いデータであることを警告する。
  * @param {string|null} [iso] weather_marine 等の updated_at
  * @param {number} [thresholdMs] 古いと判定する閾値
@@ -488,10 +490,10 @@ function displayFetchTime(iso = null, thresholdMs = FRESHNESS.marine) {
   const dt = new Date().toLocaleString("ja-JP", options);
   const f = iso ? freshness(iso, thresholdMs) : null;
   if (f && f.isStale) {
-    el.textContent = `更新日時: ${dt}（データ: ${f.label}）⚠`;
+    el.textContent = `更新日時: ${dt}（データ: ${f.label}）`;
     el.classList.add("is-stale");
   } else {
-    el.textContent = `更新日時: ${dt} 🔄`;
+    el.textContent = `更新日時: ${dt}`;
     el.classList.remove("is-stale");
   }
 }
@@ -682,6 +684,8 @@ async function calculateTide(force = false) {
   if (age < 0) age += synodicMonth;
   let ageSource = "計算値";
   let lunarDay = approximateLunarDay(dayKey, knownNewMoon, synodicMonthMs);
+  // 照度（0-1）。月相アイコンの描画にのみ使う。NASA の phase(%) を優先する。
+  let illumination = null;
 
   try {
     // 日付キーはJST基準。toISOString()(UTC)だと 0-9時JSTの間だけ前日キーのまま
@@ -704,6 +708,15 @@ async function calculateTide(force = false) {
       if (isToday && Number.isFinite(nasaAge) && nasaAge >= 0 && nasaAge < 30) {
         age = nasaAge;
         ageSource = "NASA";
+      }
+      const nasaPhase = moonToday?.phase;
+      if (
+        isToday &&
+        Number.isFinite(nasaPhase) &&
+        nasaPhase >= 0 &&
+        nasaPhase <= 100
+      ) {
+        illumination = nasaPhase / 100;
       }
       // 日次更新が遅れて date が前日のままでも、生成済みのNASA由来カレンダー
       // に当日キーがあれば潮回りは概算へ落とさず維持する。
@@ -737,10 +750,35 @@ async function calculateTide(force = false) {
   if (!tideTypeEl) return;
   tideTypeEl.textContent = "";
   tideTypeEl.appendChild(document.createTextNode(tideType + " "));
+  tideTypeEl.appendChild(buildMoonPhase(age, illumination, synodicMonth));
   const ageSpan = document.createElement("span");
   ageSpan.className = "tide-age-label";
   ageSpan.textContent = `(${ageLabel})`;
   tideTypeEl.appendChild(ageSpan);
+}
+
+/**
+ * 月相アイコンを作る（CSS のみで満ち欠けを描画。画像・ライブラリ不要）。
+ * 月齢はテキストで併記されるため、アイコン自体は支援技術から隠す。
+ * @param {number} age 月齢（日）
+ * @param {number|null} illumination 照度 0-1。null なら月齢から近似する
+ * @param {number} synodicMonth 朔望月（日）
+ * @returns {HTMLElement}
+ */
+function buildMoonPhase(age, illumination, synodicMonth) {
+  const el = document.createElement("span");
+  el.className = "moon-phase";
+  el.setAttribute("aria-hidden", "true");
+  const f =
+    illumination != null
+      ? illumination
+      : (1 - Math.cos((2 * Math.PI * age) / synodicMonth)) / 2;
+  // |1 - 2f|: 0 = 上弦/下弦（半月）、1 = 新月/満月。
+  el.style.setProperty("--term", Math.abs(1 - 2 * f).toFixed(3));
+  if (f > 0.5) el.classList.add("is-gibbous");
+  // 朔望月の後半は欠けていく側。北半球基準で明側が左になるため反転する。
+  if (age >= synodicMonth / 2) el.classList.add("is-waning");
+  return el;
 }
 
 function updateTideSource(sourceName) {
@@ -834,21 +872,20 @@ function displayTideData(extremes, chartExtremes) {
     const labelSpan = document.createElement("dt");
     labelSpan.textContent = label + ":";
     const valueSpan = document.createElement("dd");
-    valueSpan.className = cssClass;
-    list.forEach((entry, idx) => {
-      if (idx > 0) {
-        const sep = document.createElement("span");
-        sep.className = "tide-sep";
-        sep.textContent = " , ";
-        valueSpan.appendChild(sep);
-      }
-      valueSpan.appendChild(document.createTextNode(entry.timeStr));
+    // 時刻と潮位の対ごとにチップへ分ける。読点で1行に詰めると縦に揃わず、
+    // 屋外で目的の時刻を拾いにくい。
+    valueSpan.className = `tide-chips ${cssClass}`;
+    list.forEach((entry) => {
+      const chip = document.createElement("span");
+      chip.className = "tide-chip";
+      chip.appendChild(document.createTextNode(entry.timeStr));
       if (entry.height != null) {
         const h = document.createElement("span");
         h.className = "tide-height";
-        h.textContent = ` (${parseFloat(entry.height).toFixed(1)} m)`;
-        valueSpan.appendChild(h);
+        h.textContent = `${parseFloat(entry.height).toFixed(1)} m`;
+        chip.appendChild(h);
       }
+      valueSpan.appendChild(chip);
     });
     row.append(labelSpan, " ", valueSpan);
     container.appendChild(row);
@@ -1370,7 +1407,7 @@ async function fetchJmaWarning(force = false) {
     if (activeWarnings.length === 0) {
       const none = document.createElement("div");
       none.className = "warning-none";
-      none.textContent = "✅ 現在、注意報・警報はありません";
+      none.textContent = "現在、注意報・警報はありません";
       listEl.appendChild(none);
       warningBox.classList.remove("warning-active");
       setFloatingAlert(floatingBar, "");
@@ -1413,8 +1450,8 @@ async function fetchJmaWarning(force = false) {
         });
         const barText =
           severeList.length === 1
-            ? `⚠ ${severeList[0].name} 発令中`
-            : `⚠ ${hasTokubetsu ? "特別警報・警報" : "警報"} 発令中`;
+            ? `${severeList[0].name} 発令中`
+            : `${hasTokubetsu ? "特別警報・警報" : "警報"} 発令中`;
         setFloatingAlert(
           floatingBar,
           barText,
@@ -1734,7 +1771,19 @@ function toggleOverview() {
 const WIND_VISIBLE_COUNT = 3;
 
 /** 風予報1行（時刻・風向・風速）を生成する。 */
-function createWindRow({ time, dir, speed }) {
+/**
+ * 風速を行背景バーの長さ（0-100%）へ正規化する。
+ * 行ごとの最大値で正規化すると行同士を比べられないため、固定上限を使う。
+ * @param {number|string|null|undefined} v m/s
+ * @returns {number} 0-100
+ */
+function windBarPercent(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(100, Math.round((n / WIND_BAR_MAX_MS) * 100));
+}
+
+function createWindRow({ time, dir, deg, speed, gust }) {
   const row = document.createElement("div");
   row.className = "wind-row";
   const mkSpan = (cls, text) => {
@@ -1743,11 +1792,42 @@ function createWindRow({ time, dir, speed }) {
     s.textContent = text;
     return s;
   };
-  row.append(
-    mkSpan("wind-time", time),
-    mkSpan("wind-dir", dir || "データなし"),
-    mkSpan("wind-speed", `${speed ?? "-"} m/s`),
+
+  const dirEl = mkSpan("wind-dir", dir || "データなし");
+  if (Number.isFinite(Number(deg))) {
+    // 風向は「風が吹いてくる方位」。矢印は進行方向（+180°）を指す。
+    const arrow = document.createElement("span");
+    arrow.className = "wind-arrow";
+    arrow.setAttribute("aria-hidden", "true");
+    arrow.style.setProperty("--deg", `${(Number(deg) + 180) % 360}deg`);
+    dirEl.prepend(arrow);
+  }
+
+  // 単位と「平均/最大」の別は列見出し（.wind-head）で一度だけ示し、行には
+  // 数値だけを置く。見出しとの対応は支援技術には伝わらないため、読み上げ用の
+  // 語と単位だけを視覚的に隠して添える。
+  const speedEl = mkSpan("wind-speed", "");
+  speedEl.append(
+    mkSpan("visually-hidden", "平均 "),
+    document.createTextNode(speed ?? "-"),
+    mkSpan("visually-hidden", " m/s"),
   );
+
+  const gustEl = mkSpan("wind-gust", "");
+  if (gust != null) {
+    gustEl.append(
+      mkSpan("visually-hidden", "最大 "),
+      document.createTextNode(String(gust)),
+      mkSpan("visually-hidden", " m/s"),
+    );
+  }
+
+  // 平均と最大を1本のバーに重ねる（CSS 側 .wind-row の背景グラデーション）。
+  const avgPct = windBarPercent(speed);
+  row.style.setProperty("--w", String(avgPct));
+  row.style.setProperty("--g", String(Math.max(windBarPercent(gust), avgPct)));
+
+  row.append(mkSpan("wind-time", time), dirEl, speedEl, gustEl);
   return row;
 }
 
@@ -1766,7 +1846,13 @@ function renderWindForecast(entries) {
 
   if (!entries || entries.length === 0) {
     grid.appendChild(
-      createWindRow({ time: "--:--", dir: "データなし", speed: null }),
+      createWindRow({
+        time: "--:--",
+        dir: "データなし",
+        deg: null,
+        speed: null,
+        gust: null,
+      }),
     );
     if (toggle) toggle.hidden = true;
     return;
@@ -1839,9 +1925,17 @@ async function fetchWindForecast(force = false) {
             (item.wind_direction_deg != null
               ? getWindDirection16(Number(item.wind_direction_deg))
               : "データなし"),
+          deg:
+            item.wind_direction_deg != null
+              ? Number(item.wind_direction_deg)
+              : null,
           speed:
             item.wind_speed_ms != null
               ? Number(item.wind_speed_ms).toFixed(1)
+              : null,
+          gust:
+            item.wind_gust_ms != null
+              ? Number(item.wind_gust_ms).toFixed(1)
               : null,
         };
       })
@@ -1880,8 +1974,8 @@ async function fetchWindForecast(force = false) {
       // 時刻を解釈できないと警告しない設計なので、ここは通さない）。
       const f = freshness(pickTimestamp(data), 0);
       windNote.textContent = f.ms
-        ? `⚠ データが古い可能性（最終更新 ${f.label}）`
-        : "⚠ 予報データが現在時刻に届いていません";
+        ? `データが古い可能性（最終更新 ${f.label}）`
+        : "予報データが現在時刻に届いていません";
       windNote.hidden = false;
     } else {
       markStale("wind-stale", pickTimestamp(data), FRESHNESS.wind);
@@ -1972,8 +2066,8 @@ function renderWeatherCards(wmData) {
   if (marineNote) {
     if (marineStale) {
       marineNote.textContent = marineFresh.ms
-        ? `⚠ データが古い可能性（最終更新 ${marineFresh.label}）`
-        : "⚠ 最新データを取得できませんでした（表示中の値は古い可能性）";
+        ? `データが古い可能性（最終更新 ${marineFresh.label}）`
+        : "最新データを取得できませんでした（表示中の値は古い可能性）";
       marineNote.hidden = false;
     } else {
       marineNote.hidden = true;
@@ -2048,8 +2142,8 @@ function renderWeatherCards(wmData) {
     } else {
       seaNote.textContent =
         ageMs != null
-          ? `⚠ データが古い可能性（${humanAge(ageMs)}の値）`
-          : "⚠ 最新データを取得できませんでした（表示中の値は古い可能性）";
+          ? `データが古い可能性（${humanAge(ageMs)}の値）`
+          : "最新データを取得できませんでした（表示中の値は古い可能性）";
       seaNote.hidden = false;
     }
   }
