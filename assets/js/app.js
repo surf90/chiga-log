@@ -1350,8 +1350,11 @@ const WARNING_API_URL = _cfgJma.warning_api_url ?? "";
  * @param {string} [level] "keiho" | "tokubetsu"
  */
 function setFloatingAlert(bar, text, level) {
+  // 文言は role="alert" を持つ内側の span にだけ入れる。バー本体(button)の
+  // textContent を書き換えると、操作の説明(visually-hidden)ごと消えてしまう。
+  const textEl = document.getElementById("floating-alert-text");
+  if (textEl) textEl.textContent = text || "";
   if (text) {
-    bar.textContent = text;
     bar.className = `floating-alert level-${level}`;
     bar.style.display = "block";
   } else {
@@ -1846,9 +1849,13 @@ function renderWindForecast(entries) {
   const grid = document.getElementById("wind-forecast-list");
   const moreGrid = document.getElementById("wind-forecast-more");
   const toggle = document.getElementById("wind-forecast-toggle");
+  const head = document.getElementById("wind-head");
   if (!grid) return;
   grid.innerHTML = "";
   if (moreGrid) moreGrid.innerHTML = "";
+  // 値が無い時に「平均 m/s / 最大 m/s」の列見出しだけ残ると、空欄を
+  // 「0 m/s」と読み違える余地が出る（三原則1）。
+  if (head) head.hidden = !entries || entries.length === 0;
 
   if (!entries || entries.length === 0) {
     grid.appendChild(
@@ -2287,7 +2294,7 @@ function showRefreshDone() {
   const t = document.getElementById("refresh-toast");
   if (!t) return;
   clearTimeout(_refreshToastTimer);
-  t.textContent = "✓ 最新の情報に更新しました";
+  t.textContent = "最新の情報に更新しました";
   t.style.display = "block";
   requestAnimationFrame(() => t.classList.add("show"));
   _refreshToastTimer = setTimeout(() => {
@@ -2363,21 +2370,15 @@ document.addEventListener("DOMContentLoaded", () => {
   scheduleNextFetch();
 
   // 旧インライン onclick の置換
+  // data-scroll-to は必ず <button> に付ける。div + tabindex だと Enter/Space を
+  // 自前で拾う必要があり、役割も支援技術に伝わらない。
   document.querySelectorAll("[data-scroll-to]").forEach((el) => {
-    const scrollToTarget = () => {
+    el.addEventListener("click", () => {
       const target = document.getElementById(el.dataset.scrollTo);
       if (!target) return;
       const behavior = _reducedMotion.matches ? "auto" : "smooth";
       target.scrollIntoView({ behavior, block: "start" });
-    };
-    el.addEventListener("click", scrollToTarget);
-    if (el.tagName !== "BUTTON") {
-      el.addEventListener("keydown", (event) => {
-        if (event.key !== "Enter" && event.key !== " ") return;
-        event.preventDefault();
-        scrollToTarget();
-      });
-    }
+    });
   });
   const overviewBtn = document.getElementById("jma-overview-toggle");
   if (overviewBtn) overviewBtn.addEventListener("click", toggleOverview);

@@ -147,6 +147,11 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - **単位と「平均/最大」の別は見出し行に1度だけ出し、データ行は数値のみ**にする。行ごとに
   `m/s` を繰り返すと狭幅端末で値が折り返し、行高が倍になる。見出しとの対応は支援技術へは
   伝わらないので、各値に `.visually-hidden` の語（`平均 ` / `最大 ` / ` m/s`）を添えて補う。
+  見出し行自体は視覚専用として `aria-hidden="true"`（行側が語と単位を持つため、対応の取れない
+  見出しを二重に読ませない）。
+- **データが無い時は見出し行ごと隠す**（`#wind-head` の `hidden`）。空欄だけが列に残ると
+  「0 m/s」と読み違える余地が出る（三原則1）。`.wind-head` は `display:grid` を持つため、
+  `.wind-head[hidden]{display:none}` で UA 既定を明示的に打ち消すこと。
 - **平均/最大バー**: 行の下端に 4px の帯（`background-size:100% 4px` / `background-position:0 100%`）を
   敷き、濃い側（`--wind-bar-avg`）が平均、その先の薄い側（`--wind-bar-gust`）が最大（ガスト）。
   ガストは常に平均以上なので「伸びた先が最大」と読める。**文字の背面ではなく帯にする**こと
@@ -171,7 +176,8 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - 付与先は `::before` / `::after`。**文言そのものはテキストが持ち**、アイコンは装飾に留める
   （JS 側の文字列に記号を混ぜない）。
 - 対象: `.stale-note` / `.stale-inline` / `.typhoon-notice` / `.floating-alert`（警告）、
-  `.warning-none`（チェック、`--brand`）、`#toast`（更新）、`.current-time`（通常＝更新／`.is-stale`＝警告）。
+  `.warning-none` / `#refresh-toast`（チェック）、`#toast`（更新）、
+  `.current-time`（通常＝更新／`.is-stale`＝警告）。
 - `.current-time` は JS が文言を入れるまで空。`:empty::after { content: none }` でアイコンだけが浮くのを防ぐ。
 - `.typhoon-notice` は `.data-row`（`space-between`）と併用するため、`justify-content:flex-start` を
   上書きする。上書きしないとアイコンと文言が左右に割れる。
@@ -200,6 +206,14 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
 - `.floating-alert.level-tokubetsu { background:#7c3aed; }`（特別警報）。通常警報は `#c0392b` 系、注意報は橙系。
 - 表示/非表示は `setFloatingAlert()`（`app.js`）に集約する。`className` と `style.display` を呼び出し側で個別に触ると状態がずれる。
+- **バーは `<button>`**（`data-scroll-to="jma-warning-box"` で該当カードへスクロール）。`div` +
+  `tabindex="0"` にしない（Enter/Space を自前で拾う必要があり、役割も支援技術に伝わらない）。
+  ブラウザ既定のボタン外観は打ち消し、フォーカスリングは画面最下端で切れないよう
+  `outline-offset:-4px` と内側に引く。
+- **警報文は内側の `#floating-alert-text`（`role="alert"`）に入れ、バー本体に `aria-label` を
+  付けない**。`aria-label` は要素の中身より優先されるため、付けると読み上げが操作の説明に
+  化け、肝心の警報内容（例:「大雨警報 発令中」）が支援技術へ一切届かない。操作の説明は
+  `.visually-hidden` の一文で添える。
 - **バーは `position:fixed` で画面下端に重なるため、表示中は逃がしぶんの余白を確保する**。`setFloatingAlert()` が `body.has-floating-alert` を付け外しし、`padding-bottom: calc(64px + env(safe-area-inset-bottom))` でフッター最終行が隠れるのを防ぐ。`#toast` / `#refresh-toast` も同クラス配下で `bottom` を上げてバーと重ならないようにする。
 
 ### 熱中症警戒アラートカード

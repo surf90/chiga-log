@@ -652,6 +652,8 @@ h1 .title-sub {
   transform: translateX(-50%) translateY(0) scale(0.97);
 }
 
+/* 警報バーは <button>（タップで該当カードへ移動）。ブラウザ既定の
+   ボタン外観を打ち消し、帯としての見た目を維持する。 */
 .floating-alert {
   position: fixed;
   bottom: 0;
@@ -659,6 +661,11 @@ h1 .title-sub {
   width: 100%;
   padding: 12px 16px;
   padding-bottom: max(12px, env(safe-area-inset-bottom));
+  border: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  background: none;
+  font-family: inherit;
   font-weight: bold;
   font-size: 0.95rem;
   text-align: center;
@@ -667,6 +674,11 @@ h1 .title-sub {
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.25);
   box-sizing: border-box;
   cursor: pointer;
+}
+/* 画面最下端に固定されているため、外側へ出すとリングが切れる。内側に引く。 */
+.floating-alert:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: -4px;
 }
 /* 警報バー表示中は、フッター最終行がバーの下に隠れないよう余白を確保する。 */
 body.has-floating-alert {
@@ -733,6 +745,11 @@ body.has-floating-alert #refresh-toast {
 .wind-grid-more {
   display: none;
 }
+/* display を持つ class 指定は UA の [hidden]{display:none} より強い。
+   データなし時に JS が hidden を立てても消えないため、明示的に打ち消す。 */
+.wind-head[hidden] {
+  display: none;
+}
 /* 見出し行とデータ行で同じ列定義を共有する（数値の縦位置を揃えるため） */
 .wind-head,
 .wind-row {
@@ -783,10 +800,9 @@ body.has-floating-alert #refresh-toast {
   font-weight: 500;
   min-width: 0;
 }
-/* 風向の矢印。絵文字・記号フォントに依存しないよう CSS の三角形で描く。
-   既定で上（北）向き、--deg は「風が向かう方位」を指す。 */
-/* 風向矢印。border の正三角形は上下がほぼ対称で、22.5°刻みの回転差が読めな
-   かったため、軸付きの矢印を mask で敷く（注記アイコンと同じ方式）。 */
+/* 風向矢印。絵文字・記号フォントに依存させず mask で敷く（注記アイコンと同じ
+   方式）。border の正三角形は上下がほぼ対称で、22.5°刻みの回転差が読めな
+   かったため軸付きの形にした。既定で上（北）向き、--deg は「風が向かう方位」。 */
 .wind-arrow {
   display: inline-block;
   width: 13px;
@@ -1060,6 +1076,7 @@ p.note strong a {
 .floating-alert::before,
 .warning-none::before,
 .current-time::after,
+#refresh-toast::before,
 #toast::before {
   content: "";
   display: inline-block;
@@ -1085,6 +1102,11 @@ p.note strong a {
 }
 #toast::before {
   --icon: var(--icon-refresh);
+  margin-right: 6px;
+}
+/* 手動更新の完了トースト。旧「✓」は端末フォント依存のため mask へ置換。 */
+#refresh-toast::before {
+  --icon: var(--icon-check);
   margin-right: 6px;
 }
 /* 「更新日時」ボタンは通常＝更新アイコン、鮮度警告時＝警告アイコン。 */
