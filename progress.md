@@ -8,6 +8,25 @@ updated: 2026-09-21
 
 ## 完了済み（2026-09-21）
 
+### 直近追加機能（#176〜#178）のレビュー修正
+
+昨日・本日追加した機能（風の平均/最大バー・月相アイコン・絵文字廃止・風向矢印・警報バーのタップ移動）を通しで点検し、不具合と仕様ズレを修正した。挙動は Chromium（headless）で実機確認、`pa11y-ci`（WCAG2AA）0 errors。
+
+- **警報バーの警報文が支援技術に届かない不具合（#178 の回帰）を修正**: `role="alert"` の要素に
+  `aria-label="注意報・警報セクションへ移動"` を付けていたため、読み上げ名が操作説明で上書きされ、
+  肝心の「◯◯警報 発令中」が一切読まれない状態だった。バー本体を `<button>` にし、警報文は
+  内側の `#floating-alert-text`（`role="alert"`）へ入れ、操作説明は `.visually-hidden` で添える形へ変更。
+  併せて `div` + `tabindex="0"` 用の keydown(Enter/Space) フォールバックは不要になったため削除
+  （`data-scroll-to` は全て `<button>` になった）。
+- **風予報の列見出し**: 視覚専用の見出し行が支援技術に重複して読まれていたため `aria-hidden="true"` を付与。
+  データなし時は見出しごと隠す（空欄を「0 m/s」と読み違えないため）。`.wind-head` は `display:grid` を
+  持ち UA の `[hidden]` より強いので `.wind-head[hidden]{display:none}` を追加。
+- **絵文字廃止の取りこぼし**: 更新完了トーストに残っていた `✓` を `--icon-check` の mask へ置換。
+- **CSS のコメント整理**: `.wind-arrow` に border 三角形時代の古い説明が残っていたため統合。
+- テスト追加（`tests/test_live_frontend.cjs`、計34件 pass）: 警報バーが live region 側へ文言を書くこと、
+  風向矢印の16方位丸め（14°→202.5deg）、データなし時の見出し非表示。
+- `DESIGN.md` を上記に追従（警報バー節・風予報節・注記アイコン節）。
+
 ### 警報フッターバーのタップで注意報・警報カードへスクロール
 
 `#floating-alert-bar`（画面下端固定の「警報 発令中」バー）をタップ/Enter・Spaceキーで `#jma-warning-box`（注意報・警報カード）へスムーススクロールする機能を追加。既存の `data-scroll-to` 属性ベースの仕組み（`hero-card` 等で使用）を再利用し、`<button>` ではない要素向けにキーボード操作（Enter/Space）のフォールバックを追加した。新規JSライブラリ・cron追加なし（三原則2,3準拠）。
@@ -78,7 +97,7 @@ updated: 2026-09-21
 
 - **Dependabot が `warning-worker/` を見ていなかった**: ルートとは別の `package-lock.json` を持つため `directory: "/"` では更新されず、2026-08 の undici 系アラートは手動対応になっていた。`/warning-worker` を個別登録して自動追従させる。
 - **`persist-credentials: false`**: 読み取り専用ジョブ（`frontend-ci` の lint / a11y、`test`）の checkout で認証情報を `.git/config` に残さない。
-- **paths に `_data/**` を追加**: `_data/site.json` は `site-config.js` の生成元かつ Python スクリプトの設定元だが、変更しても CI が起動しなかった。
+- **paths に `\_data/**`を追加**:`\_data/site.json`は`site-config.js` の生成元かつ Python スクリプトの設定元だが、変更しても CI が起動しなかった。
 
 **監査して問題なしだった箇所**
 
@@ -553,7 +572,7 @@ PR #154 マージ後に本番状態を監査し、残っていた不具合・弱
 - **層A: フロント鮮度表示**（問題1・2の主軸, `assets/js/app.js`）:
   - 鮮度ヘルパー追加（`parseIso`/`humanAge`/`freshness`/`markStale`）＋閾値定数 `FRESHNESS`（データ種別ごと個別: marine/wind 3h・forecast 18h・wave 15h・warning 3h・tide 30h）。
   - **`displayFetchTime` 是正**: 取得時刻→`weather_marine.updated_at`（実データ生成時刻＋経過時間）。古い時は `.is-stale` 警告スタイル。
-  - **グローバル停止バナー** `#stale-banner`: 最頻更新ソース(weather_marine, */30)が3h超で古い or 取得失敗時に最上部表示。**アカウント停止/cron停止の主検知**（`fetchWeatherData` 内）。
+  - **グローバル停止バナー** `#stale-banner`: 最頻更新ソース(weather_marine, \*/30)が3h超で古い or 取得失敗時に最上部表示。**アカウント停止/cron停止の主検知**（`fetchWeatherData` 内）。
   - **セクション別 stale 注記**: 潮汐・波・警報・天気・風の各 `updated_at`(警報は `fetchedAt`)基準で `.stale-note` 点灯。
   - **津波失敗の明示化**: 失敗を「平常(津波なし)」と区別し `#tsunami-error` 表示。
 - **層B: バックエンド堅牢化**（問題2, `scripts/fetch_forecast.py`）:
@@ -657,7 +676,7 @@ PR #154 マージ後に本番状態を監査し、残っていた不具合・弱
   - workflowをkebab統一: `fetch_openmeteo→fetch-openmeteo` / `fetch_forecast→fetch-forecast` / `dl_wave-guid→fetch-wave-guidance`（内部参照・job名・cron不変）。
   - 画像集約: `favicon.svg`/`favicon-48.png`/`apple-touch-icon.png`→`assets/icons/`、`ogp.*`→`assets/og/`。`favicon.ico`はルート慣例で残置。`index.html`/`site.webmanifest`/`FORK.md`追従。
 - **B群（dataをsnake_case統一）**:
-  - `forecast_data.json→forecast.json`（_data冗長解消）/ `tidedata.json→tide_data.json` / `moon_today.json→moon_daily.json`。
+  - `forecast_data.json→forecast.json`（\_data冗長解消）/ `tidedata.json→tide_data.json` / `moon_today.json→moon_daily.json`。
   - 既にsnake_caseの `tide_widget`/`warning_chigasaki`/`weather_marine`/`wind_forecast` は変更なし。
   - **改名保留**: `mooninfo_2026.json`（`extract_daily_data.py`の`f"data/mooninfo_{year}.json"`動的参照＝年サフィックス意味的）/ `wave_guid_20.json`（`_20`は気象庁エリアコード）。
   - 連動更新: scripts(書) / app.js+app.min.js再生成(読) / workflowのgit add / README・FORK / `sw.js` CACHE_NAME v7→v8。

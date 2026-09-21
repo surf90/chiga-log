@@ -636,7 +636,10 @@ lang: ja
               取得中...
             </div>
             <div id="wind-forecast-content" class="hidden">
-              <div class="wind-head">
+              <!-- 列見出しは視覚用。各行が読み上げ用の「平均/最大」と単位を
+                   自前で持つため、支援技術には対応の取れない見出し行を
+                   読ませない。 -->
+              <div class="wind-head" id="wind-head" aria-hidden="true">
                 <span>時刻</span>
                 <span>風向</span>
                 <span>平均 m/s</span>
@@ -807,14 +810,18 @@ lang: ja
 
     <div id="refresh-toast" role="status" aria-live="polite"></div>
 
-    <div
+    <!-- 警報バーは「読み上げ対象（警報文）」と「操作（該当カードへ移動）」を
+         1要素に同居させない。バー本体をボタンにし、role="alert" は文言を持つ
+         内側の span に置く。外側に aria-label を付けると警報文がその名前で
+         上書きされ、支援技術には警報の内容が一切届かなくなる。 -->
+    <button
+      type="button"
       id="floating-alert-bar"
       class="floating-alert hidden"
-      role="alert"
-      aria-live="assertive"
-      tabindex="0"
       data-scroll-to="jma-warning-box"
-      aria-label="注意報・警報セクションへ移動"
-    ></div>
+    >
+      <span id="floating-alert-text" role="alert" aria-live="assertive"></span>
+      <span class="visually-hidden">（押すと注意報・警報の一覧へ移動）</span>
+    </button>
   </body>
 </html>

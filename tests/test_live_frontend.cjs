@@ -42,6 +42,10 @@ function makeElement() {
       contains(c) {
         return this._set.has(c);
       },
+      toggle(c, on) {
+        if (on) this._set.add(c);
+        else this._set.delete(c);
+      },
     },
     appendChild(child) {
       this.children.push(child);
@@ -133,6 +137,7 @@ function buildContext({ fetchImpl } = {}) {
     },
     document: {
       addEventListener() {},
+      body: makeElement(),
       createElement: () => makeElement(),
       createTextNode: (textContent) => ({ textContent }),
       currentScript: null,
@@ -570,4 +575,70 @@ test("wind card warns even when updated_at is unusable", async () => {
   const note = getElementById("wind-stale");
   assert.equal(note.hidden, false);
   assert.match(note.textContent, /現在時刻に届いていません/);
+});
+
+// ─── 風向矢印は16方位へ丸める ─────────────────────────────────
+test("the direction arrow snaps to the same 16-point compass as the text", async () => {
+  const { context, getElementById } = buildContext({
+    fetchImpl: async () =>
+      jsonResponse({
+        updated_at: "2026-08-29T10:00:00+09:00",
+        items: [
+          {
+            time: "2026-08-29T11:00",
+            wind_speed_ms: 4.0,
+            // 14° は北北東(22.5°)へ丸める。生の度数のままだと「北」の矢印と
+            // 見分けが付かず、隣のテキストと矛盾する。
+            wind_direction_deg: 14,
+          },
+        ],
+      }),
+  });
+  await vm.runInContext("fetchWindForecast()", context);
+  const row = getElementById("wind-forecast-list").children[0];
+  const dirEl = row.children.find((c) => c.className === "wind-dir");
+  assert.equal(dirEl.children[0].style._props["--deg"], "202.5deg");
+});
+
+test("the wind column header is hidden while there is no data", async () => {
+  const { context, getElementById } = buildContext({
+    fetchImpl: async () => jsonResponse({ updated_at: null, items: [] }),
+  });
+  await vm.runInContext("fetchWindForecast()", context);
+  // 空欄を「0 m/s」と読み違えないよう、値が無い時は見出しごと隠す。
+  assert.equal(getElementById("wind-head").hidden, true);
+});
+
+// ─── 警報バー ─────────────────────────────────────────────────
+test("the floating alert writes into its live region, not the button itself", () => {
+  const { context, getElementById } = buildContext();
+  const bar = getElementById("floating-alert-bar");
+  vm.runInContext(
+    "setFloatingAlert(document.getElementById('floating-alert-bar'), '大雨警報 発令中', 'keiho')",
+    context,
+  );
+  // 文言は role="alert" を持つ内側の span に入れる。バー本体を書き換えると
+  // 操作説明(visually-hidden)ごと消え、警報文も読み上げ名に化ける。
+  assert.equal(
+    getElementById("floating-alert-text").textContent,
+    "大雨警報 発令中",
+  );
+  assert.equal(bar.textContent, "");
+  assert.equal(bar.className, "floating-alert level-keiho");
+  assert.equal(bar.style.display, "block");
+  assert.equal(
+    context.document.body.classList.contains("has-floating-alert"),
+    true,
+  );
+
+  vm.runInContext(
+    "setFloatingAlert(document.getElementById('floating-alert-bar'), '')",
+    context,
+  );
+  assert.equal(getElementById("floating-alert-text").textContent, "");
+  assert.equal(bar.style.display, "none");
+  assert.equal(
+    context.document.body.classList.contains("has-floating-alert"),
+    false,
+  );
 });
