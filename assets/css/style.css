@@ -666,6 +666,7 @@ h1 .title-sub {
   z-index: 10000;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.25);
   box-sizing: border-box;
+  cursor: pointer;
 }
 /* 警報バー表示中は、フッター最終行がバーの下に隠れないよう余白を確保する。 */
 body.has-floating-alert {
