@@ -2364,12 +2364,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 旧インライン onclick の置換
   document.querySelectorAll("[data-scroll-to]").forEach((el) => {
-    el.addEventListener("click", () => {
+    const scrollToTarget = () => {
       const target = document.getElementById(el.dataset.scrollTo);
       if (!target) return;
       const behavior = _reducedMotion.matches ? "auto" : "smooth";
       target.scrollIntoView({ behavior, block: "start" });
-    });
+    };
+    el.addEventListener("click", scrollToTarget);
+    if (el.tagName !== "BUTTON") {
+      el.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        scrollToTarget();
+      });
+    }
   });
   const overviewBtn = document.getElementById("jma-overview-toggle");
   if (overviewBtn) overviewBtn.addEventListener("click", toggleOverview);

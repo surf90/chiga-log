@@ -1,10 +1,20 @@
 ---
-updated: 2026-09-02
+updated: 2026-09-21
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-09-21）
+
+### 警報フッターバーのタップで注意報・警報カードへスクロール
+
+`#floating-alert-bar`（画面下端固定の「警報 発令中」バー）をタップ/Enter・Spaceキーで `#jma-warning-box`（注意報・警報カード）へスムーススクロールする機能を追加。既存の `data-scroll-to` 属性ベースの仕組み（`hero-card` 等で使用）を再利用し、`<button>` ではない要素向けにキーボード操作（Enter/Space）のフォールバックを追加した。新規JSライブラリ・cron追加なし（三原則2,3準拠）。
+
+- `index.html`: `#floating-alert-bar` に `tabindex="0"` `data-scroll-to="jma-warning-box"` `aria-label` を追加。
+- `assets/js/app.js`: `data-scroll-to` の click ハンドラを関数化し、非`<button>`要素向けに keydown(Enter/Space) ハンドラを追加。
+- `assets/css/style.css`: `.floating-alert` に `cursor: pointer` を追加。
 
 ## 完了済み（2026-09-02）
 
