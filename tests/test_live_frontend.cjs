@@ -642,3 +642,32 @@ test("the floating alert writes into its live region, not the button itself", ()
     false,
   );
 });
+
+test("no arrow is drawn when the wind direction is missing", async () => {
+  const { context, getElementById } = buildContext({
+    fetchImpl: async () =>
+      jsonResponse({
+        updated_at: "2026-08-29T10:00:00+09:00",
+        // 風速はあるが風向が無い行。deg は null で渡る。
+        items: [{ time: "2026-08-29T11:00", wind_speed_ms: 5.0 }],
+      }),
+  });
+  await vm.runInContext("fetchWindForecast()", context);
+  const dirEl = getElementById("wind-forecast-list").children[0].children.find(
+    (c) => c.className === "wind-dir",
+  );
+  // Number(null) は 0（＝北）。弾かないと「データなし」の横に南向きの矢印が出る。
+  assert.equal(dirEl.textContent, "データなし");
+  assert.deepEqual(dirEl.children, []);
+});
+
+test("no arrow is drawn in the empty state", async () => {
+  const { context, getElementById } = buildContext({
+    fetchImpl: async () => jsonResponse({ updated_at: null, items: [] }),
+  });
+  await vm.runInContext("fetchWindForecast()", context);
+  const dirEl = getElementById("wind-forecast-list").children[0].children.find(
+    (c) => c.className === "wind-dir",
+  );
+  assert.deepEqual(dirEl.children, []);
+});
