@@ -1797,7 +1797,9 @@ function createWindRow({ time, dir, deg, speed, gust }) {
   };
 
   const dirEl = mkSpan("wind-dir", dir || "データなし");
-  if (Number.isFinite(Number(deg))) {
+  // null/空文字は Number() で 0（＝北）になる。弾かないと風向が欠測の行に
+  // 「データなし」と南向きの矢印が並び、無い値を描くことになる（三原則1）。
+  if (deg != null && deg !== "" && Number.isFinite(Number(deg))) {
     // 風向は「風が吹いてくる方位」。矢印は進行方向（+180°）を指す。
     // 角度は隣のテキストと同じ16方位へ丸める。生の度数のままだと「北(4°)」と
     // 「北北東(14°)」の矢印が 10° しか違わず、別方位に見えない。
