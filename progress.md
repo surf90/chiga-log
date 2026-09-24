@@ -1,10 +1,23 @@
 ---
-updated: 2026-09-21
+updated: 2026-09-24
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-09-24）
+
+### 配信版でインライン SVG アイコンが消える不具合を修正
+
+- JS の矢印生成・16方位への回転処理は生きていたが、`csscompressor` がインライン SVG の
+  data URI に残っていた空白を除去し、配信対象の `style.min.css` では SVG が壊れていた。
+- `--icon-warning`・`--icon-check`・`--icon-wind-arrow`・`--icon-refresh` の属性区切り・
+  `viewBox`・path データの空白を `%20` にエンコード。4種類とも同じ破損を確認した。
+- ソース CSS と配信 CSS の全アイコンについて、未エンコード空白・SVG 構文・一致を検査する
+  回帰テストを追加した。
+- `DESIGN.md` に minify 耐性の要件を追記し、同じ記法への退行を防止。
+- 検証: Node 37件、Python 71件、ESLint、Prettier、`git diff --check` が成功。
 
 ## 完了済み（2026-09-21）
 

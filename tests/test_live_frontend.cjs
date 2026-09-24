@@ -13,6 +13,42 @@ const APP_SOURCE = fs.readFileSync(
   "utf8",
 );
 
+test("all inline SVG icons remain intact after CSS minification", () => {
+  const iconNames = ["warning", "check", "wind-arrow", "refresh"];
+  for (const file of ["style.css", "style.min.css"]) {
+    const css = fs.readFileSync(
+      path.join(__dirname, "..", "assets", "css", file),
+      "utf8",
+    );
+    for (const name of iconNames) {
+      const match = css.match(
+        new RegExp(
+          `--icon-${name}:\\s*url\\("data:image/svg\\+xml,([^"]+)"\\)`,
+        ),
+      );
+      assert.ok(match, `${file}: ${name} data URI is present`);
+      assert.doesNotMatch(
+        match[1],
+        /\s/,
+        `${file}: ${name} URI has no raw spaces`,
+      );
+      const svg = decodeURIComponent(match[1]);
+      assert.match(
+        svg,
+        /^<svg xmlns=/,
+        `${file}: ${name} SVG attributes stay separated`,
+      );
+      assert.match(
+        svg,
+        /viewBox='0 0 24 24'/,
+        `${file}: ${name} viewBox stays valid`,
+      );
+      assert.match(svg, /<path d='[^']+'/, `${file}: ${name} path stays valid`);
+      assert.match(svg, /<\/svg>$/, `${file}: ${name} SVG remains complete`);
+    }
+  }
+});
+
 // 2026-08-29T10:30 JST 固定。アメダスの3時間ブロックは 09、直近スロットは 10:20。
 const NOW_ISO = "2026-08-29T01:30:00Z";
 const NOW_MS = Date.parse(NOW_ISO);
