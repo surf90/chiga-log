@@ -26,12 +26,14 @@
   --skeleton-sheen: #f1f5f9;
   /* 注記アイコン。絵文字は端末のフォントで字形・サイズ・色がばらつくため、
      mask で描いて currentColor に追従させる（CSP: img-src 'self' data: 配下）。 */
-  --icon-warning: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
-  --icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21.8 10A10 10 0 1 1 17 3.34'/%3E%3Cpath d='m9 11 3 3L22 4'/%3E%3C/svg%3E");
+  --icon-warning: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='2.4'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='m21.73%2018-8-14a2%202%200%200%200-3.48%200l-8%2014A2%202%200%200%200%204%2021h16a2%202%200%200%200%201.73-3Z'/%3E%3Cpath%20d='M12%209v4'/%3E%3Cpath%20d='M12%2017h.01'/%3E%3C/svg%3E");
+  --icon-check: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='2.4'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M21.8%2010A10%2010%200%201%201%2017%203.34'/%3E%3Cpath%20d='m9%2011%203%203L22%204'/%3E%3C/svg%3E");
   /* 風向矢印。軸と鏃（やじり）を持つ非対称な形にして、正三角形では読めない
      「どちらが先端か」を明示する（0deg = 上＝北向き）。 */
-  --icon-wind-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000'%3E%3Cpath d='M12 1.5 20 12h-5v10.5H9V12H4Z'/%3E%3C/svg%3E");
-  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8'/%3E%3Cpath d='M21 3v5h-5'/%3E%3C/svg%3E");
+  /* csscompressor は data URI 内の生の空白も削除するため、SVG の属性区切りと
+     path データの空白は %20 にする。未エンコードへ戻すと min.css で壊れる。 */
+  --icon-wind-arrow: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='%23000'%3E%3Cpath%20d='M12%201.5%2020%2012h-5v10.5H9V12H4Z'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23000'%20stroke-width='2.4'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M21%2012a9%209%200%201%201-9-9c2.52%200%204.93%201%206.74%202.74L21%208'/%3E%3Cpath%20d='M21%203v5h-5'/%3E%3C/svg%3E");
   /* 角丸スケール（DESIGN.md 4章と対応） */
   --radius-lg: 16px;
   --radius-md: 12px;
