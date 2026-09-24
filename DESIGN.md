@@ -163,6 +163,9 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
   敷き、`background-color: var(--brand)` で着色する（13px 角）。絵文字・記号フォントには依存
   させない。**軸と鏃を持つ非対称な矢印**にすること。border 方式の正三角形は上下がほぼ対称で
   先端がどちらか読めず、22.5°刻みの回転差も判別できなかった。
+  SVG 内の空白は必ず `%20` でエンコードする。minify に使う `csscompressor` は data URI 内の
+  生の空白も除去するため、未エンコードだと属性と path データが連結され、配信する `.min.css` で
+  mask が無効になる。この制約は `--icon-warning` / `--icon-check` / `--icon-refresh` も同じ。
   `--deg` は**風が向かう方位**（風向 + 180°）で、気象アプリ一般の慣習に合わせる。角度は
   隣のテキストと同じ **16方位（22.5°刻み）に丸めてから**渡す（生の度数だと「北 4°」と
   「北北東 14°」が同じ向きに見え、テキストと矛盾する）。
