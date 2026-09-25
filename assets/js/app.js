@@ -1407,10 +1407,20 @@ async function fetchJmaWarning(force = false) {
 
     const activeWarnings = (data.warnings ?? []).filter((w) => w && w.name);
 
+    // ライブ API が落ちて古いスナップショットに頼っている場合、「警報なし」と断定しない
+    // （三原則1: 取得失敗を「異常なし」と誤読させない）。
+    const warningFreshness = freshness(pickTimestamp(data), FRESHNESS.warning);
+    const warningUnconfirmed =
+      warningFreshness.ms == null || warningFreshness.isStale;
+
     if (activeWarnings.length === 0) {
       const none = document.createElement("div");
-      none.className = "warning-none";
-      none.textContent = "現在、注意報・警報はありません";
+      none.className = warningUnconfirmed
+        ? "warning-none warning-unconfirmed"
+        : "warning-none";
+      none.textContent = warningUnconfirmed
+        ? `注意報・警報の最新情報を確認できていません${warningFreshness.label ? `（最終取得 ${warningFreshness.label}）` : ""}。気象庁の発表を確認してください`
+        : "現在、注意報・警報はありません";
       listEl.appendChild(none);
       warningBox.classList.remove("warning-active");
       setFloatingAlert(floatingBar, "");

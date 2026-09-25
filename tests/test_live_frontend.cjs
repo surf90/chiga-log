@@ -707,3 +707,48 @@ test("no arrow is drawn in the empty state", async () => {
   );
   assert.deepEqual(dirEl.children, []);
 });
+
+// ─── 注意報・警報：取得失敗・古いデータを「警報なし」と誤表示しない ─────────
+async function renderWarning(payload) {
+  const { context, elements } = buildContext({
+    fetchImpl: async () => jsonResponse(payload),
+  });
+  await vm.runInContext("fetchJmaWarning()", context);
+  const none = elements.get("jma-warning-list").children[0];
+  return { none, elements };
+}
+
+test("fresh snapshot without warnings says there are none", async () => {
+  const { none } = await renderWarning({
+    fetchedAt: "2026-08-29T01:00:00Z",
+    warnings: [],
+  });
+  assert.equal(none.textContent, "現在、注意報・警報はありません");
+  assert.equal(none.className, "warning-none");
+});
+
+test("stale snapshot without warnings does not claim there are none", async () => {
+  const { none } = await renderWarning({
+    fetchedAt: "2026-08-28T13:30:00Z",
+    warnings: [],
+  });
+  assert.match(
+    none.textContent,
+    /最新情報を確認できていません（最終取得 12時間前）/,
+  );
+  assert.doesNotMatch(none.textContent, /ありません/);
+  assert.match(none.className, /warning-unconfirmed/);
+});
+
+test("snapshot without a timestamp is treated as unconfirmed", async () => {
+  const { none } = await renderWarning({ warnings: [] });
+  assert.match(none.textContent, /最新情報を確認できていません。/);
+});
+
+test("warning fetch failure shows the section error, not 'no warnings'", async () => {
+  const { context, elements } = buildContext({
+    fetchImpl: async () => ({ ok: false, json: async () => ({}) }),
+  });
+  await vm.runInContext("fetchJmaWarning()", context);
+  assert.equal(elements.get("jma-warning-list")?.children.length ?? 0, 0);
+});

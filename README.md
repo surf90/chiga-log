@@ -50,6 +50,7 @@ https://surf90.github.io/chiga-log/
   - レガシーフィードはCORS非対応のため、閲覧者のブラウザから [Cloudflare Worker](https://chiga-log-warning-api.delay-bot.workers.dev/warning)（`chiga-log-warning-api`）を経由して気象庁へアクセスします。Workerは閲覧時に茅ヶ崎分を抽出し、応答を60秒キャッシュします。
   - ページ表示時と表示中5分ごとに注意報・警報を再取得するため、GitHub Actionsのschedule遅延に依存せず最新発表へアクセスできます。
   - Worker障害時は `fetch-openmeteo.yml` が生成する `data/warning_chigasaki.json` へフォールバックします。`scripts/fetch_warning.py` が取得失敗した場合も既存ファイルを温存し、誤って「なし」表示にしません。
+  - フォールバックしたデータが3時間より古い（または取得時刻が不明な）場合は、「現在、注意報・警報はありません」とは表示せず、「最新情報を確認できていません（最終取得 ○時間前）」と表示します。
 
 ### 津波注意報・警報
 

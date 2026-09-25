@@ -179,7 +179,7 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - 付与先は `::before` / `::after`。**文言そのものはテキストが持ち**、アイコンは装飾に留める
   （JS 側の文字列に記号を混ぜない）。
 - 対象: `.stale-note` / `.stale-inline` / `.typhoon-notice` / `.floating-alert`（警告）、
-  `.warning-none` / `#refresh-toast`（チェック）、`#toast`（更新）、
+  `.warning-none` / `#refresh-toast`（チェック）、`.warning-unconfirmed`（警告。警報データが古い・時刻不明のとき）、`#toast`（更新）、
   `.current-time`（通常＝更新／`.is-stale`＝警告）。
 - `.current-time` は JS が文言を入れるまで空。`:empty::after { content: none }` でアイコンだけが浮くのを防ぐ。
 - `.typhoon-notice` は `.data-row`（`space-between`）と併用するため、`justify-content:flex-start` を

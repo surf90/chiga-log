@@ -1102,6 +1102,11 @@ p.note strong a {
   --icon: var(--icon-check);
   color: var(--brand);
 }
+/* 警報データが古い・時刻不明のときはチェックではなく注意アイコンにする */
+.warning-unconfirmed::before {
+  --icon: var(--icon-warning);
+  color: var(--text-sub);
+}
 #toast::before {
   --icon: var(--icon-refresh);
   margin-right: 6px;
