@@ -3,6 +3,7 @@
 import os
 import sys
 import unittest
+from datetime import date, timedelta
 from unittest import mock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
@@ -104,6 +105,51 @@ class TestMainYearMerge(unittest.TestCase):
         year = generate_tide.now_jst().year
         with self.assertRaises(SystemExit):
             self._run({year: None, year + 1: {"x": []}})
+
+
+class TestNeedsRefresh(unittest.TestCase):
+    """定期実行が落ちた場合の保険判定。"""
+
+    def _keys(self, *years):
+        keys = set()
+        for y in years:
+            d = date(y, 1, 1)
+            while d.year == y:
+                keys.add(d.isoformat())
+                d += timedelta(days=1)
+        return keys
+
+    def test_complete_data_needs_nothing(self):
+        self.assertFalse(generate_tide.needs_refresh(self._keys(2026), date(2026, 10, 1)))
+
+    def test_missing_today_needs_refresh(self):
+        """年が明けて当年ぶんが無ければ取得する（12/20 の実行が落ちた場合）。"""
+        self.assertTrue(generate_tide.needs_refresh(self._keys(2026), date(2027, 1, 1)))
+
+    def test_year_end_without_next_year_needs_refresh(self):
+        self.assertFalse(generate_tide.needs_refresh(self._keys(2026), date(2026, 12, 20)))
+        self.assertTrue(generate_tide.needs_refresh(self._keys(2026), date(2026, 12, 21)))
+        self.assertFalse(generate_tide.needs_refresh(self._keys(2026, 2027), date(2026, 12, 21)))
+
+
+class TestMainIfMissing(unittest.TestCase):
+    """--if-missing 付きの main は、揃っていれば取得しない。"""
+
+    def test_skips_fetch_when_complete(self):
+        today = generate_tide.now_jst().date()
+        with mock.patch.object(
+            generate_tide, "load_json", return_value={today.isoformat(): [], f"{today.year + 1}-01-01": []}
+        ), mock.patch.object(generate_tide, "fetch_and_parse") as fetch:
+            generate_tide.main(["--if-missing"])
+        fetch.assert_not_called()
+
+    def test_fetches_when_file_missing(self):
+        year = generate_tide.now_jst().year
+        with mock.patch.object(generate_tide, "load_json", return_value=None), mock.patch.object(
+            generate_tide, "fetch_and_parse", side_effect=lambda y: {f"{y}-01-01": []}
+        ), mock.patch.object(generate_tide, "save_json") as saver:
+            generate_tide.main(["--if-missing"])
+        self.assertIn(f"{year}-01-01", saver.call_args[0][1])
 
 
 if __name__ == "__main__":

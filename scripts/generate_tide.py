@@ -8,8 +8,10 @@
 """
 
 import sys
+from collections.abc import Sequence
+from datetime import date
 
-from _common import http_get_bytes, load_site_config, now_jst, save_json
+from _common import http_get_bytes, load_json, load_site_config, now_jst, save_json
 
 # 観測所コードD8 = 湘南港。フォーク時は _data/site.json の jma.tide_station を変更。
 TIDE_STATION = load_site_config().get("jma", {}).get("tide_station", "D8")
@@ -77,7 +79,35 @@ def fetch_and_parse(year: int, station_code: str = TIDE_STATION) -> dict | None:
     return parse_jma_tide_text(text)
 
 
-def main() -> None:
+def needs_refresh(existing_keys: set[str], today: date) -> bool:
+    """手元の潮汐データに取り直しが必要かを判定する。
+
+    update-jma-tide の定期実行は年数回しか無く、GitHub 側で落とされることがある
+    （2026-07-01 の実行は記録自体が無い）。日次ジョブから `--if-missing` 付きで呼び、
+    当日ぶんが欠けているとき、または年末（12/21以降）に翌年1/1ぶんが無いときだけ取得する。
+
+    Args:
+        existing_keys: tide_data.json の日付キー（YYYY-MM-DD）。
+        today: JST の今日。
+
+    Returns:
+        取得し直すべきなら True。
+    """
+    if today.isoformat() not in existing_keys:
+        return True
+    if today.month == 12 and today.day >= 21:
+        return f"{today.year + 1}-01-01" not in existing_keys
+    return False
+
+
+def main(argv: Sequence[str] = ()) -> None:
+    if "--if-missing" in argv:
+        existing = load_json("data/tide_data.json")
+        keys = set(existing) if isinstance(existing, dict) else set()
+        if not needs_refresh(keys, now_jst().date()):
+            print("潮汐データは揃っているため取得を省略します。")
+            return
+
     # JST基準。cron は 15:05 UTC（＝翌日 0:05 JST）に走るため、UTC の暦年で
     # 判定すると年末年始に1年ずれる余地がある。
     target_year = now_jst().year
@@ -102,4 +132,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

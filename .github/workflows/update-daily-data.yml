@@ -31,6 +31,14 @@ jobs:
         with:
           python-version: '3.12'
 
+      # update-jma-tide の定期実行（年3回）が GitHub 側で落とされた場合の保険。
+      # 2026-07-01 の実行は記録自体が無かった。cron は増やさず（三原則3）、
+      # 当日ぶん欠落・年末に翌年ぶん欠落のときだけ気象庁から取り直す。
+      # 失敗しても月齢・潮汐ウィジェットの日次更新は止めない。
+      - name: Refresh tide data if missing
+        continue-on-error: true
+        run: python scripts/generate_tide.py --if-missing
+
       - name: Extract today's moon & tide data
         run: python scripts/extract_daily_data.py
 
