@@ -13,7 +13,7 @@
   - 簡易（生HTMLのみ）: `python -m http.server 8000`（`{{ site.baseurl }}` 未解決＝アセット/Chart.js は読めない）
 - 整形: `npx prettier --write .`
 - minify: `assets/css/style.css` / `assets/js/app.js` を編集して push すると `minify.yml` が自動生成（ローカル実行不要）。
-- 容量確認: `Get-ChildItem -Recurse -File | Where-Object FullName -notmatch '\\(\.git|\.Codex)\\' | Measure-Object Length -Sum`
+- 容量確認: `Get-ChildItem -Recurse -File | Where-Object FullName -notmatch '\\(\.git|\.claude)\\' | Measure-Object Length -Sum`
 - テスト: `pytest tests`（任意。`pip install -r scripts/requirements.txt`）
 
 ## コーディング規約
