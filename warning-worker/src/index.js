@@ -2,6 +2,8 @@ const UPSTREAM_URL =
   "https://www.data.jma.go.jp/multi/data/VPWS50/JPTF_jp.json";
 const AREA_CODE = "1420700";
 const AREA_NAME = "茅ヶ崎市";
+// 閲覧側 fetchWithTimeout（10秒）より先に諦め、スナップショットへ早く切り替えさせる。
+const UPSTREAM_TIMEOUT_MS = 8000;
 const ALLOWED_ORIGINS = new Set([
   "https://surf90.github.io",
   "http://localhost:4000",
@@ -17,8 +19,10 @@ export function extractWarnings(feed) {
     .map((kind) => ({ code: kind.code ?? "", name: kind.name }));
 }
 
+// Vary: Origin は許可・不許可を問わず常に付ける。Origin 無しの応答（直接アクセス）が
+// HTTPキャッシュに残ると、サイトからの取得に CORS ヘッダ無しのまま再利用される。
 function corsHeaders(origin) {
-  if (!ALLOWED_ORIGINS.has(origin)) return {};
+  if (!ALLOWED_ORIGINS.has(origin)) return { Vary: "Origin" };
   return {
     "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "GET, OPTIONS",
@@ -59,6 +63,7 @@ export default {
       const upstream = await fetch(UPSTREAM_URL, {
         headers: { Accept: "application/json" },
         cf: { cacheEverything: true, cacheTtl: 60 },
+        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       });
       if (!upstream.ok) throw new Error(`JMA returned ${upstream.status}`);
 

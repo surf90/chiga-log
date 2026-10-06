@@ -56,3 +56,39 @@ test("unknown origins are rejected", async () => {
   );
   assert.equal(response.status, 403);
 });
+
+test("responses always vary on Origin, even without CORS headers", async (t) => {
+  t.mock.method(globalThis, "fetch", async () =>
+    Response.json({ reportDateTime: "", itemArea4: [] }),
+  );
+
+  const direct = await worker.fetch(
+    new Request("https://example.workers.dev/warning"),
+  );
+  assert.equal(direct.status, 200);
+  assert.equal(direct.headers.get("Access-Control-Allow-Origin"), null);
+  assert.equal(direct.headers.get("Vary"), "Origin");
+
+  const rejected = await worker.fetch(
+    new Request("https://example.workers.dev/warning", {
+      headers: { Origin: "https://evil.example" },
+    }),
+  );
+  assert.equal(rejected.headers.get("Vary"), "Origin");
+});
+
+test("upstream failure returns 502 without leaking details", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => {
+    throw new DOMException("The operation timed out.", "TimeoutError");
+  });
+  t.mock.method(console, "error", () => {});
+
+  const response = await worker.fetch(
+    new Request("https://example.workers.dev/warning", {
+      headers: { Origin: "https://surf90.github.io" },
+    }),
+  );
+  assert.equal(response.status, 502);
+  assert.deepEqual(await response.json(), { error: "upstream_unavailable" });
+  assert.equal(response.headers.get("Cache-Control"), "no-store");
+});

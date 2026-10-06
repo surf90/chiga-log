@@ -4,6 +4,9 @@
   "main": "src/index.js",
   "compatibility_date": "2026-07-14",
   "compatibility_flags": ["nodejs_compat"],
+  // 公開するのは本番の workers.dev URL だけ。バージョン別プレビューURLは使わない。
+  "workers_dev": true,
+  "preview_urls": false,
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1,

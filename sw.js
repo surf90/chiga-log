@@ -1,4 +1,4 @@
-const CACHE_NAME = "chigalog-v19";
+const CACHE_NAME = "chigalog-v20";
 const BASE = self.location.pathname.replace(/sw\.js$/, "");
 const ASSETS = [
   BASE,
@@ -61,6 +61,31 @@ self.addEventListener("fetch", (e) => {
         .catch(
           async () =>
             (await caches.match(fallbackUrl)) ||
+            new Response("", { status: 504, statusText: "offline" }),
+        ),
+    );
+    return;
+  }
+
+  // 地点設定(site-config.js)：ネットワーク優先。
+  // index.html の CSP connect-src は警報BFFのURLから生成され、ナビゲーション
+  // (ネットワーク優先)で即時に切り替わる。設定だけ Stale-While-Revalidate で
+  // 旧版を返すと、旧URLへの取得が新CSPにブロックされてスナップショットへ落ちる。
+  if (url.pathname === BASE + "assets/js/site-config.js") {
+    e.respondWith(
+      fetch(e.request)
+        .then((res) => {
+          if (res && res.status === 200 && res.type === "basic") {
+            const copy = res.clone();
+            e.waitUntil(
+              caches.open(CACHE_NAME).then((c) => c.put(e.request, copy)),
+            );
+          }
+          return res;
+        })
+        .catch(
+          async () =>
+            (await caches.match(e.request)) ||
             new Response("", { status: 504, statusText: "offline" }),
         ),
     );

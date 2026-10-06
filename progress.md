@@ -15,6 +15,13 @@ updated: 2026-10-06
 - **追従**: `_data/site.json` の `jma.warning_api_url` と `README.md` を更新。CSP `connect-src` は `site.json` から Liquid で生成されるため個別の修正は不要。Worker のソース・設定は未変更で再デプロイも不要。
 - **注意**: このコミットが Pages に反映されるまで、閲覧時のライブ取得は失敗し `data/warning_chigasaki.json` のスナップショット表示になる。以下の履歴に残る旧URLは当時の記録としてそのまま残す。
 
+### サブドメイン変更後の再点検と堅牢化
+
+- **点検結果**: Dependabot・secret scanning の未解決アラート 0、`npm audit`（ルート／`warning-worker`）0 件、CI・Pages デプロイ成功、公開サイトのコンソールエラーなし。
+- **Service Worker**: `site-config.js` をネットワーク優先に変更（`CACHE_NAME` → `chigalog-v20`）。Stale-While-Revalidate のままだと、`_data/site.json` を変えた直後の再訪で旧設定が1回返り、即時反映される CSP `connect-src` と食い違って警報のライブ取得がブロックされる。`index.html` の `?v=2` は v19 以前の端末向けの移行措置。
+- **Worker**: (1) `Vary: Origin` を常に付与（Origin 無しの直接アクセス応答が HTTP キャッシュに残り、サイトからの取得に CORS ヘッダ無しで再利用されるのを防ぐ）。(2) 気象庁への取得に 8 秒のタイムアウト（閲覧側の 10 秒より先に 502 を返し、スナップショットへ早く切り替える）。(3) `preview_urls: false` でバージョン別プレビューURLを無効化。テスト2件追加（計5件）。**Cloudflare への再デプロイは未実施**（`warning-worker/` で `npx wrangler deploy --minify`。デプロイ済みの旧版でもサイトは動作する）。
+- **ローカルの表示ノイズ**: ディスク上のファイル名 `PROGRESS.md` を Git 管理名 `progress.md` に揃えた（Windows では `_config.yml` の exclude が大文字小文字の違いで効かず、ローカルビルドだけ Liquid 警告が出ていた）。`warning-worker` は `npm ci` で lock どおりの wrangler に揃えると OAuth スコープ警告が消える。
+
 ## 完了済み（2026-10-01）
 
 ### 年次潮汐の定期実行が落ちたときの保険（cron 追加なし）

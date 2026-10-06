@@ -225,9 +225,9 @@ lang: ja
       defer
     ></script>
     <!-- 地点設定（_data/site.json から Jekyll が生成）。app.min.js より前に読む。 -->
-    <!-- ?v= は _data/site.json の値を変えたら上げる。Service Worker が
-         Stale-While-Revalidate で旧設定を1回返すと、CSP（こちらは即時反映）と
-         警報BFFのURLが食い違い、ライブ取得がブロックされる。 -->
+    <!-- ?v=2 は sw.js が chigalog-v19 以前（設定を Stale-While-Revalidate で
+         返す版）の端末に、旧設定のキャッシュを使わせないためのもの。v20 以降は
+         sw.js が設定をネットワーク優先で取るので、値を変えるたびに上げる必要はない。 -->
     <script
       src="{{ site.baseurl }}/assets/js/site-config.js?v=2"
       defer
