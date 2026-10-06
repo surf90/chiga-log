@@ -225,7 +225,13 @@ lang: ja
       defer
     ></script>
     <!-- 地点設定（_data/site.json から Jekyll が生成）。app.min.js より前に読む。 -->
-    <script src="{{ site.baseurl }}/assets/js/site-config.js" defer></script>
+    <!-- ?v= は _data/site.json の値を変えたら上げる。Service Worker が
+         Stale-While-Revalidate で旧設定を1回返すと、CSP（こちらは即時反映）と
+         警報BFFのURLが食い違い、ライブ取得がブロックされる。 -->
+    <script
+      src="{{ site.baseurl }}/assets/js/site-config.js?v=2"
+      defer
+    ></script>
     <script src="{{ site.baseurl }}/assets/js/app.min.js" defer></script>
     <script
       src="{{ site.baseurl }}/assets/js/sw-register.js"

@@ -1,10 +1,19 @@
 ---
-updated: 2026-10-01
+updated: 2026-10-06
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-10-06）
+
+### 警報BFFの workers.dev サブドメインを変更
+
+- **変更**: Cloudflare アカウントの workers.dev サブドメインを `delay-bot` → `surf90` に変更。無関係な別リポジトリ名が公開URLに出ていたため。
+- **新URL**: `https://chiga-log-warning-api.surf90.workers.dev/warning`（旧 `…delay-bot.workers.dev` は変更と同時に停止）。
+- **追従**: `_data/site.json` の `jma.warning_api_url` と `README.md` を更新。CSP `connect-src` は `site.json` から Liquid で生成されるため個別の修正は不要。Worker のソース・設定は未変更で再デプロイも不要。
+- **注意**: このコミットが Pages に反映されるまで、閲覧時のライブ取得は失敗し `data/warning_chigasaki.json` のスナップショット表示になる。以下の履歴に残る旧URLは当時の記録としてそのまま残す。
 
 ## 完了済み（2026-10-01）
 
