@@ -22,6 +22,11 @@ updated: 2026-10-06
 - **Worker**: (1) `Vary: Origin` を常に付与（Origin 無しの直接アクセス応答が HTTP キャッシュに残り、サイトからの取得に CORS ヘッダ無しで再利用されるのを防ぐ）。(2) 気象庁への取得に 8 秒のタイムアウト（閲覧側の 10 秒より先に 502 を返し、スナップショットへ早く切り替える）。(3) `preview_urls: false` でバージョン別プレビューURLを無効化。テスト2件追加（計5件）。**Cloudflare へ再デプロイ済み**（2026-10-06 09:39 JST。本番応答で `Vary: Origin` を確認）。
 - **ローカルの表示ノイズ**: ディスク上のファイル名 `PROGRESS.md` を Git 管理名 `progress.md` に揃えた（Windows では `_config.yml` の exclude が大文字小文字の違いで効かず、ローカルビルドだけ Liquid 警告が出ていた）。`warning-worker` は `npm ci` で lock どおりの wrangler に揃えると OAuth スコープ警告が消える。
 
+### 依存とランタイムの保守
+
+- **npm**: ルートの `npm audit fix`（qs、moderate）で 0 件。
+- **EOL ランタイム**: `update-jma-tide.yml` の Python 3.10 → 3.12（3.10 は 2026-10 でサポート終了。他のワークフローと統一）、`frontend-ci.yml` の Ruby 3.2 → 3.3（3.2 は 2026-03 に終了。GitHub Pages 本番と同じ系列）。push 後の Frontend CI 成功を確認。
+- **ubuntu-latest の Ubuntu 26.04 移行（2026-10-19〜11-19）**: 対応不要と判断。26.04 イメージにも Google Chrome（pa11y が使う `/usr/bin/google-chrome-stable`）、Python 3.12、Ruby 3.3 が入っている（actions/runner-images の Ubuntu2604-Readme で確認）。移行期間中に pa11y ジョブだけ落ちたら Chrome のパスを疑う。
 ## 完了済み（2026-10-01）
 
 ### 年次潮汐の定期実行が落ちたときの保険（cron 追加なし）
