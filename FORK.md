@@ -68,7 +68,7 @@ python -m http.server 8000        # raw 配信: 設定は反映されず本家�
 
 - `_config.yml` の `url` / `baseurl` / `google_analytics`（公開先・解析ID）。
 - `site.webmanifest`（PWA 名称・説明）。
-- `assets/og/ogp.png` / `assets/og/ogp.webp`（OGP 画像）。
+- `assets/og/ogp.png`（OGP 画像）。
 - ロゴ用フォントサブセット（`index.html` の `&text=ちがログ` 部分）。
 - フッターの外部 SNS リンク（例: ライフセービングの Instagram）。
 - `warning-worker/src/index.js`（警報BFF の Cloudflare Worker）。`_data/site.json` を

@@ -919,3 +919,45 @@ test("the fetch time is shown in JST regardless of the device time zone", () => 
   // NOW は 2026-08-29T10:30 JST（UTC 01:30）
   assert.match(getElementById("current-time").textContent, /10:30/);
 });
+
+// ─── 最高/最低気温: 夜（17時発表後）は明日の値であることを明示 ─────────
+function tempPayload(timeDefines, temps) {
+  const p = forecastPayload(
+    ["2026-08-29T05:00:00+09:00", "2026-08-30T00:00:00+09:00"],
+    ["2026-08-29T06:00:00+09:00", "2026-08-29T12:00:00+09:00"],
+  );
+  p.forecast[0].timeSeries[2] = {
+    timeDefines,
+    areas: [{ area: { code: "46106" }, temps }],
+  };
+  return p;
+}
+
+test("today's high/low is shown without a day label", async () => {
+  const { context, getElementById } = buildContext({
+    fetchImpl: async () =>
+      jsonResponse(
+        tempPayload(
+          ["2026-08-29T09:00:00+09:00", "2026-08-30T00:00:00+09:00"],
+          ["31", "24"],
+        ),
+      ),
+  });
+  await vm.runInContext("fetchJmaForecast()", context);
+  // 当日の最低が無い時間帯は明日の最低に「明日」を付ける
+  assert.equal(getElementById("jma-temp").textContent, "31℃ / 明日24℃");
+});
+
+test("tomorrow-only temperatures are labelled as tomorrow", async () => {
+  const { context, getElementById } = buildContext({
+    fetchImpl: async () =>
+      jsonResponse(
+        tempPayload(
+          ["2026-08-30T00:00:00+09:00", "2026-08-30T09:00:00+09:00"],
+          ["23", "30"],
+        ),
+      ),
+  });
+  await vm.runInContext("fetchJmaForecast()", context);
+  assert.equal(getElementById("jma-temp").textContent, "30℃ / 23℃（明日）");
+});

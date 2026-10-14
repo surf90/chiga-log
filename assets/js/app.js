@@ -1807,16 +1807,23 @@ async function fetchJmaForecast(force = false) {
       const v = idx >= 0 ? areaTemp.temps?.[idx] : null;
       return v !== "" && v != null ? v : null;
     };
-    const tempMax =
-      findTemp(nowJstDate, "09") ?? findTemp(tomorrowJstDate, "09");
+    // 17時発表以降は今日の最高/最低が既に無く、明日の値だけになる。どちらの日の
+    // 値かを併記しないと、夜に「明日の最高気温」を今日の値として読ませてしまう。
+    const todayMax = findTemp(nowJstDate, "09");
+    const tempMax = todayMax ?? findTemp(tomorrowJstDate, "09");
+    const maxIsTomorrow = todayMax == null && tempMax != null;
     const todayMinRaw = findTemp(nowJstDate, "00");
     const tomorrowMin = findTemp(tomorrowJstDate, "00");
-    const tempMin =
-      todayMinRaw != null && todayMinRaw !== tempMax
-        ? todayMinRaw
-        : (tomorrowMin ?? todayMinRaw);
+    const minIsToday = todayMinRaw != null && todayMinRaw !== tempMax;
+    const tempMin = minIsToday ? todayMinRaw : (tomorrowMin ?? todayMinRaw);
+    const minIsTomorrow = !minIsToday && tomorrowMin != null;
+    const tempText = `${tempMax ?? "--"}℃ / ${tempMin ?? "--"}℃`;
     document.getElementById("jma-temp").textContent =
-      `${tempMax ?? "--"}℃ / ${tempMin ?? "--"}℃`;
+      maxIsTomorrow && (minIsTomorrow || tempMin == null)
+        ? `${tempText}（明日）`
+        : maxIsTomorrow || minIsTomorrow
+          ? `${maxIsTomorrow ? "明日" : ""}${tempMax ?? "--"}℃ / ${minIsTomorrow ? "明日" : ""}${tempMin ?? "--"}℃`
+          : tempText;
 
     document.getElementById("jma-wind").textContent = (
       (dayIdx >= 0 && areaWeather.winds?.[dayIdx]) ||
