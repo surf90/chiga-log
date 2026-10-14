@@ -187,3 +187,70 @@ def test_fetch_marine_falls_back_to_current_only(monkeypatch):
 def test_fetch_marine_returns_none_when_both_fail(monkeypatch):
     monkeypatch.setattr(fetch_openmeteo, "http_get_json", lambda url: None)
     assert fetch_marine() is None
+
+
+fom = fetch_openmeteo
+
+
+def _run_main(tmp_path, monkeypatch, *, weather, marine, amedas, wind, prev=None):
+    import json
+
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "data").mkdir()
+    if prev is not None:
+        (tmp_path / "data" / "weather_marine.json").write_text(json.dumps(prev), encoding="utf-8")
+
+    def fake_get_json(url, **_):
+        return weather if url == fom.WEATHER_URL else wind
+
+    monkeypatch.setattr(fom, "http_get_json", fake_get_json)
+    monkeypatch.setattr(fom, "fetch_marine", lambda: marine)
+    monkeypatch.setattr(fom, "fetch_jma_amedas", lambda: amedas)
+    failed = False
+    try:
+        fom.main()
+    except RuntimeError:
+        failed = True
+    out = {}
+    for name in ("weather_marine", "wind_forecast"):
+        f = tmp_path / "data" / f"{name}.json"
+        out[name] = json.loads(f.read_text(encoding="utf-8")) if f.exists() else None
+    return failed, out
+
+
+AMEDAS = {"observed_at": "2026-10-14T20:10:00+09:00", "temp": 23.4}
+WEATHER = {"current_weather": {"time": "2026-10-14T20:15", "temperature": 23.0}}
+MARINE = {"current": {"time": "2026-10-14T20:15", "wave_height": 0.7}}
+WIND = {"hourly": {"time": ["2026-10-14T21:00"], "wind_speed_10m": [3.0]}}
+
+
+def test_main_saves_amedas_even_when_wind_forecast_fails(tmp_path, monkeypatch):
+    failed, out = _run_main(tmp_path, monkeypatch, weather=WEATHER, marine=MARINE, amedas=AMEDAS, wind=None)
+    assert failed  # 失敗は Actions に伝える
+    assert out["weather_marine"]["jma_amedas"] == AMEDAS
+    assert out["wind_forecast"] is None
+
+
+def test_main_carries_previous_marine_when_marine_fails(tmp_path, monkeypatch):
+    prev_marine = {"current": {"time": "2026-10-14T17:00+09:00", "wave_height": 0.5}}
+    failed, out = _run_main(
+        tmp_path, monkeypatch, weather=WEATHER, marine=None, amedas=AMEDAS, wind=WIND,
+        prev={"marine": prev_marine},
+    )
+    assert failed
+    # 前回値は時刻ごと引き継ぐ（フロントは marine の time で鮮度判定する）
+    assert out["weather_marine"]["marine"] == prev_marine
+    assert out["wind_forecast"]["items"][0]["time"] == "2026-10-14T21:00+09:00"
+
+
+def test_main_rejects_schema_change_as_failure(tmp_path, monkeypatch):
+    failed, out = _run_main(tmp_path, monkeypatch, weather=WEATHER, marine=MARINE, amedas=AMEDAS, wind={"oops": 1})
+    assert failed
+    assert out["wind_forecast"] is None
+
+
+def test_main_succeeds_when_everything_is_available(tmp_path, monkeypatch):
+    failed, out = _run_main(tmp_path, monkeypatch, weather=WEATHER, marine=MARINE, amedas=AMEDAS, wind=WIND)
+    assert not failed
+    assert out["weather_marine"]["current_weather"]["time"] == "2026-10-14T20:15+09:00"

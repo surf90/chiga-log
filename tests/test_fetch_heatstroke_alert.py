@@ -47,3 +47,15 @@ def test_candidate_urls_prefetches_csv_during_thirty_minute_lead():
     now = datetime(2026, 7, 16, 13, 35, tzinfo=ZoneInfo("Asia/Tokyo"))
     urls = candidate_urls(now)
     assert urls[0].endswith("/2026/alert_20260716_14.csv")
+
+
+def test_in_season_covers_operation_period_with_margin():
+    from fetch_heatstroke_alert import in_season
+
+    jst = ZoneInfo("Asia/Tokyo")
+    assert in_season(datetime(2026, 4, 22, 5, tzinfo=jst))
+    assert in_season(datetime(2026, 10, 21, 17, tzinfo=jst))
+    assert in_season(datetime(2026, 10, 31, 23, tzinfo=jst))
+    assert not in_season(datetime(2026, 11, 1, 0, tzinfo=jst))
+    assert not in_season(datetime(2027, 1, 15, 12, tzinfo=jst))
+    assert not in_season(datetime(2027, 4, 14, 12, tzinfo=jst))

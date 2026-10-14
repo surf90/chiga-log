@@ -4,13 +4,20 @@ import csv
 import io
 from datetime import datetime, timedelta
 
-from _common import http_get_text, now_jst, save_json
+from _common import http_get_text, load_site_config, now_jst, save_json
 
-PREFECTURE_CODE = "14"
+# 都道府県コード（2桁）。フォーク時は _data/site.json の jma.pref_code（6桁の府県コード）から導く。
+PREFECTURE_CODE = str(load_site_config().get("jma", {}).get("pref_code", "140000"))[:2]
 OUTPUT_PATH = "data/heatstroke_alert.json"
 BASE_URL = "https://www.wbgt.env.go.jp/alert/dl"
 SCHEDULE_HOURS = (5, 10, 14, 17)
 HEADER_MARKER = "府県予報区"
+# 運用期間は例年 4月第4水曜〜10月第4水曜（2026年度は 4/22〜10/21）。
+# 期間外は CSV が公開されず、*/30 の Open-Meteo ジョブと専用 cron から
+# 1回あたり最大8件の 404 を出し続けるだけなので、前後に余裕を持たせた
+# 範囲の外では取得しない（三原則3: API/Actions 節約）。cron は変更しない。
+SEASON_START = (4, 15)
+SEASON_END = (10, 31)
 
 
 def candidate_urls(now: datetime) -> list[str]:
@@ -26,6 +33,11 @@ def candidate_urls(now: datetime) -> list[str]:
                 name = f"alert_{day:%Y%m%d}_{hour:02d}.csv"
                 candidates.append((scheduled, f"{BASE_URL}/{day:%Y}/{name}"))
     return [url for _, url in sorted(candidates, reverse=True)]
+
+
+def in_season(now: datetime) -> bool:
+    """熱中症警戒情報の運用期間（余裕込み）内かを返す。"""
+    return SEASON_START <= (now.month, now.day) <= SEASON_END
 
 
 def parse_alert_csv(text: str, source: str) -> dict:
@@ -64,7 +76,7 @@ def parse_alert_csv(text: str, source: str) -> dict:
         "fetchedAt": now_jst().isoformat(timespec="seconds"),
         "reportDateTime": f"{report_date}T{report_time}+09:00" if report_date and report_time else "",
         "source": source,
-        "area": "神奈川県",
+        "area": area.get(HEADER_MARKER) or "神奈川県",
         "prefectureCode": PREFECTURE_CODE,
         "alerts": alerts,
     }
@@ -73,6 +85,11 @@ def parse_alert_csv(text: str, source: str) -> dict:
 def main() -> None:
     """CSVを取得し書き出す。取得失敗時は既存ファイルを保持する。"""
     now = now_jst()
+    if not in_season(now):
+        # 既存ファイルは温存する。フロントは対象日（今日・明日）で絞るため、
+        # 期間終了前の発表が残っていても表示されない。
+        print("[heatstroke] 運用期間外のため取得を省略します。")
+        return
     for url in candidate_urls(now):
         text = http_get_text(url)
         if text is None:

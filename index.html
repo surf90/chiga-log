@@ -50,7 +50,7 @@ lang: ja
     default: "" | split: "/" | slice: 0, 3 | join: "/" -%}
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self' https://www.jma.go.jp {{ warning_api_origin }}; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'"
+      content="default-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self' https://www.jma.go.jp {{ warning_api_origin }}; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'"
     />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -248,7 +248,7 @@ lang: ja
       <span class="site-bar-area">{{ site.data.site.area_label }}</span>
     </div>
     <noscript>
-      ちがログは、茅ヶ崎ヘッドランド周辺の波・潮汐・海水温・天気を確認できるWebツールです。利用にはJavaScriptを有効にしてください。
+      {{ site.data.site.description }}利用にはJavaScriptを有効にしてください。
     </noscript>
     <div class="container">
       <header>
@@ -735,36 +735,54 @@ lang: ja
       </main>
 
       <footer class="footer">
+        <!-- 出典は各提供元の利用条件に沿って表記する。気象庁ホームページ利用規約は
+             加工した場合にその旨の明記を求め、Open-Meteo は CC BY 4.0 の帰属表示
+             （提供元リンク＋ライセンス）を求める。 -->
         <div class="footer-data">
-          データ提供元:
+          出典:
           <a
             href="https://www.jma.go.jp/bosai/forecast/"
             target="_blank"
             rel="noopener noreferrer"
-            >気象庁</a
-          >
+            >気象庁ホームページ</a
+          >（天気予報・アメダス・注意報・警報・津波・潮位表・波浪ガイダンス）を加工して作成
           /
+          <a
+            href="https://www.wbgt.env.go.jp/alert.php"
+            target="_blank"
+            rel="noopener noreferrer"
+            >環境省 熱中症予防情報サイト</a
+          >（熱中症警戒情報） /
           <a
             href="https://svs.gsfc.nasa.gov/gallery/moonphase/"
             target="_blank"
             rel="noopener noreferrer"
-            >NASA</a
-          >
-          /
+            >NASA SVS</a
+          >（月齢） /
           <a
             href="https://open-meteo.com/"
             target="_blank"
             rel="noopener noreferrer"
             >Open-Meteo</a
-          >
-          /
+          >（<a
+            href="https://creativecommons.org/licenses/by/4.0/"
+            target="_blank"
+            rel="noopener noreferrer license"
+            >CC BY 4.0</a
+          >、風予報・波高・海水温） /
           <a
             href="https://stormglass.io/"
             target="_blank"
             rel="noopener noreferrer"
             >Stormglass</a
-          >
+          >（潮汐の予備）
         </div>
+
+        <!-- サイト名の表記ゆれ（ちがろぐ／チガログ）でも検索に掛かるよう、
+             説明文を本文として1回だけ載せる（JSON-LD の alternateName と対応）。 -->
+        <p class="footer-disclaimer footer-about">
+          {{ site.data.site.description }}
+        </p>
 
         <div class="footer-disclaimer">
           ※

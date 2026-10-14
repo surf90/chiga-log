@@ -56,17 +56,35 @@ async function fetchCached(
   key,
   { store = "session", ttlMs = 30 * 60 * 1000, force = false, timeoutMs } = {},
 ) {
-  const storage = store === "local" ? localStorage : sessionStorage;
+  // Cookie/サイトデータをブロックした Safari・一部の埋め込みWebView では
+  // `window.sessionStorage` の参照自体が SecurityError を投げる。キャッシュは
+  // 節約のための付加機能なので、使えない環境では素通しでネットワーク取得する
+  // （ここで例外を投げると NOW/MARINE カードが丸ごと「データなし」になる）。
+  let storage = null;
+  try {
+    storage = store === "local" ? localStorage : sessionStorage;
+  } catch {
+    storage = null;
+  }
   // 同オリジン内の他コードとのキー衝突を避けるためプレフィックスを付与する
   key = STORAGE_PREFIX + key;
-  const cached = storage.getItem(key);
+  let cached = null;
+  try {
+    cached = storage?.getItem(key) ?? null;
+  } catch {
+    cached = null;
+  }
   // 手動更新(force)時はキャッシュ読み取りをスキップし常に再取得する
   if (!force && cached) {
     try {
       const { data, ts } = JSON.parse(cached);
       if (Date.now() - ts < ttlMs) return data;
     } catch {
-      storage.removeItem(key);
+      try {
+        storage.removeItem(key);
+      } catch {
+        // 削除できなくても次回の取得で上書きされるだけなので無視する
+      }
     }
   }
   const res = await fetchWithTimeout(url, {
@@ -76,7 +94,7 @@ async function fetchCached(
   if (!res.ok) throw new Error(`fetch failed: ${url}`);
   const data = await res.json();
   try {
-    storage.setItem(key, JSON.stringify({ data, ts: Date.now() }));
+    storage?.setItem(key, JSON.stringify({ data, ts: Date.now() }));
   } catch {
     // QuotaExceeded等は無視（取得済みデータはそのまま返す）
   }
@@ -480,7 +498,10 @@ function toJstDateStr(date) {
 function displayFetchTime(iso = null, thresholdMs = FRESHNESS.marine) {
   const el = document.getElementById("current-time");
   if (!el) return;
+  // 他の表示（潮汐・観測時刻など）と同じく JST 固定。閲覧端末のTZのままだと
+  // 海外・UTC設定の端末で「更新日時」だけが9時間ずれ、観測時刻と矛盾する。
   const options = {
+    timeZone: "Asia/Tokyo",
     month: "short",
     day: "numeric",
     weekday: "short",
@@ -1364,9 +1385,21 @@ function setFloatingAlert(bar, text, level) {
   document.body.classList.toggle("has-floating-alert", Boolean(text));
 }
 
-/** 警報名からバッジ用レベルを判定する。危険警報(レベル4)も「警報」を含むためkeiho。 */
+// 2026-05-28 運用開始の新たな防災気象情報で、警戒レベル4相当の「危険警報」が
+// 新設され、名称にレベルが付く（例: "レベル４土砂災害危険警報"）。危険警報も
+// 「警報」を含むため、判定は重い順に行う。表示色は気象庁の警戒レベル配色
+// （レベル5=黒・4=紫・3=赤・2=黄）に揃える。
+const WARNING_LEVELS = {
+  tokubetsu: { order: 0, label: "特別警報" },
+  kiken: { order: 1, label: "危険警報" },
+  keiho: { order: 2, label: "警報" },
+  chuiho: { order: 3, label: "注意報" },
+};
+
+/** 警報名からバッジ用レベルを判定する。 */
 function warningLevelFromName(name) {
   if (name.includes("特別警報")) return "tokubetsu";
+  if (name.includes("危険警報")) return "kiken";
   if (name.includes("警報")) return "keiho";
   return "chuiho";
 }
@@ -1426,25 +1459,15 @@ async function fetchJmaWarning(force = false) {
       setFloatingAlert(floatingBar, "");
     } else {
       warningBox.classList.add("warning-active");
-      const order = { tokubetsu: 0, keiho: 1, chuiho: 2 };
-      activeWarnings.sort(
-        (a, b) =>
-          (order[warningLevelFromName(a.name)] ?? 9) -
-          (order[warningLevelFromName(b.name)] ?? 9),
-      );
+      const rank = (w) => WARNING_LEVELS[warningLevelFromName(w.name)].order;
+      activeWarnings.sort((a, b) => rank(a) - rank(b));
       activeWarnings.forEach((w) => {
         const level = warningLevelFromName(w.name);
-        const levelLabel =
-          level === "tokubetsu"
-            ? "特別警報"
-            : level === "keiho"
-              ? "警報"
-              : "注意報";
         const item = document.createElement("div");
         item.className = "warning-item";
         const badge = document.createElement("span");
         badge.className = `warning-badge badge-${level}`;
-        badge.textContent = levelLabel;
+        badge.textContent = WARNING_LEVELS[level].label;
         const name = document.createElement("span");
         name.className = "warning-name";
         name.textContent = w.name;
@@ -1452,24 +1475,25 @@ async function fetchJmaWarning(force = false) {
         listEl.appendChild(item);
       });
 
-      const topLevel = warningLevelFromName(activeWarnings[0].name);
-      if (topLevel === "tokubetsu" || topLevel === "keiho") {
-        const hasTokubetsu = activeWarnings.some(
-          (w) => warningLevelFromName(w.name) === "tokubetsu",
-        );
-        const severeList = activeWarnings.filter((w) => {
-          const lv = warningLevelFromName(w.name);
-          return lv === "tokubetsu" || lv === "keiho";
-        });
+      // 画面下端のバーは警報以上（警戒レベル3以上）のときだけ出す。
+      const severeList = activeWarnings.filter(
+        (w) => warningLevelFromName(w.name) !== "chuiho",
+      );
+      if (severeList.length > 0) {
+        const topLevel = warningLevelFromName(severeList[0].name);
+        // 複数発表時は、出ている種別を重い順に並べる（例: "危険警報・警報 発令中"）。
+        const kinds = [
+          ...new Set(
+            severeList.map(
+              (w) => WARNING_LEVELS[warningLevelFromName(w.name)].label,
+            ),
+          ),
+        ];
         const barText =
           severeList.length === 1
             ? `${severeList[0].name} 発令中`
-            : `${hasTokubetsu ? "特別警報・警報" : "警報"} 発令中`;
-        setFloatingAlert(
-          floatingBar,
-          barText,
-          hasTokubetsu ? "tokubetsu" : "keiho",
-        );
+            : `${kinds.join("・")} 発令中`;
+        setFloatingAlert(floatingBar, barText, topLevel);
       } else {
         setFloatingAlert(floatingBar, "");
       }
@@ -1690,6 +1714,40 @@ async function fetchTsunami(force = false) {
 // 代表地点コード。フォーク時に _data/site.json を書き換えれば追従する。
 const FORECAST_AREA_CODE = _cfgJma.forecast_area_code ?? "140010";
 const FORECAST_TEMP_CODE = _cfgJma.forecast_temp_code ?? "46106";
+// 降水確率の時間区切り（気象庁 短期予報は6時間ごと）。
+const FORECAST_POP_SLOT_MS = 6 * 3600e3;
+
+/**
+ * 天気・風の timeDefines（日単位）から JST の今日に当たる添字を返す。
+ * timeDefines は "+09:00" 付きなので先頭10文字がそのまま JST の日付。
+ * @param {string[]|undefined} timeDefines
+ * @param {string} todayJst "YYYY-MM-DD"
+ * @returns {number} 見つからなければ -1
+ */
+function forecastDayIndex(timeDefines, todayJst) {
+  return (timeDefines || []).findIndex(
+    (t) => typeof t === "string" && t.slice(0, 10) === todayJst,
+  );
+}
+
+/**
+ * 降水確率の timeDefines（6時間区切りの開始時刻）から、現在時刻を含む
+ * 区間の添字を返す。発表直後は次の区間から始まる（17時発表は18時〜）ため、
+ * 6時間以内に始まる直近の区間を代わりに返す。どちらも無ければ -1。
+ * @param {string[]|undefined} timeDefines
+ * @param {number} nowMs epochミリ秒
+ * @returns {number}
+ */
+function forecastPopIndex(timeDefines, nowMs) {
+  const starts = (timeDefines || []).map(parseIso);
+  const current = starts.findIndex(
+    (s) => s != null && s <= nowMs && nowMs < s + FORECAST_POP_SLOT_MS,
+  );
+  if (current >= 0) return current;
+  return starts.findIndex(
+    (s) => s != null && s > nowMs && s - nowMs < FORECAST_POP_SLOT_MS,
+  );
+}
 
 async function fetchJmaForecast(force = false) {
   const hour8Buster = Math.floor(Date.now() / (8 * 60 * 60 * 1000));
@@ -1720,13 +1778,24 @@ async function fetchJmaForecast(force = false) {
       throw new Error("forecast.json に対象エリアがありません");
     }
 
+    // 先頭要素の決め打ちをやめ、時刻で「今」に当たる要素を選ぶ。Actions の
+    // 発火が数時間〜半日遅れる（CLAUDE.md 参照）と、先頭は昨日の天気・
+    // 過ぎた時間帯の降水確率になり、今日の予報として誤読される（三原則1）。
+    const nowMs = Date.now();
+    const dayIdx = forecastDayIndex(
+      timeSeries0.timeDefines,
+      toJstDateStr(new Date(nowMs)),
+    );
+    const popIdx = forecastPopIndex(timeSeries1.timeDefines, nowMs);
+
     // 気象庁の天気文は全角スペース区切り。風と同じ扱いで半角に正規化する。
     document.getElementById("jma-weather").textContent = (
-      areaWeather.weathers?.[0] || "--"
+      (dayIdx >= 0 && areaWeather.weathers?.[dayIdx]) ||
+      "--"
     ).replace(/　/g, " ");
-    document.getElementById("jma-pop").textContent = areaPop.pops?.[0]
-      ? areaPop.pops[0] + "%"
-      : "--";
+    const pop = popIdx >= 0 ? areaPop.pops?.[popIdx] : null;
+    document.getElementById("jma-pop").textContent =
+      pop != null && pop !== "" ? pop + "%" : "--";
 
     // 配列順依存をやめ、timeDefines の HH時刻で最高/最低を判定する
     const nowJstDate = toJstDateStr(new Date());
@@ -1738,19 +1807,27 @@ async function fetchJmaForecast(force = false) {
       const v = idx >= 0 ? areaTemp.temps?.[idx] : null;
       return v !== "" && v != null ? v : null;
     };
-    const tempMax =
-      findTemp(nowJstDate, "09") ?? findTemp(tomorrowJstDate, "09");
+    // 17時発表以降は今日の最高/最低が既に無く、明日の値だけになる。どちらの日の
+    // 値かを併記しないと、夜に「明日の最高気温」を今日の値として読ませてしまう。
+    const todayMax = findTemp(nowJstDate, "09");
+    const tempMax = todayMax ?? findTemp(tomorrowJstDate, "09");
+    const maxIsTomorrow = todayMax == null && tempMax != null;
     const todayMinRaw = findTemp(nowJstDate, "00");
     const tomorrowMin = findTemp(tomorrowJstDate, "00");
-    const tempMin =
-      todayMinRaw != null && todayMinRaw !== tempMax
-        ? todayMinRaw
-        : (tomorrowMin ?? todayMinRaw);
+    const minIsToday = todayMinRaw != null && todayMinRaw !== tempMax;
+    const tempMin = minIsToday ? todayMinRaw : (tomorrowMin ?? todayMinRaw);
+    const minIsTomorrow = !minIsToday && tomorrowMin != null;
+    const tempText = `${tempMax ?? "--"}℃ / ${tempMin ?? "--"}℃`;
     document.getElementById("jma-temp").textContent =
-      `${tempMax ?? "--"}℃ / ${tempMin ?? "--"}℃`;
+      maxIsTomorrow && (minIsTomorrow || tempMin == null)
+        ? `${tempText}（明日）`
+        : maxIsTomorrow || minIsTomorrow
+          ? `${maxIsTomorrow ? "明日" : ""}${tempMax ?? "--"}℃ / ${minIsTomorrow ? "明日" : ""}${tempMin ?? "--"}℃`
+          : tempText;
 
     document.getElementById("jma-wind").textContent = (
-      areaWeather.winds?.[0] || "--"
+      (dayIdx >= 0 && areaWeather.winds?.[dayIdx]) ||
+      "--"
     ).replace(/　/g, " ");
     const overviewText = data?.overview?.text ?? "";
     document.getElementById("jma-overview-body").textContent = overviewText;
@@ -1763,6 +1840,12 @@ async function fetchJmaForecast(force = false) {
     document.getElementById("jma-forecast-content").classList.remove("hidden");
     setSectionError("jma-error", false);
     markStale("forecast-stale", pickTimestamp(data), FRESHNESS.forecast);
+    // 年齢の閾値内でも、日付を跨いで今日の要素が無ければ必ず知らせる。
+    const forecastNote = document.getElementById("forecast-stale");
+    if (dayIdx < 0 && forecastNote) {
+      forecastNote.textContent = "今日の予報を取得できていません";
+      forecastNote.hidden = false;
+    }
   } catch (e) {
     console.error("JMA forecast error:", e);
     document.getElementById("jma-loading").classList.add("hidden");
@@ -2124,7 +2207,9 @@ function renderWeatherCards(wmData) {
     setText("wind-dir", getWindDirectionJma(jma.windDirection));
     setText(
       "precip-1h",
-      jma.precipitation1h != null ? `${jma.precipitation1h} mm` : "0 mm",
+      // 欠測（品質管理フラグ不良・未観測）を「0 mm」と書くと、降っていても
+      // 「降っていない」と読ませてしまう（三原則1: ダミー値で誤読させない）。
+      jma.precipitation1h != null ? `${jma.precipitation1h} mm` : "-- mm",
     );
     setText("hero-temp", jma.temp != null ? jma.temp : "--");
     setText("hero-wind", jma.wind != null ? jma.wind : "--");

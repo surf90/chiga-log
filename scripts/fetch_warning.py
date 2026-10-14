@@ -36,21 +36,30 @@ def extract_chigasaki(feed: dict) -> list[dict]:
     return []
 
 
+def is_valid_feed(feed) -> bool:
+    """VPWS50フィードが想定構造（dict かつ itemArea4 が配列）か検証する。"""
+    return isinstance(feed, dict) and isinstance(feed.get("itemArea4"), list)
+
+
 def main() -> None:
     """警報フィードを取得し茅ヶ崎分を書き出す。取得失敗時は既存を保持。"""
     feed = http_get_json(WARNING_URL)
-    if not isinstance(feed, dict):
+    # itemArea4 が無い＝仕様変更・空応答。ここを通すと warnings=[] と新しい
+    # fetchedAt が書き出され、フロントが「注意報・警報はありません」と断定して
+    # しまう（三原則1）。Worker 側(warning-worker)と同じ条件で失敗扱いにする。
+    if not is_valid_feed(feed):
         # 取得失敗時は誤って空にせず既存ファイルを温存する。
         if load_json(OUTPUT_PATH) is not None:
             print("[warning] 取得失敗。既存ファイルを保持します。")
             return
-        # 既存も無い場合のみ空で初期化する。
-        feed = {}
+        # 既存も無い場合のみ空で初期化する。fetchedAt を空にして、フロントに
+        # 「未確認」（警報なしと断定しない）として扱わせる。
+        feed = None
 
-    warnings = extract_chigasaki(feed)
+    warnings = extract_chigasaki(feed) if feed else []
     output = {
-        "reportDateTime": feed.get("reportDateTime", ""),
-        "fetchedAt": now_jst().isoformat(timespec="seconds"),
+        "reportDateTime": feed.get("reportDateTime", "") if feed else "",
+        "fetchedAt": now_jst().isoformat(timespec="seconds") if feed else "",
         "source": WARNING_URL,
         "area": CHIGASAKI_NAME,
         "areaCode": CHIGASAKI_CODE,
