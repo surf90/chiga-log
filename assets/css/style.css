@@ -114,7 +114,9 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 body {
-  font-family: Inter, "Zen Kaku Gothic New", sans-serif;
+  font-family:
+    Inter, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP",
+    "Noto Sans CJK JP", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
   background: var(--bg-gradient);
   min-height: 100vh;
   min-height: 100dvh;
@@ -716,7 +718,9 @@ body.has-floating-alert #refresh-toast {
   min-height: 44px;
   font-size: 12px;
   font-weight: 500;
-  font-family: Inter, "Zen Kaku Gothic New", sans-serif;
+  font-family:
+    Inter, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP",
+    "Noto Sans CJK JP", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
   cursor: pointer;
   margin-top: 8px;
   letter-spacing: -0.28px;
@@ -762,6 +766,15 @@ body.has-floating-alert #refresh-toast {
   grid-template-columns: 48px 1fr 52px 52px;
   gap: 6px;
   align-items: center;
+}
+/* 風予報の日付区切り（翌日の最初の行の直前に入る）。 */
+.wind-day {
+  margin-top: 8px;
+  padding: 2px 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-sub);
+  letter-spacing: 0.04em;
 }
 /* 「平均」「最大」の意味は列見出しで示す。行ごとに語を繰り返すと
    屋外で読む文字量が増え、狭幅端末では列も潰れる。 */

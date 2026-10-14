@@ -984,3 +984,20 @@ PR #154 マージ後に本番状態を監査し、残っていた不具合・弱
 - 検証: pytest / node --test（フロント・Worker）/ ESLint / Prettier / Jekyll ビルド / Chromium 実行（CSP違反・ページエラー無し）/ pa11y WCAG2AA 0 エラー
 - **積み残し（要手動）**: ① 12月中に `data/mooninfo_2027.json` を README 手順で配置（NASA SVS は作業環境から到達不可）② Search Console で sitemap 再送信・インデックス登録リクエスト ③ サイト名表示を強化するなら独自ドメイン化を検討
 - 見送り: `current_weather=true`（Open-Meteo 旧形式）→ `current=` 移行。現役で動作し、アメダス欠測時の予備表示のみに使うため、仕様変更が告知された時点で対応
+
+## 完了済み（2026-10-14）UI/UX・表示速度の改善
+
+実ブラウザ（Chromium、モバイル390px/PC1280px、ライト/ダーク、1.6Mbps+150ms 回線模擬）で計測・目視して対応。
+
+- **通信量削減（最大の改善）**: 本文の和文 Web フォント Zen Kaku Gothic New 400/500/700 が unicode-range 分割で約90ファイル・約800KB（総転送の約7割）を取得していた。本文は OS 標準和文（ヒラギノ/Noto/游ゴシック/メイリオ）へ切替、Inter（1ファイル）とロゴ用 Zen Kaku 900 サブセットのみ残す。総転送 1.2MB→約0.4MB、低速回線での内容表示 6.7秒→2.7秒。`DESIGN.md`・`CLAUDE.md` 追従
+- **わかりやすさ（波高表記）**: 波グラフの「最大波高」は気象庁 沿岸波浪ガイダンスの「海域内で最も高い地点の有義波高」であり、個々の最大波と誤読されるため「波高（海域最大）」に変更し、注記で有義波高・卓越周期・岸近くは通常低いことを説明。Open-Meteo の「平均波高」も有義波高のため「波高（有義）」に修正し注記追加
+- **風予報の範囲**: 当日4〜23時のみ→現在から24時間先までの4〜23時に拡大。夜でも翌朝の風が見える。日付の変わり目に「明日」区切り（`.wind-day`）、トグルも「明日06:00-23:00」
+- 検証: node --test 53 / pytest 84 / ESLint / Prettier / pa11y 0 エラー
+
+### 推奨項目の実装と最終検証（同日・追加）
+
+- **Chart.js の非同期化**: `defer`→`async`（SRI 維持）。`whenChartReady()` Promise でグラフ描画だけを後回しにし、テキスト情報は Chart.js の到着を待たずに表示（低速回線の内容表示 2.7秒→2.4秒）。読み込み失敗は `error` イベントに加え window `load` 時点の未定義でも検知し、潮汐グラフは畳み・波は取得失敗表示（空枠を残さない）
+- **Open-Meteo を `current=` 形式へ移行**: `current_weather=true`（旧形式）→ `current=temperature_2m,wind_speed_10m,wind_direction_10m`、`windspeed_unit`→`wind_speed_unit`。出力は従来の `current_weather` 形に変換しフロント無変更
+- **実 API 検証**: PR ブランチで `fetch-openmeteo.yml` を workflow_dispatch し success。新形式で `current_weather`（time/temperature/windspeed/winddirection）が正しく生成されることを確認（検証用のデータコミットは main の定期更新と競合するためブランチから除去）
+- **最終検証**: pytest 85 / node --test 55・Worker 5 / ESLint / Prettier / pa11y 0 エラー / npm audit 0 / SRI 一致 / Chromium で通常・低速回線・Chart.js 遮断の3条件を実行しページエラー・CSP 違反なし
+- **積み残し（要手動のみ）**: 12月中の `data/mooninfo_2027.json` 配置、Search Console の sitemap 再送信

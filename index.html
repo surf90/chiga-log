@@ -192,12 +192,15 @@ lang: ja
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Inter (variable 400-700) + Zen Kaku 本文用 (400/500/700)。
+    <!-- Inter（可変 400-700、欧文・数字用の1ファイル）のみ Web フォントで読む。
+         和文は OS 標準（ヒラギノ/Noto/游ゴシック）に任せる。和文 Web フォントは
+         unicode-range 分割で本文の漢字ぶん約90ファイル・約800KBを取得しており
+         （2026-10 実測、総転送の約7割）、低速回線で初期表示を大きく遅らせていた。
          media=print + 読込後の media 切替でレンダリングをブロックせず後追い適用
          （FOUTはdisplay=swapで吸収）。切替はCSP `script-src 'self'` 下で
          インライン onload 属性が実行されないため app.js が data 属性を見て行う。 -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap"
       rel="stylesheet"
       media="print"
       data-media-onload="all"
@@ -211,18 +214,21 @@ lang: ja
     />
     <noscript>
       <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap"
         rel="stylesheet"
       />
     </noscript>
 
     <link rel="stylesheet" href="{{ site.baseurl }}/assets/css/style.min.css" />
 
+    <!-- グラフ描画ライブラリは async。app.js は whenChartReady() で到着を待って
+         グラフだけを後から描き、テキスト情報の表示を待たせない（三原則2）。 -->
     <script
+      id="chartjs"
       src="{{ site.baseurl }}/assets/vendor/chart.umd.min.js"
       integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC"
       crossorigin="anonymous"
-      defer
+      async
     ></script>
     <!-- 地点設定（_data/site.json から Jekyll が生成）。app.min.js より前に読む。 -->
     <!-- ?v=2 は sw.js が chigalog-v19 以前（設定を Stale-While-Revalidate で
@@ -480,8 +486,8 @@ lang: ja
                   href="https://www.data.jma.go.jp/waveinf/guid/wave_guid.html?area={{ site.data.site.jma.wave_guid_link_area }}"
                   target="_blank"
                   rel="noopener noreferrer"
-                  >気象庁が提供している（関東地方南部全域の）予想値</a
-                >です。
+                  >気象庁 沿岸波浪ガイダンス</a
+                >の予想値です。波高は関東地方南部（相模湾〜外房）の海域で最も高い地点の有義波高、周期は卓越周期で、茅ヶ崎の岸近くでは通常これより低くなります。
               </p>
             </div>
             <div id="wave-guid-error" class="section-error" data-nosnippet>
@@ -499,7 +505,7 @@ lang: ja
             <p id="sea-stale" class="stale-note" data-nosnippet hidden></p>
             <dl class="data-list">
               <div class="data-row">
-                <dt>平均波高:</dt>
+                <dt>波高（有義）:</dt>
                 <dd id="wave-height"><span data-nosnippet>-- m</span></dd>
               </div>
               <div class="data-row">
@@ -507,7 +513,9 @@ lang: ja
                 <dd id="sea-temp"><span data-nosnippet>--℃</span></dd>
               </div>
             </dl>
-            <p class="note">※波と海水温のデータは沖合の予測値ベースです。</p>
+            <p class="note">
+              ※茅ヶ崎沖の予測値です。有義波高は高い方から1/3の波の平均で、目視の波の高さに近い値です。
+            </p>
           </div>
 
           <div class="weather-box" id="jma-warning-box">
