@@ -939,3 +939,17 @@ PR #154 マージ後に本番状態を監査し、残っていた不具合・弱
 **関連ファイル**
 
 - `package-lock.json` / `warning-worker/package-lock.json`
+
+## 完了済み（2026-10-14）
+
+### 全体点検に基づく修正（誤読防止・耐障害性）
+
+- **天気予報の時刻選択**（`app.js`）: 天気・風・降水確率を先頭要素の決め打ちから「今」に当たる要素の選択へ変更（`forecastDayIndex` / `forecastPopIndex`）。Actions 発火遅延で日付を跨ぐと昨日の天気・過ぎた時間帯の降水確率を今日の値として出していた。今日の要素が無い場合は `--` と注記「今日の予報を取得できていません」
+- **降水量の欠測表示**（`app.js`）: `precipitation1h` 欠測時に `0 mm` と表示していたのを `-- mm` へ（三原則1）
+- **ストレージ遮断環境**（`app.js`）: `fetchCached` が sessionStorage 参照の SecurityError（Cookie ブロック時の Safari 等）で例外となり NOW/MARINE カードが全滅していたため、キャッシュ無しで素通し取得するよう修正
+- **警報BFF（Python）のスキーマ検証**（`fetch_warning.py`）: `itemArea4` 欠落（仕様変更・空応答）を取得失敗扱いにし既存ファイルを温存（Worker と同条件）。既存も無い初期化時は `fetchedAt` 空で書き出し、フロントで「未確認」扱い（「警報なし」と断定しない）
+- テスト追加: `tests/test_fetch_warning.py`、`tests/test_live_frontend.cjs`（降水欠測・ストレージ例外・予報時刻選択）
+
+**申し送り**
+
+- `data/mooninfo_2027.json` 未配置。NASA SVS は本環境から到達不可のため未取得。12月中に README 手順で配置要（未配置だと 2027/1/1 以降は月齢が計算値フォールバック）

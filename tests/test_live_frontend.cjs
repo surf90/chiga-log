@@ -752,3 +752,116 @@ test("warning fetch failure shows the section error, not 'no warnings'", async (
   await vm.runInContext("fetchJmaWarning()", context);
   assert.equal(elements.get("jma-warning-list")?.children.length ?? 0, 0);
 });
+
+// ─── 降水量の欠測表示 ─────────────────────────────────────────
+test("missing 1h precipitation is shown as unknown, not 0 mm", () => {
+  const { context, getElementById } = buildContext();
+  vm.runInContext(
+    `renderWeatherCards({
+       updated_at: "2026-08-29T10:32:00+09:00",
+       jma_amedas: { observed_at: "2026-08-29T10:20:00+09:00", temp: 25.3, precipitation1h: null },
+     })`,
+    context,
+  );
+  assert.equal(getElementById("precip-1h").textContent, "-- mm");
+});
+
+// ─── ストレージが使えない環境 ─────────────────────────────────
+test("fetchCached still fetches when sessionStorage access throws", async () => {
+  const { context } = buildContext({
+    fetchImpl: async () => jsonResponse({ ok: 1 }),
+  });
+  Object.defineProperty(context, "sessionStorage", {
+    get() {
+      throw new Error("SecurityError");
+    },
+  });
+  const data = await vm.runInContext(
+    'fetchCached("data/weather_marine.json", "k")',
+    context,
+  );
+  assert.deepEqual({ ...data }, { ok: 1 });
+});
+
+// ─── 天気予報: 発火遅延で古い発表のまま日付を跨いだ場合 ─────────
+function forecastPayload(dayDefines, popDefines) {
+  return {
+    updated_at: "2026-08-29T05:10:00+09:00",
+    forecast: [
+      {
+        timeSeries: [
+          {
+            timeDefines: dayDefines,
+            areas: [
+              {
+                area: { code: "140010" },
+                weathers: ["昨日の天気", "今日の天気", "明後日の天気"],
+                winds: ["昨日の風", "今日の風", "明後日の風"],
+              },
+            ],
+          },
+          {
+            timeDefines: popDefines,
+            areas: [
+              { area: { code: "140010" }, pops: ["90", "80", "30", "10"] },
+            ],
+          },
+          { timeDefines: [], areas: [{ area: { code: "46106" }, temps: [] }] },
+        ],
+      },
+    ],
+    overview: { text: "" },
+  };
+}
+
+test("forecast picks today's weather and the pop slot covering now", async () => {
+  const { context, getElementById } = buildContext({
+    fetchImpl: async () =>
+      jsonResponse(
+        forecastPayload(
+          [
+            "2026-08-28T17:00:00+09:00",
+            "2026-08-29T00:00:00+09:00",
+            "2026-08-30T00:00:00+09:00",
+          ],
+          [
+            "2026-08-28T18:00:00+09:00",
+            "2026-08-29T00:00:00+09:00",
+            "2026-08-29T06:00:00+09:00",
+            "2026-08-29T12:00:00+09:00",
+          ],
+        ),
+      ),
+  });
+  await vm.runInContext("fetchJmaForecast()", context);
+  assert.equal(getElementById("jma-weather").textContent, "今日の天気");
+  assert.equal(getElementById("jma-wind").textContent, "今日の風");
+  // 10:30 JST は 06-12時の区間
+  assert.equal(getElementById("jma-pop").textContent, "30%");
+  assert.equal(getElementById("forecast-stale").hidden, true);
+});
+
+test("forecast shows the upcoming pop slot right after issuance", () => {
+  const { context } = buildContext();
+  const idx = vm.runInContext(
+    `forecastPopIndex(["2026-08-29T12:00:00+09:00", "2026-08-29T18:00:00+09:00"], Date.now())`,
+    context,
+  );
+  assert.equal(idx, 0);
+});
+
+test("forecast without a row for today says so instead of showing old values", async () => {
+  const { context, getElementById } = buildContext({
+    fetchImpl: async () =>
+      jsonResponse(
+        forecastPayload(
+          ["2026-08-27T17:00:00+09:00", "2026-08-28T00:00:00+09:00"],
+          ["2026-08-27T18:00:00+09:00", "2026-08-28T00:00:00+09:00"],
+        ),
+      ),
+  });
+  await vm.runInContext("fetchJmaForecast()", context);
+  assert.equal(getElementById("jma-weather").textContent, "--");
+  assert.equal(getElementById("jma-pop").textContent, "--");
+  assert.equal(getElementById("forecast-stale").hidden, false);
+});
