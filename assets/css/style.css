@@ -693,8 +693,11 @@ body.has-floating-alert #refresh-toast {
 .floating-alert.level-keiho {
   background: #c0392b;
 }
-.floating-alert.level-tokubetsu {
+.floating-alert.level-kiken {
   background: #7c3aed;
+}
+.floating-alert.level-tokubetsu {
+  background: #222222;
 }
 .jma-overview {
   font-size: 14px;
@@ -864,7 +867,17 @@ body.has-floating-alert #refresh-toast {
   letter-spacing: -0.44px;
 }
 .badge-tokubetsu {
+  background-color: #222222;
+}
+.badge-kiken {
   background-color: #7c3aed;
+}
+/* 特別警報(黒)はダーク背景に沈むため、白の縁取りで面を分ける。 */
+@media (prefers-color-scheme: dark) {
+  .badge-tokubetsu,
+  .floating-alert.level-tokubetsu {
+    box-shadow: inset 0 0 0 1px #f5f5f5;
+  }
 }
 .badge-keiho {
   background-color: #c0392b;
@@ -947,6 +960,9 @@ p.note strong a {
   color: var(--text-sub);
   line-height: 1.5;
   text-wrap: pretty;
+}
+.footer-about {
+  margin: 0 0 8px;
 }
 .footer-copyright {
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;

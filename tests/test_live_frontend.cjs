@@ -865,3 +865,49 @@ test("forecast without a row for today says so instead of showing old values", a
   assert.equal(getElementById("jma-pop").textContent, "--");
   assert.equal(getElementById("forecast-stale").hidden, false);
 });
+
+// ─── 新たな防災気象情報（2026-05-28〜）: レベル付き名称・危険警報 ─────
+test("level-4 danger warnings get their own badge, ordered above warnings", async () => {
+  const { elements } = await renderWarning({
+    fetchedAt: "2026-08-29T01:00:00Z",
+    warnings: [
+      { code: "10", name: "レベル２大雨注意報" },
+      { code: "03", name: "レベル３大雨警報" },
+      { code: "49", name: "レベル４土砂災害危険警報" },
+    ],
+  });
+  const items = elements.get("jma-warning-list").children;
+  const badges = items.map((it) => it.children[0]);
+  assert.deepEqual(
+    badges.map((b) => b.textContent),
+    ["危険警報", "警報", "注意報"],
+  );
+  assert.equal(badges[0].className, "warning-badge badge-kiken");
+  assert.equal(
+    elements.get("floating-alert-text").textContent,
+    "危険警報・警報 発令中",
+  );
+  assert.equal(
+    elements.get("floating-alert-bar").className,
+    "floating-alert level-kiken",
+  );
+});
+
+test("a single danger warning is named on the floating bar", async () => {
+  const { elements } = await renderWarning({
+    fetchedAt: "2026-08-29T01:00:00Z",
+    warnings: [{ code: "49", name: "レベル４土砂災害危険警報" }],
+  });
+  assert.equal(
+    elements.get("floating-alert-text").textContent,
+    "レベル４土砂災害危険警報 発令中",
+  );
+});
+
+test("advisories alone do not raise the floating bar", async () => {
+  const { elements } = await renderWarning({
+    fetchedAt: "2026-08-29T01:00:00Z",
+    warnings: [{ code: "10", name: "レベル２大雨注意報" }],
+  });
+  assert.equal(elements.get("floating-alert-bar").style.display, "none");
+});

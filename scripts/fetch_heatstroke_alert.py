@@ -11,6 +11,12 @@ OUTPUT_PATH = "data/heatstroke_alert.json"
 BASE_URL = "https://www.wbgt.env.go.jp/alert/dl"
 SCHEDULE_HOURS = (5, 10, 14, 17)
 HEADER_MARKER = "府県予報区"
+# 運用期間は例年 4月第4水曜〜10月第4水曜（2026年度は 4/22〜10/21）。
+# 期間外は CSV が公開されず、*/30 の Open-Meteo ジョブと専用 cron から
+# 1回あたり最大8件の 404 を出し続けるだけなので、前後に余裕を持たせた
+# 範囲の外では取得しない（三原則3: API/Actions 節約）。cron は変更しない。
+SEASON_START = (4, 15)
+SEASON_END = (10, 31)
 
 
 def candidate_urls(now: datetime) -> list[str]:
@@ -26,6 +32,11 @@ def candidate_urls(now: datetime) -> list[str]:
                 name = f"alert_{day:%Y%m%d}_{hour:02d}.csv"
                 candidates.append((scheduled, f"{BASE_URL}/{day:%Y}/{name}"))
     return [url for _, url in sorted(candidates, reverse=True)]
+
+
+def in_season(now: datetime) -> bool:
+    """熱中症警戒情報の運用期間（余裕込み）内かを返す。"""
+    return SEASON_START <= (now.month, now.day) <= SEASON_END
 
 
 def parse_alert_csv(text: str, source: str) -> dict:
@@ -73,6 +84,11 @@ def parse_alert_csv(text: str, source: str) -> dict:
 def main() -> None:
     """CSVを取得し書き出す。取得失敗時は既存ファイルを保持する。"""
     now = now_jst()
+    if not in_season(now):
+        # 既存ファイルは温存する。フロントは対象日（今日・明日）で絞るため、
+        # 期間終了前の発表が残っていても表示されない。
+        print("[heatstroke] 運用期間外のため取得を省略します。")
+        return
     for url in candidate_urls(now):
         text = http_get_text(url)
         if text is None:

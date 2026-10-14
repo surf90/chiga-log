@@ -1382,9 +1382,21 @@ function setFloatingAlert(bar, text, level) {
   document.body.classList.toggle("has-floating-alert", Boolean(text));
 }
 
-/** 警報名からバッジ用レベルを判定する。危険警報(レベル4)も「警報」を含むためkeiho。 */
+// 2026-05-28 運用開始の新たな防災気象情報で、警戒レベル4相当の「危険警報」が
+// 新設され、名称にレベルが付く（例: "レベル４土砂災害危険警報"）。危険警報も
+// 「警報」を含むため、判定は重い順に行う。表示色は気象庁の警戒レベル配色
+// （レベル5=黒・4=紫・3=赤・2=黄）に揃える。
+const WARNING_LEVELS = {
+  tokubetsu: { order: 0, label: "特別警報" },
+  kiken: { order: 1, label: "危険警報" },
+  keiho: { order: 2, label: "警報" },
+  chuiho: { order: 3, label: "注意報" },
+};
+
+/** 警報名からバッジ用レベルを判定する。 */
 function warningLevelFromName(name) {
   if (name.includes("特別警報")) return "tokubetsu";
+  if (name.includes("危険警報")) return "kiken";
   if (name.includes("警報")) return "keiho";
   return "chuiho";
 }
@@ -1444,25 +1456,15 @@ async function fetchJmaWarning(force = false) {
       setFloatingAlert(floatingBar, "");
     } else {
       warningBox.classList.add("warning-active");
-      const order = { tokubetsu: 0, keiho: 1, chuiho: 2 };
-      activeWarnings.sort(
-        (a, b) =>
-          (order[warningLevelFromName(a.name)] ?? 9) -
-          (order[warningLevelFromName(b.name)] ?? 9),
-      );
+      const rank = (w) => WARNING_LEVELS[warningLevelFromName(w.name)].order;
+      activeWarnings.sort((a, b) => rank(a) - rank(b));
       activeWarnings.forEach((w) => {
         const level = warningLevelFromName(w.name);
-        const levelLabel =
-          level === "tokubetsu"
-            ? "特別警報"
-            : level === "keiho"
-              ? "警報"
-              : "注意報";
         const item = document.createElement("div");
         item.className = "warning-item";
         const badge = document.createElement("span");
         badge.className = `warning-badge badge-${level}`;
-        badge.textContent = levelLabel;
+        badge.textContent = WARNING_LEVELS[level].label;
         const name = document.createElement("span");
         name.className = "warning-name";
         name.textContent = w.name;
@@ -1470,24 +1472,25 @@ async function fetchJmaWarning(force = false) {
         listEl.appendChild(item);
       });
 
-      const topLevel = warningLevelFromName(activeWarnings[0].name);
-      if (topLevel === "tokubetsu" || topLevel === "keiho") {
-        const hasTokubetsu = activeWarnings.some(
-          (w) => warningLevelFromName(w.name) === "tokubetsu",
-        );
-        const severeList = activeWarnings.filter((w) => {
-          const lv = warningLevelFromName(w.name);
-          return lv === "tokubetsu" || lv === "keiho";
-        });
+      // 画面下端のバーは警報以上（警戒レベル3以上）のときだけ出す。
+      const severeList = activeWarnings.filter(
+        (w) => warningLevelFromName(w.name) !== "chuiho",
+      );
+      if (severeList.length > 0) {
+        const topLevel = warningLevelFromName(severeList[0].name);
+        // 複数発表時は、出ている種別を重い順に並べる（例: "危険警報・警報 発令中"）。
+        const kinds = [
+          ...new Set(
+            severeList.map(
+              (w) => WARNING_LEVELS[warningLevelFromName(w.name)].label,
+            ),
+          ),
+        ];
         const barText =
           severeList.length === 1
             ? `${severeList[0].name} 発令中`
-            : `${hasTokubetsu ? "特別警報・警報" : "警報"} 発令中`;
-        setFloatingAlert(
-          floatingBar,
-          barText,
-          hasTokubetsu ? "tokubetsu" : "keiho",
-        );
+            : `${kinds.join("・")} 発令中`;
+        setFloatingAlert(floatingBar, barText, topLevel);
       } else {
         setFloatingAlert(floatingBar, "");
       }

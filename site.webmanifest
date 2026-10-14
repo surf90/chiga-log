@@ -2,7 +2,7 @@
   "name": "ちがログ｜茅ヶ崎の海情報",
   "short_name": "ちがログ",
   "id": "/chiga-log/",
-  "description": "茅ヶ崎の海情報をログするデータサイト。天気、波、水温、タイドグラフ、気温をリアルタイムで網羅。",
+  "description": "ちがログ（ちがろぐ・チガログ）は、茅ヶ崎ヘッドランド・サザンビーチ周辺の海情報を確認できるWebツール。波高、潮汐、海水温、風、天気、注意報・警報をまとめてチェックできます。",
   "start_url": "/chiga-log/?mode=standalone",
   "scope": "/chiga-log/",
   "display": "standalone",
