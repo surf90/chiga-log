@@ -961,3 +961,30 @@ test("tomorrow-only temperatures are labelled as tomorrow", async () => {
   await vm.runInContext("fetchJmaForecast()", context);
   assert.equal(getElementById("jma-temp").textContent, "30℃ / 23℃（明日）");
 });
+
+// ─── 風予報: 24時間先まで（翌朝を含む）と日付区切り ─────────────
+test("wind forecast reaches into tomorrow morning with a day divider", async () => {
+  const { context, getElementById } = buildContext({
+    fetchImpl: async () =>
+      jsonResponse(
+        windPayload("2026-08-29T10:00:00+09:00", [
+          "2026-08-29T10:00",
+          "2026-08-29T23:00",
+          "2026-08-30T02:00", // 深夜は出さない
+          "2026-08-30T05:00",
+          "2026-08-30T10:00",
+          "2026-08-30T11:00", // 24時間より先は出さない
+        ]),
+      ),
+  });
+  await vm.runInContext("fetchWindForecast()", context);
+  const visible = getElementById("wind-forecast-list").children;
+  const more = getElementById("wind-forecast-more").children;
+  const text = (els) =>
+    els.map((el) =>
+      el.className === "wind-day" ? el.textContent : el.children[0].textContent,
+    );
+  assert.deepEqual(text(visible), ["10:00", "23:00", "明日", "05:00"]);
+  assert.deepEqual(text(more), ["10:00"]);
+  assert.match(getElementById("wind-forecast-toggle").textContent, /明日10:00/);
+});

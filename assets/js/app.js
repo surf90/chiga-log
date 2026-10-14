@@ -1211,7 +1211,7 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
     data: {
       datasets: [
         {
-          label: "最大波高 [m]",
+          label: "波高（海域最大）[m]",
           data: heightData,
           borderColor: "#0275d8",
           backgroundColor: "#0275d826",
@@ -1256,7 +1256,7 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
             },
             label(c) {
               return c.dataset.yAxisID === "yWave"
-                ? `最大波高: ${c.parsed.y.toFixed(1)} m`
+                ? `波高（海域最大）: ${c.parsed.y.toFixed(1)} m`
                 : `周期: ${c.parsed.y.toFixed(0)} 秒`;
             },
           },
@@ -1319,7 +1319,7 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
 
   legendDiv.textContent = "";
   const legendItems = [
-    { color: "#0275d8", label: "最大波高 [m]" },
+    { color: "#0275d8", label: "波高（海域最大）[m]" },
     { color: "#27ae60", label: "周期 [秒]" },
   ];
   legendItems.forEach((meta, idx) => {
@@ -1865,6 +1865,8 @@ function toggleOverview() {
 // ─── 8. 風予報 ──────────────────────────────────────────────
 // 折りたたまずに常時表示する件数。開かなくても直近の風が読めるようにする。
 const WIND_VISIBLE_COUNT = 3;
+// 風予報を表示する範囲。cutoff（1時間前）から25時間＝現在から24時間先まで。
+const WIND_WINDOW_MS = 25 * 3600e3;
 
 /** 風予報1行（時刻・風向・風速）を生成する。 */
 /**
@@ -1966,13 +1968,27 @@ function renderWindForecast(entries) {
     return;
   }
 
+  // 日付が変わる行の直前に「明日」の区切りを入れる。時刻だけだと
+  // 23:00 の次の 04:00 が翌日だと読み取れない。
+  let prevTomorrow = false;
+  const appendWithDivider = (target, entry) => {
+    if (entry.isTomorrow && !prevTomorrow) {
+      const divider = document.createElement("div");
+      divider.className = "wind-day";
+      divider.textContent = "明日";
+      target.appendChild(divider);
+    }
+    prevTomorrow = Boolean(entry.isTomorrow);
+    target.appendChild(createWindRow(entry));
+  };
+
   entries
     .slice(0, WIND_VISIBLE_COUNT)
-    .forEach((entry) => grid.appendChild(createWindRow(entry)));
+    .forEach((entry) => appendWithDivider(grid, entry));
 
   const rest = entries.slice(WIND_VISIBLE_COUNT);
   if (moreGrid) {
-    rest.forEach((entry) => moreGrid.appendChild(createWindRow(entry)));
+    rest.forEach((entry) => appendWithDivider(moreGrid, entry));
     // 折りたたみは常に閉じた状態から始める
     moreGrid.style.display = "none";
   }
@@ -2010,7 +2026,7 @@ async function fetchWindForecast(force = false) {
     const cutoff = now.getTime() - 60 * 60 * 1000;
     // JST基準の日付文字列で比較（ブラウザTZがJST以外でも安定）
     const todayJst = toJstDateStr(now);
-    // 表示用フィルタ（当日4-23時）とは別に、系列全体の時刻を保持する。
+    // 表示用フィルタ（24時間先までの4-23時）とは別に、系列全体の時刻を保持する。
     // 深夜など「今日の表示行が無い」状態と「系列自体が古い」状態を区別するため。
     const allTs = [];
     const items = (data.items || [])
@@ -2047,24 +2063,33 @@ async function fetchWindForecast(force = false) {
               : null,
         };
       })
+      // 24時間先までの日中（4-23時）を出す。当日に限ると夕方以降は残りが
+      // 1〜2行しかなく、朝の海に入る判断に要る「明日の朝の風」が見えない。
       .filter(
         (item) =>
           item.h >= 4 &&
           item.h <= 23 &&
           item.ts >= cutoff &&
-          item.dateJst === todayJst,
+          item.ts < cutoff + WIND_WINDOW_MS,
       )
+      .map((item) => ({ ...item, isTomorrow: item.dateJst !== todayJst }))
       .slice(0, 21);
 
     // ラベルは折りたたむ側（4件目以降）の時間帯を示す。
     // 1件しか残らない時に "23:00-23:00" とならないよう分岐する。
     const rest = items.slice(WIND_VISIBLE_COUNT);
+    const label = (it) => `${it.isTomorrow ? "明日" : ""}${it.time}`;
     windForecastRange =
       rest.length === 0
         ? ""
         : rest.length === 1
-          ? rest[0].time
-          : `${rest[0].time}-${rest[rest.length - 1].time}`;
+          ? label(rest[0])
+          : // 両端とも明日なら「明日06:00-23:00」と1回だけ書く
+            `${label(rest[0])}-${
+              rest[0].isTomorrow
+                ? rest[rest.length - 1].time
+                : label(rest[rest.length - 1])
+            }`;
     renderWindForecast(items);
     updateWindForecastToggleLabel(false);
     document.getElementById("wind-forecast-loading").classList.add("hidden");
@@ -2410,7 +2435,8 @@ function _updateChartsTheme(e) {
   const tickColor = isDark ? "#94a3b8" : "#707070";
   const gridColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)";
   if (window.Chart) {
-    Chart.defaults.font.family = 'Inter, "Zen Kaku Gothic New", sans-serif';
+    Chart.defaults.font.family =
+      'Inter, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif';
     Chart.defaults.color = tickColor;
     Chart.defaults.borderColor = gridColor;
   }

@@ -68,13 +68,14 @@
 
 ```css
 /* 本文・見出し（欧文優先の和欧混植） */
-font-family: Inter, "Zen Kaku Gothic New", sans-serif;
+font-family: Inter, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
 
 /* 数値・ラベル等（等幅） */
 font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 ```
 
-- 欧文を Inter、和文を Zen Kaku Gothic New にフォールバック。
+- 欧文・数字を Inter（Web フォント、可変 1 ファイル）、和文は OS 標準（ヒラギノ／Noto／游ゴシック／メイリオ）にフォールバック。
+- **和文 Web フォントは本文に使わない**。Zen Kaku Gothic New 400/500/700 は unicode-range 分割で本文の漢字ぶん約90ファイル・約800KB を取得しており（2026-10 実測、総転送の約7割、低速回線で内容表示 6.7秒→除去後 2.7秒）、三原則2に反するため。Zen Kaku はロゴ「ちがログ」の 900 のみ `text=` サブセットで読む。
 - `body` に `-webkit-font-smoothing:antialiased` / `-moz-osx-font-smoothing:grayscale` を指定し、macOS/iOS での過剰な太りを抑える。
 - フォントは可変フォント＋サブセットで最小化（三原則2）。Web フォント追加は要相談。
 
@@ -141,6 +142,7 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - 直近 **3件（`WIND_VISIBLE_COUNT`）は常時表示**し、4件目以降を `#wind-forecast-more`（`.wind-grid-more`、既定 `display:none`）へ入れて `.toggle-btn` で開閉する。開かなくても直近の風が読める状態にする。
 - 残りが0件のときはトグルボタンごと隠す（`hidden`）。押しても何も出ないボタンを見せない。
 - トグルのラベルは折りたたむ側の時間帯を示す（例: `残りの予想風（12:00-23:00）を表示 ▼`）。
+- **表示範囲は現在から24時間先までの4〜23時**（当日に限らない）。夜でも翌朝の風が読めるようにする。日付が変わる行の直前に `.wind-day`（11px・700・`--text-sub`）で「明日」の区切りを入れ、トグルのラベルも `明日06:00-23:00` のように明日を1回だけ付ける。
 - **列構成**: `時刻 / 風向 / 平均 / 最大` の4列。見出し行 `.wind-head` とデータ行 `.wind-row` は
   **同じ `grid-template-columns`**（既定 `48px 1fr 52px 52px`、`max-width:420px` で `46px 1fr 46px 46px`）
   を共有する。ずらすと数値の縦位置が揃わなくなるため、変更時は必ず2箇所を揃える。
