@@ -988,3 +988,20 @@ test("wind forecast reaches into tomorrow morning with a day divider", async () 
   assert.deepEqual(text(more), ["10:00"]);
   assert.match(getElementById("wind-forecast-toggle").textContent, /明日10:00/);
 });
+
+// ─── Chart.js の非同期読込 ─────────────────────────────────────
+test("whenChartReady rejects when Chart.js never arrived after page load", async () => {
+  const { context } = buildContext();
+  delete context.Chart;
+  context.document.readyState = "complete";
+  await assert.rejects(
+    vm.runInContext("whenChartReady()", context),
+    /Chart\.js/,
+  );
+});
+
+test("whenChartReady resolves immediately when Chart.js is already loaded", async () => {
+  const { context } = buildContext();
+  context.Chart.defaults = { font: {} };
+  await vm.runInContext("whenChartReady()", context);
+});

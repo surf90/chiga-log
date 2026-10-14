@@ -221,11 +221,14 @@ lang: ja
 
     <link rel="stylesheet" href="{{ site.baseurl }}/assets/css/style.min.css" />
 
+    <!-- グラフ描画ライブラリは async。app.js は whenChartReady() で到着を待って
+         グラフだけを後から描き、テキスト情報の表示を待たせない（三原則2）。 -->
     <script
+      id="chartjs"
       src="{{ site.baseurl }}/assets/vendor/chart.umd.min.js"
       integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC"
       crossorigin="anonymous"
-      defer
+      async
     ></script>
     <!-- 地点設定（_data/site.json から Jekyll が生成）。app.min.js より前に読む。 -->
     <!-- ?v=2 は sw.js が chigalog-v19 以前（設定を Stale-While-Revalidate で

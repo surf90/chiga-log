@@ -994,6 +994,9 @@ PR #154 マージ後に本番状態を監査し、残っていた不具合・弱
 - **風予報の範囲**: 当日4〜23時のみ→現在から24時間先までの4〜23時に拡大。夜でも翌朝の風が見える。日付の変わり目に「明日」区切り（`.wind-day`）、トグルも「明日06:00-23:00」
 - 検証: node --test 53 / pytest 84 / ESLint / Prettier / pa11y 0 エラー
 
-**見送り**
+### 推奨項目の実装と最終検証（同日・追加）
 
-- Chart.js（約206KB、`defer`）の遅延読込: グラフ以外のテキストを先に出せるが、描画経路の非同期化が必要で変更が大きい。Service Worker で再訪時はキャッシュされるため優先度低
+- **Chart.js の非同期化**: `defer`→`async`（SRI 維持）。`whenChartReady()` Promise でグラフ描画だけを後回しにし、テキスト情報は Chart.js の到着を待たずに表示（低速回線の内容表示 2.7秒→2.4秒）。読み込み失敗は `error` イベントに加え window `load` 時点の未定義でも検知し、潮汐グラフは畳み・波は取得失敗表示（空枠を残さない）
+- **Open-Meteo を `current=` 形式へ移行**: `current_weather=true`（旧形式）→ `current=temperature_2m,wind_speed_10m,wind_direction_10m`、`windspeed_unit`→`wind_speed_unit`。出力は従来の `current_weather` 形に変換しフロント無変更
+- **最終検証**: pytest 85 / node --test 55・Worker 5 / ESLint / Prettier / pa11y 0 エラー / npm audit 0 / SRI 一致 / Chromium で通常・低速回線・Chart.js 遮断の3条件を実行しページエラー・CSP 違反なし
+- **積み残し（要手動のみ）**: 12月中の `data/mooninfo_2027.json` 配置、Search Console の sitemap 再送信

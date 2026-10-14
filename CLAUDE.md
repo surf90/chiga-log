@@ -3,7 +3,7 @@
 ## 三原則
 
 1. **確かなソース**: 気象庁を一次優先。Open-Meteo/Stormglass/NASA は補助。取得失敗時はUI上で明示し、ダミー値で誤読を誘発しない。
-2. **高速表示**: JSライブラリ原則不使用。例外は Chart.js のみ（自ホストUMDビルド `assets/vendor/chart.umd.min.js`）。フォントは可変フォント+サブセットで最小化（和文Webフォントは本文に使わずOS標準。ロゴのみサブセット）。
+2. **高速表示**: JSライブラリ原則不使用。例外は Chart.js のみ（自ホストUMDビルド `assets/vendor/chart.umd.min.js`、`async` 読込で `whenChartReady()` 経由。テキスト表示を待たせない）。フォントは可変フォント+サブセットで最小化（和文Webフォントは本文に使わずOS標準。ロゴのみサブセット）。
 3. **API/Actions 節約**: fetch は sessionStorage/localStorage キャッシュ経由。GitHub Actions cron は既存頻度維持、追加禁止。軽微Pushでの再ビルド禁止。
 
 ## 実行コマンド（PowerShell / win32）

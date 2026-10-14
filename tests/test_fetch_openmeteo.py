@@ -220,7 +220,7 @@ def _run_main(tmp_path, monkeypatch, *, weather, marine, amedas, wind, prev=None
 
 
 AMEDAS = {"observed_at": "2026-10-14T20:10:00+09:00", "temp": 23.4}
-WEATHER = {"current_weather": {"time": "2026-10-14T20:15", "temperature": 23.0}}
+WEATHER = {"current": {"time": "2026-10-14T20:15", "temperature_2m": 23.0, "wind_speed_10m": 4.1, "wind_direction_10m": 350}}
 MARINE = {"current": {"time": "2026-10-14T20:15", "wave_height": 0.7}}
 WIND = {"hourly": {"time": ["2026-10-14T21:00"], "wind_speed_10m": [3.0]}}
 
@@ -254,3 +254,13 @@ def test_main_succeeds_when_everything_is_available(tmp_path, monkeypatch):
     failed, out = _run_main(tmp_path, monkeypatch, weather=WEATHER, marine=MARINE, amedas=AMEDAS, wind=WIND)
     assert not failed
     assert out["weather_marine"]["current_weather"]["time"] == "2026-10-14T20:15+09:00"
+
+
+def test_main_converts_current_to_legacy_current_weather_shape(tmp_path, monkeypatch):
+    _, out = _run_main(tmp_path, monkeypatch, weather=WEATHER, marine=MARINE, amedas=AMEDAS, wind=WIND)
+    assert out["weather_marine"]["current_weather"] == {
+        "time": "2026-10-14T20:15+09:00",
+        "temperature": 23.0,
+        "windspeed": 4.1,
+        "winddirection": 350,
+    }

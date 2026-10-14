@@ -10,16 +10,20 @@ LAT = _loc.get("lat", 35.3175)
 LON = _loc.get("lon", 139.4151)
 LOCATION_NAME = _loc.get("display_name", "茅ヶ崎ヘッドランド")
 
+# 旧形式 current_weather=true は Open-Meteo で後方互換扱いのため、現行の
+# current= 形式で取得し、出力は従来どおり current_weather 形にそろえる
+# （フロントの互換を保つ。変換は _to_current_weather）。
 WEATHER_URL = (
     f"https://api.open-meteo.com/v1/forecast"
-    f"?latitude={LAT}&longitude={LON}&current_weather=true"
-    f"&timezone=Asia%2FTokyo&windspeed_unit=ms"
+    f"?latitude={LAT}&longitude={LON}"
+    f"&current=temperature_2m,wind_speed_10m,wind_direction_10m"
+    f"&timezone=Asia%2FTokyo&wind_speed_unit=ms"
 )
 WIND_FORECAST_URL = (
     f"https://api.open-meteo.com/v1/forecast"
     f"?latitude={LAT}&longitude={LON}"
     f"&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m"
-    f"&forecast_days=2&timezone=Asia%2FTokyo&windspeed_unit=ms"
+    f"&forecast_days=2&timezone=Asia%2FTokyo&wind_speed_unit=ms"
 )
 # current(1点)だけだと Actions の発火が数時間遅れた際に「数時間前の波高」が
 # そのまま表示され続ける。hourly 系列も併せて保存し、フロント側が
@@ -156,6 +160,17 @@ def fetch_marine() -> dict | None:
     return http_get_json(MARINE_URL_CURRENT_ONLY)
 
 
+def _to_current_weather(weather: dict) -> dict:
+    """current= 形式の応答を従来の current_weather 形（time/temperature/windspeed/winddirection）へ変換する。"""
+    cur = weather.get("current") or {}
+    return {
+        "time": cur.get("time"),
+        "temperature": cur.get("temperature_2m"),
+        "windspeed": cur.get("wind_speed_10m"),
+        "winddirection": cur.get("wind_direction_10m"),
+    }
+
+
 def _normalize_current_weather(cw: dict) -> dict:
     """current_weather オブジェクトの time に JST オフセットを付与する。"""
     if not isinstance(cw, dict):
@@ -209,7 +224,7 @@ def main() -> None:
     print("Open-Meteo データの取得を開始します...")
 
     # スキーマ検証: 主要キーが揃っているか確認 (BFFやAPI仕様変更の早期検知)
-    weather = _validated(http_get_json(WEATHER_URL), ["current_weather"], "openmeteo.weather")
+    weather = _validated(http_get_json(WEATHER_URL), ["current"], "openmeteo.weather")
     marine = _validated(fetch_marine(), ["current"], "openmeteo.marine")
     fresh_amedas = fetch_jma_amedas()
     wind_fc = _validated(http_get_json(WIND_FORECAST_URL), ["hourly"], "openmeteo.wind_forecast")
@@ -226,7 +241,7 @@ def main() -> None:
         save_json("data/weather_marine.json", {
             "updated_at": updated_at,
             "current_weather": (
-                _normalize_current_weather(weather.get("current_weather", {}))
+                _normalize_current_weather(_to_current_weather(weather))
                 if weather is not None else prev.get("current_weather", {})
             ),
             "marine": _normalize_marine(marine) if marine is not None else prev.get("marine", {}),

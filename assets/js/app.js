@@ -591,6 +591,45 @@ function redrawChartAxesForScroll() {
   });
 }
 
+/**
+ * Chart.js の読み込み完了を待つ Promise を返す（初回呼び出しで生成し共有）。
+ *
+ * Chart.js（約206KB）は async で読み、文字情報の表示を待たせない。以前は defer
+ * で app.js より先に実行させていたため、低速回線ではグラフ用ライブラリの到着まで
+ * 潮汐・天気・風などテキストの表示まで止まっていた（三原則2）。グラフ描画だけを
+ * この Promise の後ろへ回す。読み込み失敗時は reject し、呼び出し側はグラフ領域
+ * だけを諦める（テキストは表示済みのまま）。
+ * @returns {Promise<void>}
+ */
+let _chartReady = null;
+function whenChartReady() {
+  if (_chartReady) return _chartReady;
+  _chartReady = new Promise((resolve, reject) => {
+    if (typeof Chart !== "undefined") {
+      resolve();
+      return;
+    }
+    const el = document.getElementById("chartjs");
+    if (!el) {
+      reject(new Error("Chart.js の script 要素がありません"));
+      return;
+    }
+    const fail = () => reject(new Error("Chart.js の読み込みに失敗しました"));
+    // async の読み込み失敗は app.js の実行前に起き得るため、error イベントを
+    // 取り逃がす。全リソースの読み込み完了（window の load）時点でまだ未定義
+    // なら失敗とみなし、空のグラフ枠を残さない。
+    const failIfMissing = () => {
+      if (typeof Chart === "undefined") fail();
+      else resolve();
+    };
+    el.addEventListener("load", () => resolve(), { once: true });
+    el.addEventListener("error", fail, { once: true });
+    if (document.readyState === "complete") failIfMissing();
+    else window.addEventListener("load", failIfMissing, { once: true });
+  }).then(() => _updateChartsTheme(_prefersDark));
+  return _chartReady;
+}
+
 function buildChartXTicks(xMin, xMax) {
   const h4ms = 4 * 60 * 60 * 1000;
   const ticks = [{ value: xMin }];
@@ -933,7 +972,14 @@ function displayTideData(extremes, chartExtremes) {
       height: heightValue,
     });
   });
-  drawTideChart(chartDataPoints, hasHeightData);
+  whenChartReady()
+    .then(() => drawTideChart(chartDataPoints, hasHeightData))
+    .catch((e) => {
+      // テキストの満潮・干潮は表示済み。グラフ領域だけを畳む。
+      console.warn("Tide chart unavailable:", e);
+      const chartContainer = document.getElementById("tide-chart-container");
+      if (chartContainer) chartContainer.style.display = "none";
+    });
 }
 
 function drawTideChart(extremes, hasHeightData) {
@@ -1104,11 +1150,20 @@ async function fetchWaveGuidance(force = false) {
     if (todayData.length === 0) throw new Error("本日の波浪データがありません");
 
     waveChartData = todayData;
-    waveChartInstance = drawWaveCombinedChart(
-      "waveChart",
-      waveChartInstance,
-      todayData,
-    );
+    whenChartReady()
+      .then(() => {
+        waveChartInstance = drawWaveCombinedChart(
+          "waveChart",
+          waveChartInstance,
+          waveChartData,
+        );
+      })
+      .catch((e) => {
+        // 空のグラフ枠を残さず、波セクションは取得失敗として明示する。
+        console.error("Wave chart error:", e);
+        document.getElementById("wave-guid-content")?.classList.add("hidden");
+        setSectionError("wave-guid-error", true);
+      });
 
     document.getElementById("wave-guid-loading").classList.add("hidden");
     document.getElementById("wave-guid-content").classList.remove("hidden");
