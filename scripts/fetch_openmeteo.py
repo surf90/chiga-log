@@ -184,42 +184,70 @@ def _normalize_marine(marine: dict) -> dict:
     return out
 
 
+def _validated(data, required: list[str], label: str):
+    """必須キーが揃っていればそのまま、欠けていれば None（取得失敗扱い）を返す。"""
+    if data is None:
+        return None
+    try:
+        require_keys(data, required, label=label)
+    except ValueError as e:
+        print(f"[error] {e}")
+        return None
+    return data
+
+
 def main() -> None:
-    """Open-Meteo + アメダスからデータを取得してJSONを生成する。"""
+    """Open-Meteo + アメダスからデータを取得してJSONを生成する。
+
+    ソースごとに独立して保存する。以前は1つでも欠けると全ファイルの更新を
+    止めていたため、例えば風予報APIの一時障害だけでアメダス実測値・波高まで
+    更新されず、NOWカードが古いまま残った。欠けた部分は前回値を引き継ぐ
+    （フロントの鮮度判定は updated_at ではなく各値自身の時刻＝観測時刻・
+    marine の time 系列で行うため、引き継いだ値を新しいと誤読させない）。
+    1つでも失敗した場合は最後に異常終了し、Actions 上の失敗通知は維持する。
+    """
     print("Open-Meteo データの取得を開始します...")
 
-    weather = http_get_json(WEATHER_URL)
-    marine = fetch_marine()
-    jma_amedas = _carry_forward_amedas(fetch_jma_amedas())
-    wind_fc = http_get_json(WIND_FORECAST_URL)
-
-    failed = [k for k, v in {"weather": weather, "marine": marine, "wind_fc": wind_fc}.items() if v is None]
-    if failed:
-        raise RuntimeError(f"必須データ取得失敗: {failed}")
-
     # スキーマ検証: 主要キーが揃っているか確認 (BFFやAPI仕様変更の早期検知)
-    require_keys(weather, ["current_weather"], label="openmeteo.weather")
-    require_keys(marine, ["current"], label="openmeteo.marine")
-    require_keys(wind_fc, ["hourly"], label="openmeteo.wind_forecast")
+    weather = _validated(http_get_json(WEATHER_URL), ["current_weather"], "openmeteo.weather")
+    marine = _validated(fetch_marine(), ["current"], "openmeteo.marine")
+    fresh_amedas = fetch_jma_amedas()
+    wind_fc = _validated(http_get_json(WIND_FORECAST_URL), ["hourly"], "openmeteo.wind_forecast")
 
+    failed = [
+        k for k, v in {"weather": weather, "marine": marine, "jma_amedas": fresh_amedas, "wind_fc": wind_fc}.items()
+        if v is None
+    ]
     updated_at = now_jst().isoformat()
 
-    save_json("data/weather_marine.json", {
-        "updated_at": updated_at,
-        "current_weather": _normalize_current_weather(weather.get("current_weather", {})),
-        "marine": _normalize_marine(marine),
-        "jma_amedas": jma_amedas,
-    }, indent=2)
-    print("保存完了: data/weather_marine.json")
+    if weather is not None or marine is not None or fresh_amedas is not None:
+        prev = load_json("data/weather_marine.json")
+        prev = prev if isinstance(prev, dict) else {}
+        save_json("data/weather_marine.json", {
+            "updated_at": updated_at,
+            "current_weather": (
+                _normalize_current_weather(weather.get("current_weather", {}))
+                if weather is not None else prev.get("current_weather", {})
+            ),
+            "marine": _normalize_marine(marine) if marine is not None else prev.get("marine", {}),
+            "jma_amedas": _carry_forward_amedas(fresh_amedas),
+        }, indent=2)
+        print("保存完了: data/weather_marine.json")
+    else:
+        print("[warn] weather/marine/アメダスが全て取得失敗。weather_marine.json は更新しません。")
 
-    save_json("data/wind_forecast.json", {
-        "source": "Open-Meteo",
-        "location": {"name": LOCATION_NAME, "lat": LAT, "lon": LON},
-        "updated_at": updated_at,
-        "interval": "1h",
-        "items": _build_wind_items(wind_fc.get("hourly", {})),
-    }, indent=2)
-    print("保存完了: data/wind_forecast.json")
+    if wind_fc is not None:
+        save_json("data/wind_forecast.json", {
+            "source": "Open-Meteo",
+            "location": {"name": LOCATION_NAME, "lat": LAT, "lon": LON},
+            "updated_at": updated_at,
+            "interval": "1h",
+            "items": _build_wind_items(wind_fc.get("hourly", {})),
+        }, indent=2)
+        print("保存完了: data/wind_forecast.json")
+
+    if failed:
+        raise RuntimeError(f"一部データ取得失敗（取得できた分は保存済み）: {failed}")
 
 
 if __name__ == "__main__":

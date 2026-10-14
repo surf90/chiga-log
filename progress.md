@@ -965,3 +965,10 @@ PR #154 マージ後に本番状態を監査し、残っていた不具合・弱
 
 - Search Console で sitemap 再送信・URL検査「インデックス登録をリクエスト」を推奨（反映を早める）。Google の「サイト名」表示はサブディレクトリ（`/chiga-log/`）単位では非対応のため、独自ドメイン化が最も効く
 - `robots.txt` はプロジェクトページ配下では参照されない（既知）
+
+### 追加改善（2026-10-14 第3弾）
+
+- **更新日時のTZ固定**（`app.js`）: `displayFetchTime` が端末TZで整形しており、UTC等の端末で9時間ずれていた（実ブラウザ検証で発見）。`timeZone: "Asia/Tokyo"` を指定
+- **CSP強化**（`index.html`）: `style-src` から `'unsafe-inline'` を削除。インライン style 属性・`<style>` は無く、JS の CSSOM 操作は対象外。Chromium で `securitypolicyviolation` ゼロ・pa11y 0 エラーを確認
+- **Open-Meteo 取得の部分失敗**（`fetch_openmeteo.py`）: 1ソース欠落で全ファイル更新を止めていたのを、ソース別に保存へ変更（欠けた部分は前回値を時刻ごと引き継ぎ、最後に異常終了して失敗通知は維持）。スキーマ不一致は取得失敗扱い
+- **熱中症の都道府県コード**: `_data/site.json` の `jma.pref_code` から導出（フォーク対応）、地域名は CSV の府県予報区名を使用

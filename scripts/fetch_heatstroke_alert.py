@@ -4,9 +4,10 @@ import csv
 import io
 from datetime import datetime, timedelta
 
-from _common import http_get_text, now_jst, save_json
+from _common import http_get_text, load_site_config, now_jst, save_json
 
-PREFECTURE_CODE = "14"
+# 都道府県コード（2桁）。フォーク時は _data/site.json の jma.pref_code（6桁の府県コード）から導く。
+PREFECTURE_CODE = str(load_site_config().get("jma", {}).get("pref_code", "140000"))[:2]
 OUTPUT_PATH = "data/heatstroke_alert.json"
 BASE_URL = "https://www.wbgt.env.go.jp/alert/dl"
 SCHEDULE_HOURS = (5, 10, 14, 17)
@@ -75,7 +76,7 @@ def parse_alert_csv(text: str, source: str) -> dict:
         "fetchedAt": now_jst().isoformat(timespec="seconds"),
         "reportDateTime": f"{report_date}T{report_time}+09:00" if report_date and report_time else "",
         "source": source,
-        "area": "神奈川県",
+        "area": area.get(HEADER_MARKER) or "神奈川県",
         "prefectureCode": PREFECTURE_CODE,
         "alerts": alerts,
     }

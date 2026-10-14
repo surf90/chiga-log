@@ -498,7 +498,10 @@ function toJstDateStr(date) {
 function displayFetchTime(iso = null, thresholdMs = FRESHNESS.marine) {
   const el = document.getElementById("current-time");
   if (!el) return;
+  // 他の表示（潮汐・観測時刻など）と同じく JST 固定。閲覧端末のTZのままだと
+  // 海外・UTC設定の端末で「更新日時」だけが9時間ずれ、観測時刻と矛盾する。
   const options = {
+    timeZone: "Asia/Tokyo",
     month: "short",
     day: "numeric",
     weekday: "short",

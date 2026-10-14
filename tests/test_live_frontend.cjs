@@ -911,3 +911,11 @@ test("advisories alone do not raise the floating bar", async () => {
   });
   assert.equal(elements.get("floating-alert-bar").style.display, "none");
 });
+
+// ─── 更新日時は閲覧端末のTZに依らず JST ─────────────────────────
+test("the fetch time is shown in JST regardless of the device time zone", () => {
+  const { context, getElementById } = buildContext();
+  vm.runInContext("displayFetchTime()", context);
+  // NOW は 2026-08-29T10:30 JST（UTC 01:30）
+  assert.match(getElementById("current-time").textContent, /10:30/);
+});

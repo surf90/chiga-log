@@ -50,7 +50,7 @@ lang: ja
     default: "" | split: "/" | slice: 0, 3 | join: "/" -%}
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self' https://www.jma.go.jp {{ warning_api_origin }}; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'"
+      content="default-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self' https://www.jma.go.jp {{ warning_api_origin }}; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'"
     />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
