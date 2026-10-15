@@ -136,6 +136,7 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - **初期位置**: 読み込み時は「今」の少し手前（`now - 80px`）へ寄せ、画面の大半を今後の予測に使う。`display:none` の状態では `scrollLeft` 代入が無効になるため、`#weather-content` を表示した後に `requestAnimationFrame` で寄せ直す。
 - **現在時刻ライン**: `nowLinePlugin` がオレンジ（`#ff6600`, `globalAlpha:0.35`）の縦帯を描く。
 - **Y軸の固定表示**: `stickyYAxisPlugin` が、スクロール量ぶん平行移動した位置に軸幅ぶんの下地（`--box-bg`）をキャンバス全高で塗り、Chart.js の scale を再描画する。左軸（潮位 m・波高 m）は表示領域の左端、右軸（周期 秒）は右端へ貼り付く。スクロール中は `requestAnimationFrame` で1フレーム1回に間引いて再描画する。
+- **描画順とツールチップ**: `nowLinePlugin`・`stickyYAxisPlugin` は `afterDatasetsDraw` で描く（`afterDraw` だと組み込みツールチップの後になり、貼り付けた周期軸がツールチップを塗りつぶす）。ツールチップの左右は `tooltipXAlignInView` が表示領域基準で決める（点が表示領域の右半分なら左側へ出す）。
 - **右端フェード**: `.chart-scroll` に `mask-image` を当て、右端20pxを不透明度 `0.45` まで落として「横に続きがある」ことを示す（モバイルはスクロールバーが出ないため）。固定表示の周期軸が重なるので、完全な透明までは落とさない。
 - **キャンバス高**: 潮汐 134px / 波高・周期 140px。`layout.padding` は両グラフとも 0（下パディングを入れるとX軸ラベルの下に空白が残り、直下の注記との間が間延びする）。`responsive:false` のため **CSS（`.tide-chart-area` / `.wave-chart-area`）と JS（`canvas.height`）の両方に同じ値**を持つ。変更時は必ず2箇所を揃える。
 - **凡例**: 波グラフのカスタム凡例（`.wave-legend`）は **`.chart-scroll` の外側**に置く。内側に入れると凡例も一緒にスクロールし、2項目目が画面外へ出る。 項目は2つだけなので `justify-content:flex-start` ＋ `gap:16px` で左に寄せる（`space-between` で左右端へ離すと視線移動が無駄に大きい）。
