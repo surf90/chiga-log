@@ -105,7 +105,8 @@ https://surf90.github.io/chiga-log/
 | 地点設定（`site-config.js`）    | ネットワーク優先             | CSP `connect-src` は警報BFFのURLから生成されナビゲーションで即時に切り替わる。設定だけ旧版を返すと取得がCSPにブロックされるため、同じ鮮度で取る |
 | 静的アセット（CSS/JS/画像）     | Stale-While-Revalidate       | キャッシュがあれば即返して描画をブロックせず（三原則2）、裏で再取得して**次回アクセスから新版に入れ替わる**                                     |
 
-- **静的アセットを Cache-First にしてはいけません。** `index.html` は `style.min.css` / `app.min.js` をクエリ無しの固定URLで参照するため、Cache-First かつ再検証なしだと `minify.yml` が更新した内容が `CACHE_NAME` を手で上げるまで永久に届きません（実際に発生した不具合）。
+- **静的アセットを Cache-First にしてはいけません。** `index.html` は `style.min.css` / `app.min.js` を固定の `?v=N` 付きURLで参照するため、Cache-First かつ再検証なしだと `minify.yml` が更新した内容が `CACHE_NAME` を手で上げるまで永久に届きません（実際に発生した不具合）。
+- **HTML と CSS/JS の互換が崩れる変更**（要素ID・スクリプトの読み込み方式の変更など）では、`index.html` の `?v=N` を上げ、`sw.js` の `ASSETS` と `CACHE_NAME` も合わせてください。Stale-While-Revalidate は更新直後の初回表示で旧版を返すため、URL が同じだと「新しい HTML＋古い JS」の組み合わせが1回起きます（2026-10 の Chart.js `async` 化で該当）。
 - 他オリジンへのリクエスト（気象庁・Cloudflare Worker）は Service Worker を素通しします。オリジンは前方一致ではなく `URL` で解析して厳密比較します。
 - `assets/js/sw-register.js` は、**既存の Service Worker が置き換わったときだけ**ページを再読み込みします。`skipWaiting()` + `clients.claim()` は初回登録でも `controllerchange` を発火するため、無条件に再読み込みすると新規訪問者が毎回フルリロード＋データ再取得になります（三原則2・3に反する）。
 - `sw.js` を編集したら `CACHE_NAME`（`chigalog-vNN`）を上げてください。`activate` で旧キャッシュを削除します。

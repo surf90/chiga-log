@@ -59,3 +59,17 @@ def test_in_season_covers_operation_period_with_margin():
     assert not in_season(datetime(2026, 11, 1, 0, tzinfo=jst))
     assert not in_season(datetime(2027, 1, 15, 12, tzinfo=jst))
     assert not in_season(datetime(2027, 4, 14, 12, tzinfo=jst))
+
+
+def test_in_season_covers_any_year_without_edit():
+    """固定範囲が、どの年の「4月第4水曜」開始・10月下旬終了も含むこと。"""
+    from datetime import date, timedelta
+
+    from fetch_heatstroke_alert import in_season
+
+    jst = ZoneInfo("Asia/Tokyo")
+    for year in range(2026, 2040):
+        first = date(year, 4, 1)
+        start = first + timedelta(days=(2 - first.weekday()) % 7 + 21)
+        assert in_season(datetime(year, start.month, start.day, 5, tzinfo=jst))
+        assert in_season(datetime(year, 10, 28, 17, tzinfo=jst))
