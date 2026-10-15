@@ -983,6 +983,36 @@ p.note strong a {
   letter-spacing: -0.28px;
   margin-top: 8px;
 }
+/* 英語表示の切替（補助機能）。フッターのリンクと同じ控えめな色で目立たせない。 */
+.lang-toggle {
+  align-self: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--text-sub);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    opacity 0.2s var(--ease-out),
+    transform 0.12s var(--ease-out);
+}
+@media (hover: hover) {
+  .lang-toggle:hover {
+    opacity: 0.7;
+  }
+}
+.lang-toggle:active {
+  transform: scale(0.97);
+}
+.lang-toggle:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
 /* 警報色と紛れないよう、footer の他リンクより強いが警報より穏やかな赤。
    !important ではなく .footer a に勝つ詳細度で上書きする。 */
 .footer .lifesaving-link {

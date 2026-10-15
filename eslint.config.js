@@ -1,5 +1,5 @@
 // フロントエンド JS の静的検査設定（ESLint flat config）。
-// 対象は手書きソース（app.js / sw.js / sw-register.js）。生成物 *.min.js は対象外。
+// 対象は手書きソース（app.js / en.js / sw.js / sw-register.js）。生成物 *.min.js は対象外。
 // 追加依存を避けるため import せず、ブラウザ globals と必要ルールを自己完結で宣言する。
 
 const browserGlobals = {
@@ -24,6 +24,8 @@ const browserGlobals = {
   matchMedia: "readonly",
   getComputedStyle: "readonly",
   IntersectionObserver: "readonly",
+  MutationObserver: "readonly",
+  NodeFilter: "readonly",
   // 外部UMD / Jekyll 生成のグローバル
   Chart: "readonly",
   SITE_CONFIG: "readonly",
@@ -68,7 +70,7 @@ module.exports = [
     ],
   },
   {
-    files: ["assets/js/app.js"],
+    files: ["assets/js/app.js", "assets/js/en.js"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "script",

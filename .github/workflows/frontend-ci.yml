@@ -56,7 +56,7 @@ jobs:
       - name: Install pinned frontend tools
         run: npm ci
       - name: ESLint (source JS)
-        run: npx --no-install eslint assets/js/app.js sw.js assets/js/sw-register.js
+        run: npx --no-install eslint assets/js/app.js assets/js/en.js sw.js assets/js/sw-register.js
       - name: Tide frontend unit tests
         run: npm test
       - name: Warning BFF (Cloudflare Worker) unit tests
