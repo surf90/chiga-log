@@ -225,7 +225,7 @@ lang: ja
          上げたら sw.js の ASSETS と CACHE_NAME も合わせる。 -->
     <link
       rel="stylesheet"
-      href="{{ site.baseurl }}/assets/css/style.min.css?v=2"
+      href="{{ site.baseurl }}/assets/css/style.min.css?v=3"
     />
 
     <!-- グラフ描画ライブラリは async。app.js は whenChartReady() で到着を待って
@@ -245,7 +245,12 @@ lang: ja
       src="{{ site.baseurl }}/assets/js/site-config.js?v=2"
       defer
     ></script>
-    <script src="{{ site.baseurl }}/assets/js/app.min.js?v=2" defer></script>
+    <!-- style.min.css / app.min.js の ?v= は、HTML が新しい JS・CSS に依存する変更
+         （要素の追加など）を入れたら上げる。sw.js は静的アセットを
+         Stale-While-Revalidate で返すため、据え置くと再訪1回目は「新しい HTML ＋
+         古い JS」になり、追加したボタンが動かない（v3: 英語切替で実際に発生）。
+         sw.js の ASSETS と CACHE_NAME も合わせて更新する。 -->
+    <script src="{{ site.baseurl }}/assets/js/app.min.js?v=3" defer></script>
     <script
       src="{{ site.baseurl }}/assets/js/sw-register.js"
       data-sw-url="{{ site.baseurl }}/sw.js"

@@ -24,6 +24,15 @@
 - 画像: 追加前に WebP/最適化必須。
 - UI（色・フォント・余白・角丸）変更時は `DESIGN.md`（実CSS準拠の仕様書）に従い、変更後は同ファイルも追従更新。
 
+## 英語表示（おまけ）の扱い
+
+- **日本語版が本体、英語表示はおまけ**。いつ削除してもよい補助機能として扱い、日本語版の速度・保守・表示を一切犠牲にしない。迷ったら日本語版を優先し、英語側は諦める（日本語のまま残る／隠す）。
+- 構成: フッターの `#lang-toggle` ＋ `app.js` 末尾のローダー ＋ `assets/js/en.js`（英語選択時のみ遅延読込。`sw.js` の事前キャッシュにも入れない）。`app.js` の文言を英語対応のために変えない（`t()` 化・属性追加をしない）。
+- 機能追加・文言変更時: en.js の辞書追従は**任意**（漏れても英語表示で日本語のまま出るだけ）。ただし `app.js` が表示文言を判定に使っている箇所（例: `#current-time` の「更新中」）は en.js で訳さないこと。
+- 気象庁の自由文（天気文・概況）は英語表示で隠す。警報・津波は隠さない（訳せない名称は日本語のまま）。
+- 削除手順: `#lang-toggle`（index.html）・app.js の「英語表示（おまけ）」ブロック・`.lang-toggle`（style.css）・`assets/js/en.js`・`eslint.config.js`/`frontend-ci.yml` の en.js 指定を消す。
+- 新しい JS/CSS に依存する HTML 変更（要素追加など）では `index.html` の `?v=` と `sw.js` の `ASSETS`・`CACHE_NAME` を上げる（SW の Stale-While-Revalidate で「新 HTML＋旧 JS」になり、追加ボタンが無反応になる。2026-10-15 英語切替で発生）。
+
 ## キャッシュ戦略（API節約の要）
 
 - 当日変動データ（潮汐・波・天気）: sessionStorage 30分TTL
@@ -47,7 +56,7 @@
 | `update-jma-tide.yml`        | 気象庁 年次潮汐                               | 年3回（12/20・1/1・7/1） |
 | `minify.yml`                 | CSS/JS minify                                 | push トリガ              |
 | `test.yml`                   | Python ユニットテスト                         | push/PR                  |
-| `frontend-ci.yml`            | ESLint/Prettier + Worker試験/SRI検証 + pa11y   | push/PR                  |
+| `frontend-ci.yml`            | ESLint/Prettier + Worker試験/SRI検証 + pa11y  | push/PR                  |
 
 - データ品質は気象庁を一次優先（原則1）、更新頻度は Open-Meteo が主力（`fetch-openmeteo.yml`）。
 - cron 追加・頻度変更は要相談（三原則3: API/Actions 節約）。
