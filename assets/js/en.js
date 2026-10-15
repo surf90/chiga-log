@@ -116,9 +116,9 @@
     // 凡例が2行に折れないよう短くする（海域最大である旨は注記とツールチップにある）
     "波高（海域最大）[m]": "Wave height [m]",
     "周期 [秒]": "Period [s]",
-    "気象庁 沿岸波浪ガイダンス": "JMA coastal wave guidance",
-    "の予想値です。波高は関東地方南部（相模湾〜外房）の海域で最も高い地点の有義波高で、茅ヶ崎の岸近くでは通常これより低くなります。周期は卓越周期（波が来る間隔の秒数。長いほど力の強いうねり）です。":
-      " forecast. Wave height is the significant wave height at the highest point in the southern Kanto sea area (Sagami Bay to Sotobo); near the Chigasaki shore it is usually lower. Period is the peak period (seconds between waves; longer means more powerful swell).",
+    "気象庁 波浪ガイダンス": "JMA wave guidance",
+    "の予想値。波高は相模湾〜外房の最大値で、岸近くは通常これより低めです。":
+      " forecast. Height is the max for Sagami Bay to Sotobo; usually lower near shore.",
     "波情報の取得に失敗しました。": "Failed to load wave data.",
     // 水温・波高（Open-Meteo）
     "水温･波高": "Sea temp & waves",

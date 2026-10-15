@@ -531,9 +531,12 @@ function displayFetchTime(iso = null, thresholdMs = FRESHNESS.marine) {
 }
 
 // ─── 3. チャート共通 ────────────────────────────────────────
+// 両プラグインとも afterDatasetsDraw で描く（plugins 配列の順に nowLine → 軸）。
+// afterDraw だとツールチップ（Chart.js 組み込み、afterDraw）より後に描かれ、
+// 右端に貼り付けた周期の軸がツールチップを塗りつぶして読めなくなっていた。
 const nowLinePlugin = {
   id: "nowLine",
-  afterDraw(chart) {
+  afterDatasetsDraw(chart) {
     const now = Date.now();
     const xScale = chart.scales.x;
     if (now < xScale.min || now > xScale.max) return;
@@ -559,7 +562,7 @@ const nowLinePlugin = {
  */
 const stickyYAxisPlugin = {
   id: "stickyYAxis",
-  afterDraw(chart) {
+  afterDatasetsDraw(chart) {
     const scroller = chart.canvas.closest(".chart-scroll");
     if (!scroller) return;
     const maxScroll = scroller.scrollWidth - scroller.clientWidth;
@@ -586,6 +589,18 @@ const stickyYAxisPlugin = {
     });
   },
 };
+
+/**
+ * ツールチップを横スクロールの表示領域の内側へ向けて出す（Chart.js の xAlign 用）。
+ * Chart.js はキャンバス全幅（2日分）を基準に左右を決めるため、表示領域の右端付近の
+ * 点では画面外側へ出て切れていた。点が表示領域の右半分なら左側へ出す。
+ */
+function tooltipXAlignInView(ctx) {
+  const scroller = ctx.chart.canvas.closest(".chart-scroll");
+  const x = ctx.tooltip?.dataPoints?.[0]?.element?.x;
+  if (!scroller || x == null) return undefined;
+  return x - scroller.scrollLeft > scroller.clientWidth / 2 ? "right" : "left";
+}
 
 /**
  * 横スクロール中にY軸の貼り付け位置を追従させる。
@@ -1085,6 +1100,7 @@ function drawTideChart(extremes, hasHeightData) {
       plugins: {
         legend: { display: false },
         tooltip: {
+          xAlign: tooltipXAlignInView,
           callbacks: {
             title(items) {
               return items.length ? formatJstHm(items[0].parsed.x) : "";
@@ -1316,6 +1332,7 @@ function drawWaveCombinedChart(canvasId, existingInstance, data) {
       plugins: {
         legend: { display: false },
         tooltip: {
+          xAlign: tooltipXAlignInView,
           callbacks: {
             title(items) {
               return items.length ? formatJstHm(items[0].parsed.x) : "";
