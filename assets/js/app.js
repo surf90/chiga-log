@@ -2689,3 +2689,44 @@ function _showGlobalError() {
 
 window.addEventListener("error", _showGlobalError);
 window.addEventListener("unhandledrejection", _showGlobalError);
+
+// ─── 英語表示（補助） ───────────────────────────────────────
+// 日本語利用者には en.js を配らない。フッターの「English」を押した時と、
+// その選択を覚えている再訪時だけ読み込み、en.js が描画済みの文言を置き換える。
+const _EN_SRC = document.currentScript?.src?.replace(
+  /app(\.min)?\.js(\?.*)?$/,
+  "en.js",
+);
+
+function _loadEnglish() {
+  if (!_EN_SRC || document.getElementById("en-script")) return;
+  const s = document.createElement("script");
+  s.id = "en-script";
+  s.src = _EN_SRC;
+  document.head.appendChild(s);
+}
+
+(function () {
+  let saved = null;
+  try {
+    saved = localStorage.getItem("lang");
+  } catch {
+    // ストレージを使えない環境では日本語のまま
+  }
+  if (saved === "en") {
+    _loadEnglish();
+    return;
+  }
+  document.getElementById?.("lang-toggle")?.addEventListener?.(
+    "click",
+    () => {
+      try {
+        localStorage.setItem("lang", "en");
+      } catch {
+        // 保存できなくても今回の表示は英語にする
+      }
+      _loadEnglish();
+    },
+    { once: true },
+  );
+})();

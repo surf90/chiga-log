@@ -125,6 +125,7 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
 - アウトライン型（`.toggle-btn`）: `border:1px solid #0e7490` / `color:#0e7490` / 背景透明 / `min-height:44px`。
 - 全ボタン共通: `touch-action:manipulation`・`-webkit-tap-highlight-color:transparent`。`:hover` スタイルは必ず `@media (hover: hover)` 内に置く（タッチ端末でタップ後にホバー状態が残るのを防ぐ）。押下時は `:active`（`scale(0.97〜0.98)` または opacity 低下）、キーボード時は `:focus-visible`（2px アウトライン）で必ずフィードバックする。
+- 英語表示の切替（`.lang-toggle`、フッター内）: 補助機能のため目立たせない。背景透明 / `1px solid var(--hairline)` / `color:var(--text-sub)` / `border-radius:var(--radius-xs)` / `min-height:44px` / `font-size:12px` / 中央寄せ（`align-self:center`）。英語表示時は en.js が文言を「日本語」に変える。英語表示用のスタイルは持たない（自由文の非表示は en.js が要素のインラインスタイルで行う）。
 - タップターゲット: `.toggle-btn` / `#toast` / `.current-time` は `min-height:44px`。`.wave-legend-item`（グラフ凡例トグル、`<button aria-pressed>`）は padding＋負マージンでヒット領域を拡張。
 - セクションへのスクロール移動先（`.weather-box`）は `scroll-margin-top:56px` でサイトバー下に余白を確保。
 - 「更新日時」ボタン（`.current-time`）の右寄せは、親 `.float-alert-wrap` の `display:flex; justify-content:flex-end` で行う。`float`＋`overflow:hidden` のクリアフィックスは使わない（`overflow:hidden` が `outline-offset` のフォーカスリングを欠けさせる）。
