@@ -201,8 +201,12 @@ def _run_main(tmp_path, monkeypatch, *, weather, marine, amedas, wind, prev=None
     if prev is not None:
         (tmp_path / "data" / "weather_marine.json").write_text(json.dumps(prev), encoding="utf-8")
 
+    # 現在値と風予報は1リクエストの応答にまとまっている
     def fake_get_json(url, **_):
-        return weather if url == fom.WEATHER_URL else wind
+        assert url == fom.FORECAST_URL
+        if weather is None and wind is None:
+            return None
+        return {**(weather or {}), **(wind or {})}
 
     monkeypatch.setattr(fom, "http_get_json", fake_get_json)
     monkeypatch.setattr(fom, "fetch_marine", lambda: marine)

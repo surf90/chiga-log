@@ -68,7 +68,9 @@
 
 ```css
 /* 本文・見出し（欧文優先の和欧混植） */
-font-family: Inter, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
+font-family:
+  Inter, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP",
+  "Noto Sans CJK JP", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
 
 /* 数値・ラベル等（等幅） */
 font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
@@ -141,7 +143,7 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
 - 直近 **3件（`WIND_VISIBLE_COUNT`）は常時表示**し、4件目以降を `#wind-forecast-more`（`.wind-grid-more`、既定 `display:none`）へ入れて `.toggle-btn` で開閉する。開かなくても直近の風が読める状態にする。
 - 残りが0件のときはトグルボタンごと隠す（`hidden`）。押しても何も出ないボタンを見せない。
-- トグルのラベルは折りたたむ側の時間帯を示す（例: `残りの予想風（12:00-23:00）を表示 ▼`）。
+- トグルのラベルは折りたたむ側の時間帯を示す（例: `この先の風（12:00-23:00）を表示 ▼`）。
 - **表示範囲は現在から24時間先までの4〜23時**（当日に限らない）。夜でも翌朝の風が読めるようにする。日付が変わる行の直前に `.wind-day`（11px・700・`--text-sub`）で「明日」の区切りを入れ、トグルのラベルも `明日06:00-23:00` のように明日を1回だけ付ける。
 - **列構成**: `時刻 / 風向 / 平均 / 最大` の4列。見出し行 `.wind-head` とデータ行 `.wind-row` は
   **同じ `grid-template-columns`**（既定 `48px 1fr 52px 52px`、`max-width:420px` で `46px 1fr 46px 46px`）

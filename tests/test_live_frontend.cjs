@@ -1019,3 +1019,65 @@ test("formatJmaText joins particles to the preceding word", () => {
   assert.equal(fmt("　では　"), "では"); // 先頭の助詞は付け先が無いのでそのまま
   assert.equal(fmt("--"), "--");
 });
+
+// ─── 取得回数・エラー耐性（2026-10-15 点検） ──────────────────
+test("fetchLiveAmedas falls back to the previous block when the new one 404s", async () => {
+  const { context, calls } = buildContext({
+    fetchImpl: async (url) =>
+      url.includes("_09.json")
+        ? { ok: false, status: 404, json: async () => ({}) }
+        : jsonResponse({ 20260829085000: { temp: [24.1, 0] } }),
+  });
+  const live = await vm.runInContext("fetchLiveAmedas()", context);
+  assert.equal(live.temp, 24.1);
+  assert.equal(calls.length, 2);
+});
+
+test("tsunami detail is fetched once per bulletin, not on every recheck", async () => {
+  const { context, calls } = buildContext({
+    fetchImpl: async (url) =>
+      url.includes("list.json")
+        ? jsonResponse([{ ttl: "津波注意報", json: "20260101_VTSE41.json" }])
+        : jsonResponse({ Body: { Tsunami: { Forecast: { Item: [] } } } }),
+  });
+  await vm.runInContext("fetchTsunami()", context);
+  await vm.runInContext("fetchTsunami()", context);
+  assert.equal(calls.filter((u) => u.includes("VTSE41")).length, 1);
+  assert.equal(calls.filter((u) => u.includes("list.json")).length, 2);
+});
+
+test("heatstroke alerts are not fetched outside the operating season", async () => {
+  // NOW は 8/29（期間内）。期間判定だけを関数で確かめ、期間外の取得抑止を見る。
+  const { context, calls, getElementById } = buildContext();
+  assert.equal(vm.runInContext("inHeatstrokeSeason()", context), true);
+  assert.equal(
+    vm.runInContext(
+      "inHeatstrokeSeason(Date.parse('2026-11-01T00:00:00+09:00'))",
+      context,
+    ),
+    false,
+  );
+  assert.equal(
+    vm.runInContext(
+      "inHeatstrokeSeason(Date.parse('2026-10-31T23:59:00+09:00'))",
+      context,
+    ),
+    true,
+  );
+  vm.runInContext("inHeatstrokeSeason = () => false", context);
+  await vm.runInContext("fetchHeatstrokeAlert()", context);
+  assert.equal(calls.length, 0);
+  assert.ok(getElementById("heatstroke-box").classList.contains("hidden"));
+});
+
+test("warning report time is shown as month/day and time", () => {
+  const { context } = buildContext();
+  assert.equal(
+    vm.runInContext("formatReportDateTime('2026/10/15 08:10')", context),
+    "10月15日 8:10",
+  );
+  assert.equal(
+    vm.runInContext("formatReportDateTime('unknown')", context),
+    "unknown",
+  );
+});

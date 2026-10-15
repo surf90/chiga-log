@@ -91,7 +91,13 @@ async function fetchCached(
     force,
     ...(timeoutMs && { timeoutMs }),
   });
-  if (!res.ok) throw new Error(`fetch failed: ${url}`);
+  if (!res.ok) {
+    // 呼び出し側が「HTTPエラー（ファイル未生成など）」と「通信断・タイムアウト」を
+    // 区別できるよう、ステータスを載せて投げる（fetchLiveAmedas 参照）。
+    const err = new Error(`fetch failed: ${url}`);
+    err.status = res.status;
+    throw err;
+  }
   const data = await res.json();
   try {
     storage?.setItem(key, JSON.stringify({ data, ts: Date.now() }));
@@ -321,7 +327,8 @@ async function fetchLiveAmedas(force = false) {
   const now = Date.now();
   // 3時間ブロックの切り替わり直後はファイルが未生成・空になり得るため、
   // 現在ブロックで拾えなければ1つ前のブロックまで遡る。
-  for (const ms of [now, now - 3 * 3600e3]) {
+  const blocks = [now, now - 3 * 3600e3];
+  for (const [i, ms] of blocks.entries()) {
     const { url, key } = amedasPointRef(ms);
     let data;
     try {
@@ -332,6 +339,10 @@ async function fetchLiveAmedas(force = false) {
       });
       pruneAmedasCache(key);
     } catch (e) {
+      // 切り替わり直後の新ブロックは 404 で返ることがある。HTTPエラーなら
+      // 前のブロックを試す。通信断・タイムアウトは前のブロックでも同じ結果に
+      // なり待ち時間が倍になるだけなので、そこで打ち切る。
+      if (e?.status && i < blocks.length - 1) continue;
       console.warn("Live amedas fetch failed:", e);
       return null;
     }
@@ -1459,6 +1470,18 @@ function warningLevelFromName(name) {
   return "chuiho";
 }
 
+/**
+ * 気象庁の発表時刻 "2026/10/15 08:10" を「10月15日 8:10」に整える。
+ * 形式が違えば元の文字列のまま返す（表示を空にしない）。
+ * @param {string} s
+ * @returns {string}
+ */
+function formatReportDateTime(s) {
+  const m = /^\d{4}\/(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{2})/.exec(String(s));
+  if (!m) return String(s);
+  return `${Number(m[1])}月${Number(m[2])}日 ${Number(m[3])}:${m[4]}`;
+}
+
 async function fetchJmaWarning(force = false) {
   try {
     const bust = Math.floor(Date.now() / (15 * 60000));
@@ -1563,7 +1586,7 @@ async function fetchJmaWarning(force = false) {
       contentEl.appendChild(headlineEl);
     }
     if (activeWarnings.length > 0 && data.reportDateTime) {
-      headlineEl.textContent = `気象庁発表（${data.reportDateTime}）`;
+      headlineEl.textContent = `気象庁 ${formatReportDateTime(data.reportDateTime)} 発表`;
       headlineEl.style.display = "block";
     } else {
       headlineEl.style.display = "none";
@@ -1578,6 +1601,21 @@ async function fetchJmaWarning(force = false) {
     document.getElementById("jma-warning-loading").classList.add("hidden");
     setSectionError("jma-warning-error", true);
   }
+}
+
+// 熱中症警戒アラートの運用期間（月, 日）。scripts/fetch_heatstroke_alert.py の
+// SEASON_START / SEASON_END と同じ値（例年4月下旬〜10月下旬に前後の余裕を持たせた幅）。
+// 期間外は発表が無く JSON も更新されないため、5分ごとの再確認を出さない。
+const HEATSTROKE_SEASON_START = [4, 15];
+const HEATSTROKE_SEASON_END = [10, 31];
+
+/** JST の日付が熱中症警戒アラートの運用期間内かを返す。 */
+function inHeatstrokeSeason(nowMs = Date.now()) {
+  const jst = new Date(nowMs + JST_OFFSET_MS);
+  const md = (jst.getUTCMonth() + 1) * 100 + jst.getUTCDate();
+  const [sm, sd] = HEATSTROKE_SEASON_START;
+  const [em, ed] = HEATSTROKE_SEASON_END;
+  return md >= sm * 100 + sd && md <= em * 100 + ed;
 }
 
 /** 発表対象日を「今日」「明日」または月日で表示する。 */
@@ -1596,6 +1634,10 @@ async function fetchHeatstrokeAlert(force = false) {
   const title = document.getElementById("heatstroke-title");
   const source = document.getElementById("heatstroke-source");
   if (!box || !list || !title || !source) return;
+  if (!inHeatstrokeSeason()) {
+    box.classList.add("hidden");
+    return;
+  }
   try {
     // 発表時刻（5時・14時・17時）直後に、発表前のsessionStorageが
     // 最大30分残らないよう、5分粒度のURLで同一オリジンJSONを直接取得する。
@@ -1658,6 +1700,7 @@ async function fetchHeatstrokeAlert(force = false) {
 const TSUNAMI_AREA_CODE = _cfgJma.tsunami_area_code ?? "330"; // 相模湾・三浦半島
 const TSUNAMI_LIST_URL = "https://www.jma.go.jp/bosai/tsunami/data/list.json";
 const TSUNAMI_BASE_URL = "https://www.jma.go.jp/bosai/tsunami/data/";
+const TSUNAMI_DETAIL_TTL_MS = 24 * 3600e3;
 
 /** Kind.Codeから津波バッジのレベルを判定する。52:大津波警報 53:津波警報 62:津波注意報。*/
 function tsunamiLevelFromCode(code) {
@@ -1704,11 +1747,15 @@ async function fetchTsunami(force = false) {
       return;
     }
 
-    const detRes = await fetchWithTimeout(`${TSUNAMI_BASE_URL}${latest.json}`, {
-      force,
-    });
-    if (!detRes.ok) throw new Error("tsunami detail fetch failed");
-    const det = await detRes.json();
+    // 詳細JSONは発表ごとに別ファイル名で、中身は後から変わらない。平常時も
+    // list.json の先頭は過去の発表を指し続けるため、5分ごとの再確認で同じ
+    // 詳細を取り直さないようファイル名をキーにキャッシュする。新しい発表が
+    // 出れば list.json 側のファイル名が変わるので、取りこぼしは起きない。
+    const det = await fetchCached(
+      `${TSUNAMI_BASE_URL}${latest.json}`,
+      `cache_tsunami_${latest.json}`,
+      { ttlMs: TSUNAMI_DETAIL_TTL_MS, force },
+    );
 
     const items = det?.Body?.Tsunami?.Forecast?.Item ?? [];
     const area = items.find((it) => it?.Area?.Code === TSUNAMI_AREA_CODE);
@@ -2075,8 +2122,8 @@ function updateWindForecastToggleLabel(isOpen) {
   if (!btn) return;
   const range = windForecastRange ? `（${windForecastRange}）` : "";
   btn.textContent = isOpen
-    ? `残りの予想風${range}を閉じる ▲`
-    : `残りの予想風${range}を表示 ▼`;
+    ? `この先の風${range}を閉じる ▲`
+    : `この先の風${range}を表示 ▼`;
   btn.setAttribute("aria-expanded", String(isOpen));
 }
 

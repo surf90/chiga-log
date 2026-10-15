@@ -13,15 +13,12 @@ LOCATION_NAME = _loc.get("display_name", "茅ヶ崎ヘッドランド")
 # 旧形式 current_weather=true は Open-Meteo で後方互換扱いのため、現行の
 # current= 形式で取得し、出力は従来どおり current_weather 形にそろえる
 # （フロントの互換を保つ。変換は _to_current_weather）。
-WEATHER_URL = (
+# 現在値（NOWカードの予備）と風予報（hourly）は同じ forecast エンドポイントの
+# 同じ地点なので1リクエストにまとめる（実行ごとのAPI呼び出しを1本減らす＝三原則3）。
+FORECAST_URL = (
     f"https://api.open-meteo.com/v1/forecast"
     f"?latitude={LAT}&longitude={LON}"
     f"&current=temperature_2m,wind_speed_10m,wind_direction_10m"
-    f"&timezone=Asia%2FTokyo&wind_speed_unit=ms"
-)
-WIND_FORECAST_URL = (
-    f"https://api.open-meteo.com/v1/forecast"
-    f"?latitude={LAT}&longitude={LON}"
     f"&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m"
     f"&forecast_days=2&timezone=Asia%2FTokyo&wind_speed_unit=ms"
 )
@@ -234,10 +231,13 @@ def main() -> None:
     print("Open-Meteo データの取得を開始します...")
 
     # スキーマ検証: 主要キーが揃っているか確認 (BFFやAPI仕様変更の早期検知)
-    weather = _validated(http_get_json(WEATHER_URL), ["current"], "openmeteo.weather")
+    # 現在値と風予報は同じ応答に入っている。検証は部分ごとに行い、片方の
+    # キーが欠けても、もう片方は保存できるようにする。
+    forecast = http_get_json(FORECAST_URL)
+    weather = _validated(forecast, ["current"], "openmeteo.weather")
     marine = _validated(fetch_marine(), ["current"], "openmeteo.marine")
     fresh_amedas = fetch_jma_amedas()
-    wind_fc = _validated(http_get_json(WIND_FORECAST_URL), ["hourly"], "openmeteo.wind_forecast")
+    wind_fc = _validated(forecast, ["hourly"], "openmeteo.wind_forecast")
 
     failed = [k for k, v in {"weather": weather, "marine": marine, "wind_fc": wind_fc}.items() if v is None]
     prev_wm = load_json("data/weather_marine.json")
