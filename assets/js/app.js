@@ -2690,19 +2690,28 @@ function _showGlobalError() {
 window.addEventListener("error", _showGlobalError);
 window.addEventListener("unhandledrejection", _showGlobalError);
 
-// ─── 英語表示（補助） ───────────────────────────────────────
-// 日本語利用者には en.js を配らない。フッターの「English」を押した時と、
-// その選択を覚えている再訪時だけ読み込み、en.js が描画済みの文言を置き換える。
-const _EN_SRC = document.currentScript?.src?.replace(
-  /app(\.min)?\.js(\?.*)?$/,
-  "en.js",
-);
+// ─── 英語表示（おまけ） ─────────────────────────────────────
+// 日本語版が本体。英語表示はいつ削除してもよい補助機能で、日本語版の速度・
+// 保守を優先する（CLAUDE.md「英語表示（おまけ）の扱い」）。日本語利用者には
+// en.js を配らず、「English」を押した時と、その選択を覚えている再訪時だけ読み込む。
+// 削除する時は、このブロック・index.html の #lang-toggle・style.css の
+// .lang-toggle・assets/js/en.js を消せば日本語版には影響しない。
+//
+// en.js の URL は app.js 自身の URL から作り、?v= も引き継ぐ（sw.js の
+// Stale-While-Revalidate で古い en.js が返らないよう、版を app.min.js と揃える）。
+const _EN_SRC = (
+  document.currentScript?.src ||
+  document.querySelector?.('script[src*="/app.min.js"], script[src*="/app.js"]')
+    ?.src
+)?.replace(/app(\.min)?\.js/, "en.js");
 
 function _loadEnglish() {
   if (!_EN_SRC || document.getElementById("en-script")) return;
   const s = document.createElement("script");
   s.id = "en-script";
   s.src = _EN_SRC;
+  // 取得失敗（オフライン等）なら要素を外して、もう一度押せば再試行できるようにする。
+  s.onerror = () => s.remove();
   document.head.appendChild(s);
 }
 
@@ -2717,16 +2726,14 @@ function _loadEnglish() {
     _loadEnglish();
     return;
   }
-  document.getElementById?.("lang-toggle")?.addEventListener?.(
-    "click",
-    () => {
-      try {
-        localStorage.setItem("lang", "en");
-      } catch {
-        // 保存できなくても今回の表示は英語にする
-      }
-      _loadEnglish();
-    },
-    { once: true },
-  );
+  // 英語表示中のボタン（日本語へ戻す）は en.js 側が受け持つ。
+  document.getElementById?.("lang-toggle")?.addEventListener?.("click", () => {
+    if (document.documentElement.lang === "en") return;
+    try {
+      localStorage.setItem("lang", "en");
+    } catch {
+      // 保存できなくても今回の表示は英語にする
+    }
+    _loadEnglish();
+  });
 })();

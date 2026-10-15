@@ -8,6 +8,12 @@ updated: 2026-10-15
 
 ## 完了済み（2026-10-15）
 
+### 英語切替ボタンが本番で無反応だった件の修正
+
+- **原因**: `minify.yml` は成功し `app.min.js` にローダーは入っていた。`sw.js` が静的アセットを Stale-While-Revalidate で返すため、デプロイ直後の再訪では「新しい index.html（ボタンあり）＋キャッシュの古い app.min.js?v=2（ローダーなし）」となり、押しても何も起きなかった。
+- **修正**: `index.html` の `style.min.css`/`app.min.js` を `?v=3`、`sw.js` の `ASSETS` を同じく `?v=3`、`CACHE_NAME` を `chigalog-v22` に。ローダーは en.js の URL に app.js と同じ `?v=` を引き継ぐ（古い en.js が返らない）。en.js の取得失敗時は script 要素を外して再押下で再試行できるようにした。`currentScript` が取れない場合は script 要素から URL を探す。
+- **記録**: CLAUDE.md / AGENTS.md に「英語表示（おまけ）の扱い」（日本語版優先・いつ削除してもよい・削除手順・`?v=` を上げる条件）を追加。en.js・app.js・DESIGN.md の該当箇所にも明記。
+
 ### 補助的な英語表示（フッターの「English」ボタン）
 
 - **方針**: 日本語版（主用途）に負担を掛けない。日本語版の追加はボタン1個と `app.js` 末尾のローダー約40行のみで、`assets/js/en.js` は English を押した利用者（と選択を `localStorage.lang` に覚えた再訪時）にだけ読み込む。`sw.js` の事前キャッシュにも入れない。
