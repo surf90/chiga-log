@@ -129,6 +129,16 @@ def _carry_forward_amedas(fresh: dict | None) -> dict | None:
     return {**prev_amedas, "stale": True}
 
 
+def _amedas_failed_repeatedly(prev_stale: bool, amedas: dict | None) -> bool:
+    """アメダス取得失敗を Actions の失敗として通知すべきかを返す。
+
+    前回も失敗して引き継ぎ値だった（2回連続の失敗）か、引き継げる値自体が
+    無い場合に True。観測時刻の古さで判定しないのは、cron の実効間隔が
+    4〜12時間まで伸びる（CLAUDE.md）ため単発の失敗でも古く見えるから。
+    """
+    return amedas is None or prev_stale
+
+
 def _build_wind_items(hourly: dict) -> list[dict]:
     """Open-Meteoの時系列配列から風予報の整形済みアイテム配列を生成する。"""
     items = []
@@ -229,15 +239,22 @@ def main() -> None:
     fresh_amedas = fetch_jma_amedas()
     wind_fc = _validated(http_get_json(WIND_FORECAST_URL), ["hourly"], "openmeteo.wind_forecast")
 
-    failed = [
-        k for k, v in {"weather": weather, "marine": marine, "jma_amedas": fresh_amedas, "wind_fc": wind_fc}.items()
-        if v is None
-    ]
+    failed = [k for k, v in {"weather": weather, "marine": marine, "wind_fc": wind_fc}.items() if v is None]
+    prev_wm = load_json("data/weather_marine.json")
+    prev_amedas_stale = bool(
+        isinstance(prev_wm, dict) and isinstance(prev_wm.get("jma_amedas"), dict) and prev_wm["jma_amedas"].get("stale")
+    )
+    amedas = _carry_forward_amedas(fresh_amedas)
+    # アメダスは latest_time.txt 再生成中の 404 等で単発の失敗が多く、前回値の
+    # 引き継ぎ＋フロントのライブ補完（bosai 直接取得）で吸収できる。単発では
+    # 失敗通知を出さず、2回連続で失敗した（＝継続障害や仕様変更の疑い）ときだけ
+    # 失敗として Actions に伝える。
+    if fresh_amedas is None and _amedas_failed_repeatedly(prev_amedas_stale, amedas):
+        failed.append("jma_amedas")
     updated_at = now_jst().isoformat()
 
     if weather is not None or marine is not None or fresh_amedas is not None:
-        prev = load_json("data/weather_marine.json")
-        prev = prev if isinstance(prev, dict) else {}
+        prev = prev_wm if isinstance(prev_wm, dict) else {}
         save_json("data/weather_marine.json", {
             "updated_at": updated_at,
             "current_weather": (
@@ -245,7 +262,7 @@ def main() -> None:
                 if weather is not None else prev.get("current_weather", {})
             ),
             "marine": _normalize_marine(marine) if marine is not None else prev.get("marine", {}),
-            "jma_amedas": _carry_forward_amedas(fresh_amedas),
+            "jma_amedas": amedas,
         }, indent=2)
         print("保存完了: data/weather_marine.json")
     else:

@@ -264,3 +264,27 @@ def test_main_converts_current_to_legacy_current_weather_shape(tmp_path, monkeyp
         "windspeed": 4.1,
         "winddirection": 350,
     }
+
+
+def test_main_tolerates_single_amedas_failure(tmp_path, monkeypatch):
+    # 単発の失敗は前回値を引き継ぎ、失敗通知は出さない
+    failed, out = _run_main(
+        tmp_path, monkeypatch, weather=WEATHER, marine=MARINE, amedas=None, wind=WIND,
+        prev={"jma_amedas": AMEDAS},
+    )
+    assert not failed
+    assert out["weather_marine"]["jma_amedas"] == {**AMEDAS, "stale": True}
+
+
+def test_main_fails_on_consecutive_amedas_failure(tmp_path, monkeypatch):
+    failed, _ = _run_main(
+        tmp_path, monkeypatch, weather=WEATHER, marine=MARINE, amedas=None, wind=WIND,
+        prev={"jma_amedas": {**AMEDAS, "stale": True}},
+    )
+    assert failed
+
+
+def test_main_fails_when_no_amedas_value_at_all(tmp_path, monkeypatch):
+    failed, out = _run_main(tmp_path, monkeypatch, weather=WEATHER, marine=MARINE, amedas=None, wind=WIND)
+    assert failed
+    assert out["weather_marine"]["jma_amedas"] is None

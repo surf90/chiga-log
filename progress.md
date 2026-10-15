@@ -27,6 +27,7 @@ updated: 2026-10-06
 - **npm**: ルートの `npm audit fix`（qs、moderate）で 0 件。
 - **EOL ランタイム**: `update-jma-tide.yml` の Python 3.10 → 3.12（3.10 は 2026-10 でサポート終了。他のワークフローと統一）、`frontend-ci.yml` の Ruby 3.2 → 3.3（3.2 は 2026-03 に終了。GitHub Pages 本番と同じ系列）。push 後の Frontend CI 成功を確認。
 - **ubuntu-latest の Ubuntu 26.04 移行（2026-10-19〜11-19）**: 対応不要と判断。26.04 イメージにも Google Chrome（pa11y が使う `/usr/bin/google-chrome-stable`）、Python 3.12、Ruby 3.3 が入っている（actions/runner-images の Ubuntu2604-Readme で確認）。移行期間中に pa11y ジョブだけ落ちたら Chrome のパスを疑う。
+
 ## 完了済み（2026-10-01）
 
 ### 年次潮汐の定期実行が落ちたときの保険（cron 追加なし）
@@ -1001,3 +1002,13 @@ PR #154 マージ後に本番状態を監査し、残っていた不具合・弱
 - **実 API 検証**: PR ブランチで `fetch-openmeteo.yml` を workflow_dispatch し success。新形式で `current_weather`（time/temperature/windspeed/winddirection）が正しく生成されることを確認（検証用のデータコミットは main の定期更新と競合するためブランチから除去）
 - **最終検証**: pytest 85 / node --test 55・Worker 5 / ESLint / Prettier / pa11y 0 エラー / npm audit 0 / SRI 一致 / Chromium で通常・低速回線・Chart.js 遮断の3条件を実行しページエラー・CSP 違反なし
 - **積み残し（要手動のみ）**: 12月中の `data/mooninfo_2027.json` 配置、Search Console の sitemap 再送信
+
+## 完了済み（2026-10-15）PR #198/#199 のレビュー後の改善
+
+- **アメダス単発失敗で Actions を失敗にしない**（`fetch_openmeteo.py`）: #198 で失敗扱いに加わったが、latest_time 再生成中の404等で単発失敗が多く通知が増えるため、前回値引き継ぎ（`stale`）で吸収。2回連続失敗、または引き継げる値が無いときだけ失敗通知。観測時刻の古さで判定しないのは cron 実効間隔（4〜12時間）で単発でも古く見えるため
+- **熱中症の運用期間**（`fetch_heatstroke_alert.py`）: 「4月第4水曜〜10月第4水曜」は終了日に当てはまらない（2026年度は 10/21＝第3水曜、環境省 2026-04-14 発表）ため規則計算は不採用。固定範囲 4/15〜10/31 が毎年の開始・終了を含むことをコメントと 2026〜2039 年のテストで担保し、毎年の書き換え不要
+- **HTML と JS の版ずれ対策**（`index.html`/`sw.js`）: SW は静的アセットを Stale-While-Revalidate で返すため、#199（Chart.js `async` 化）直後の初回表示で「新HTML＋旧JS」が起き得た。`style.min.css`/`app.min.js` に `?v=2` を付け、`sw.js` の ASSETS 追従・`CACHE_NAME` を v21 に。運用ルールを README に追記
+- **天気・風の文の整形**（`app.js` `formatJmaText`）: 全角スペースを一律半角にしていたため「海上 では はじめ」と途切れて読めた。助詞だけの語は前の語に付ける（「海上では はじめ」）
+- 検証: pytest 89 / node --test 56 / ESLint / Prettier / Jekyll ビルドで `?v=2` 出力確認
+
+**Search Console（2026-10-15 確認）**: `https://surf90.github.io/chiga-log/sitemap.xml` は 200・`application/xml`・正しい内容で公開済み、ページも noindex 無し・canonical 正常。「取得できませんでした」は Search Console 側の表示（GitHub Pages で頻出）で、サイト側の不備ではない。誤送信の `/sitemap` は削除推奨。単一ページのためサイトマップより URL 検査の「インデックス登録をリクエスト」が有効

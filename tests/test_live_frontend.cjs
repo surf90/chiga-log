@@ -1005,3 +1005,17 @@ test("whenChartReady resolves immediately when Chart.js is already loaded", asyn
   context.Chart.defaults = { font: {} };
   await vm.runInContext("whenChartReady()", context);
 });
+
+// ─── 気象庁の天気・風の文の整形 ──────────────────────────────
+test("formatJmaText joins particles to the preceding word", () => {
+  const { context } = buildContext();
+  const fmt = (t) =>
+    vm.runInContext(`formatJmaText(${JSON.stringify(t)})`, context);
+  assert.equal(
+    fmt("北の風　後　東の風　海上　では　はじめ　北東の風　やや強く"),
+    "北の風 後 東の風 海上では はじめ 北東の風 やや強く",
+  );
+  assert.equal(fmt("くもり　時々　晴れ"), "くもり 時々 晴れ");
+  assert.equal(fmt("　では　"), "では"); // 先頭の助詞は付け先が無いのでそのまま
+  assert.equal(fmt("--"), "--");
+});

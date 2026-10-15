@@ -1804,6 +1804,28 @@ function forecastPopIndex(timeDefines, nowMs) {
   );
 }
 
+// 天気・風の文で前の語に付ける助詞（単独の語として区切られて届く）。
+const JMA_TEXT_PARTICLES = new Set(["では", "で", "は"]);
+
+/**
+ * 気象庁の天気・風の文（語句ごとに全角スペース区切り）を表示用に整える。
+ * 区切りは半角スペースにするが、助詞だけの語（「海上　では」の「では」）は
+ * 前の語に付ける。全語を空けると「海上 では はじめ」と文が途切れて読める。
+ * @param {string} text
+ * @returns {string}
+ */
+function formatJmaText(text) {
+  const words = String(text)
+    .split(/[\s　]+/)
+    .filter(Boolean);
+  const out = [];
+  for (const w of words) {
+    if (out.length > 0 && JMA_TEXT_PARTICLES.has(w)) out[out.length - 1] += w;
+    else out.push(w);
+  }
+  return out.join(" ");
+}
+
 async function fetchJmaForecast(force = false) {
   const hour8Buster = Math.floor(Date.now() / (8 * 60 * 60 * 1000));
   try {
@@ -1843,11 +1865,10 @@ async function fetchJmaForecast(force = false) {
     );
     const popIdx = forecastPopIndex(timeSeries1.timeDefines, nowMs);
 
-    // 気象庁の天気文は全角スペース区切り。風と同じ扱いで半角に正規化する。
-    document.getElementById("jma-weather").textContent = (
-      (dayIdx >= 0 && areaWeather.weathers?.[dayIdx]) ||
-      "--"
-    ).replace(/　/g, " ");
+    // 気象庁の天気文は全角スペース区切り。風と同じ扱いで整える。
+    document.getElementById("jma-weather").textContent = formatJmaText(
+      (dayIdx >= 0 && areaWeather.weathers?.[dayIdx]) || "--",
+    );
     const pop = popIdx >= 0 ? areaPop.pops?.[popIdx] : null;
     document.getElementById("jma-pop").textContent =
       pop != null && pop !== "" ? pop + "%" : "--";
@@ -1880,10 +1901,9 @@ async function fetchJmaForecast(force = false) {
           ? `${maxIsTomorrow ? "明日" : ""}${tempMax ?? "--"}℃ / ${minIsTomorrow ? "明日" : ""}${tempMin ?? "--"}℃`
           : tempText;
 
-    document.getElementById("jma-wind").textContent = (
-      (dayIdx >= 0 && areaWeather.winds?.[dayIdx]) ||
-      "--"
-    ).replace(/　/g, " ");
+    document.getElementById("jma-wind").textContent = formatJmaText(
+      (dayIdx >= 0 && areaWeather.winds?.[dayIdx]) || "--",
+    );
     const overviewText = data?.overview?.text ?? "";
     document.getElementById("jma-overview-body").textContent = overviewText;
     const hasTyphoon = overviewText.includes("台風");
