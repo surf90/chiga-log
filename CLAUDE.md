@@ -31,7 +31,7 @@
 - 機能追加・文言変更時: en.js の辞書追従は**任意**（漏れても英語表示で日本語のまま出るだけ）。ただし `app.js` が表示文言を判定に使っている箇所（例: `#current-time` の「更新中」）は en.js で訳さないこと。
 - 気象庁の自由文（天気文・概況）は英語表示で隠す。警報・津波は隠さない（訳せない名称は日本語のまま）。
 - 削除手順: `#lang-toggle`（index.html）・app.js の「英語表示（おまけ）」ブロック・`.lang-toggle`（style.css）・`assets/js/en.js`・`eslint.config.js`/`frontend-ci.yml` の en.js 指定を消す。
-- 新しい JS/CSS に依存する HTML 変更（要素追加など）では `index.html` の `?v=` と `sw.js` の `ASSETS`・`CACHE_NAME` を上げる（SW の Stale-While-Revalidate で「新 HTML＋旧 JS」になり、追加ボタンが無反応になる。2026-10-15 英語切替で発生）。
+- 新しい JS/CSS に依存する HTML 変更（要素追加など）では `index.html`・`404.html` の `?v=` と `sw.js` の `ASSETS`・`CACHE_NAME` を上げる（SW の Stale-While-Revalidate で「新 HTML＋旧 JS」になり、追加ボタンが無反応になる。2026-10-15 英語切替で発生）。
 
 ## キャッシュ戦略（API節約の要）
 
