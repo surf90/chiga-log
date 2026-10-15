@@ -53,7 +53,8 @@
     ...PLACES,
     // 共通
     気象庁: "JMA",
-    "※": "*",
+    // 注記の「※」の直後にリンクが続くため、英語では空白を補う
+    "※": "* ",
     "読み込み中...": "Loading...",
     "取得中...": "Loading...",
     取得失敗: "Failed",
@@ -61,7 +62,8 @@
     明日: "Tomorrow",
     "file:// プロトコル非対応": "file:// not supported",
     メインコンテンツへスキップ: "Skip to main content",
-    茅ヶ崎の海情報: "Chigasaki ocean info",
+    // ロゴ横に並ぶため、日本語と同程度の幅に収める（320px で2行に崩れない）
+    茅ヶ崎の海情報: "Chigasaki Sea",
     "茅ヶ崎の波・潮汐・水温が、５秒でわかる。":
       "Chigasaki waves, tides and water temperature at a glance.",
     "データの取得に失敗しました。": "Failed to load data.",
@@ -111,7 +113,8 @@
     // 波浪ガイダンス
     "波高･周期": "Wave height & period",
     波高と周期の予測グラフ: "Wave height and period forecast graph",
-    "波高（海域最大）[m]": "Wave height (area max) [m]",
+    // 凡例が2行に折れないよう短くする（海域最大である旨は注記とツールチップにある）
+    "波高（海域最大）[m]": "Wave height [m]",
     "周期 [秒]": "Period [s]",
     "気象庁 沿岸波浪ガイダンス": "JMA coastal wave guidance",
     "の予想値です。波高は関東地方南部（相模湾〜外房）の海域で最も高い地点の有義波高で、茅ヶ崎の岸近くでは通常これより低くなります。周期は卓越周期（波が来る間隔の秒数。長いほど力の強いうねり）です。":

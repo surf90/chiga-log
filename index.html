@@ -249,7 +249,7 @@ lang: ja
          （要素の追加など）を入れたら上げる。sw.js は静的アセットを
          Stale-While-Revalidate で返すため、据え置くと再訪1回目は「新しい HTML ＋
          古い JS」になり、追加したボタンが動かない（v3: 英語切替で実際に発生）。
-         sw.js の ASSETS と CACHE_NAME も合わせて更新する。 -->
+         sw.js の ASSETS と CACHE_NAME、404.html の style.min.css も合わせて更新する。 -->
     <script src="{{ site.baseurl }}/assets/js/app.min.js?v=3" defer></script>
     <script
       src="{{ site.baseurl }}/assets/js/sw-register.js"
