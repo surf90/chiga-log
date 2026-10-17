@@ -1,17 +1,7 @@
 {
-  "updated_at": "2026-10-17T19:31:56.947867+09:00",
+  "updated_at": "2026-10-18T00:25:54.199874+09:00",
   "area": 20,
   "data": [
-    {
-      "time": "2026-10-14T09:00:00+09:00",
-      "period": 10.3,
-      "wave_height": 1.6
-    },
-    {
-      "time": "2026-10-14T12:00:00+09:00",
-      "period": 9.4,
-      "wave_height": 1.8
-    },
     {
       "time": "2026-10-14T15:00:00+09:00",
       "period": 9.4,
@@ -144,12 +134,12 @@
     },
     {
       "time": "2026-10-17T21:00:00+09:00",
-      "period": 7.9,
+      "period": 7.3,
       "wave_height": 2.1
     },
     {
       "time": "2026-10-18T00:00:00+09:00",
-      "period": 7.3,
+      "period": 7.9,
       "wave_height": 2.0
     },
     {
@@ -160,17 +150,17 @@
     {
       "time": "2026-10-18T06:00:00+09:00",
       "period": 7.3,
-      "wave_height": 1.9
+      "wave_height": 1.8
     },
     {
       "time": "2026-10-18T09:00:00+09:00",
       "period": 7.3,
-      "wave_height": 1.9
+      "wave_height": 1.8
     },
     {
       "time": "2026-10-18T12:00:00+09:00",
       "period": 7.3,
-      "wave_height": 1.8
+      "wave_height": 1.7
     },
     {
       "time": "2026-10-18T15:00:00+09:00",
@@ -179,18 +169,18 @@
     },
     {
       "time": "2026-10-18T18:00:00+09:00",
-      "period": 6.7,
+      "period": 7.3,
       "wave_height": 1.5
     },
     {
       "time": "2026-10-18T21:00:00+09:00",
-      "period": 6.7,
+      "period": 7.3,
       "wave_height": 1.5
     },
     {
       "time": "2026-10-19T00:00:00+09:00",
-      "period": 8.6,
-      "wave_height": 1.4
+      "period": 7.3,
+      "wave_height": 1.5
     },
     {
       "time": "2026-10-19T03:00:00+09:00",
@@ -210,40 +200,50 @@
     {
       "time": "2026-10-19T12:00:00+09:00",
       "period": 5.6,
-      "wave_height": 1.8
+      "wave_height": 1.6
     },
     {
       "time": "2026-10-19T15:00:00+09:00",
-      "period": 6.1,
-      "wave_height": 1.9
+      "period": 5.6,
+      "wave_height": 1.7
     },
     {
       "time": "2026-10-19T18:00:00+09:00",
       "period": 6.1,
-      "wave_height": 1.9
+      "wave_height": 1.7
     },
     {
       "time": "2026-10-19T21:00:00+09:00",
       "period": 6.1,
-      "wave_height": 1.8
+      "wave_height": 1.6
     },
     {
       "time": "2026-10-20T00:00:00+09:00",
-      "period": 6.1,
-      "wave_height": 1.9
+      "period": 5.6,
+      "wave_height": 1.7
     },
     {
       "time": "2026-10-20T03:00:00+09:00",
       "period": 6.1,
-      "wave_height": 2.0
+      "wave_height": 1.7
     },
     {
       "time": "2026-10-20T06:00:00+09:00",
       "period": 6.1,
-      "wave_height": 2.1
+      "wave_height": 1.8
     },
     {
       "time": "2026-10-20T09:00:00+09:00",
+      "period": 6.1,
+      "wave_height": 1.9
+    },
+    {
+      "time": "2026-10-20T12:00:00+09:00",
+      "period": 6.1,
+      "wave_height": 2.0
+    },
+    {
+      "time": "2026-10-20T15:00:00+09:00",
       "period": 6.1,
       "wave_height": 2.1
     }
