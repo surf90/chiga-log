@@ -1,20 +1,32 @@
+# 依存の更新提案。1パッケージ1PRだと package-lock.json の競合とPRの積み残しが
+# 起きる（2026-10 に7件滞留）ため、エコシステムごとに1つのPRへまとめる。
+# CI（Actions）の実行回数も抑える（三原則3）。セキュリティ更新はグループ外でも随時届く。
 version: 2
 updates:
   - package-ecosystem: npm
     directory: "/"
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    groups:
+      npm:
+        patterns: ["*"]
+    open-pull-requests-limit: 2
   - package-ecosystem: bundler
     directory: "/"
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    groups:
+      bundler:
+        patterns: ["*"]
+    open-pull-requests-limit: 2
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns: ["*"]
+    open-pull-requests-limit: 2
   # 警報BFF（Cloudflare Worker）。ルートとは別の package-lock.json を持つため
   # directory: "/" のエントリでは更新されず、2026-08 の undici 系アラートは
   # 手動対応が必要だった。個別に登録して自動追従させる。
@@ -22,4 +34,7 @@ updates:
     directory: "/warning-worker"
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    groups:
+      warning-worker:
+        patterns: ["*"]
+    open-pull-requests-limit: 2
