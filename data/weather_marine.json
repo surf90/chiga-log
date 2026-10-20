@@ -1,15 +1,15 @@
 {
-  "updated_at": "2026-10-21T04:53:46.968732+09:00",
+  "updated_at": "2026-10-21T08:00:54.030511+09:00",
   "current_weather": {
-    "time": "2026-10-21T04:45+09:00",
-    "temperature": 24.4,
-    "windspeed": 6.89,
-    "winddirection": 206
+    "time": "2026-10-21T08:00+09:00",
+    "temperature": 24.9,
+    "windspeed": 8.65,
+    "winddirection": 202
   },
   "marine": {
     "latitude": 35.291664,
     "longitude": 139.37502,
-    "generationtime_ms": 0.10669231414794922,
+    "generationtime_ms": 0.10907649993896484,
     "utc_offset_seconds": 32400,
     "timezone": "Asia/Tokyo",
     "timezone_abbreviation": "GMT+9",
@@ -21,10 +21,10 @@
       "sea_surface_temperature": "°C"
     },
     "current": {
-      "time": "2026-10-21T04:45+09:00",
+      "time": "2026-10-21T08:00+09:00",
       "interval": 900,
-      "wave_height": 1.04,
-      "sea_surface_temperature": 24.2
+      "wave_height": 1.16,
+      "sea_surface_temperature": 24.3
     },
     "hourly_units": {
       "time": "iso8601",
@@ -185,12 +185,12 @@
     }
   },
   "jma_amedas": {
-    "observed_at": "2026-10-21T04:40:00+09:00",
+    "observed_at": "2026-10-21T07:50:00+09:00",
     "amedas_code": "46141",
-    "temp": 24.8,
-    "wind": 9.1,
-    "windDirection": 8,
-    "humidity": 86,
+    "temp": 24.4,
+    "wind": 6.9,
+    "windDirection": 9,
+    "humidity": 93,
     "precipitation1h": 0.0
   }
 }
