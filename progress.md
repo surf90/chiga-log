@@ -1,10 +1,19 @@
 ---
-updated: 2026-10-15
+updated: 2026-10-20
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-10-20）
+
+### 依存更新の滞留解消と dependabot のグループ化
+
+- **滞留**: dependabot が1パッケージ1PR（各エコシステム上限5件）で、npm 系は同じ `package-lock.json` を更新するため1件ずつマージすると順に競合し、7件（#200〜#206）が溜まっていた。
+- **対応**: 7件を1本にまとめて適用（#212）。eslint 10.12.0・pa11y-ci 5.0.0・prettier 3.9.10・wait-on 9.5.1・warning-worker の @types/node・actions/setup-node v7.1.0・ruby/setup-ruby（SHA固定）。`npm audit` 0件、ESLint・`npm test` 60件・Worker テスト5件・Prettier を手元で確認、CI（ESLint・pa11y）成功。
+- **再発防止**: `.github/dependabot.yml` に `groups` を追加し、npm・bundler・github-actions・warning-worker ごとに1PR、上限各2件に（週次は据え置き）。直後に届いたグループPR #213〜#215 もマージ済み。
+- frontend-ci は paths フィルタのため、`warning-worker/package*.json` やワークフローだけの変更では走らない（#214・#215 は手元でテストして確認）。
 
 ## 完了済み（2026-10-15）
 
