@@ -1012,15 +1012,9 @@ p.note strong a {
   outline: var(--focus-ring);
   outline-offset: 2px;
 }
-/* サーフ90の関連サイトのリンク群（ちがビオと同じ構成）。赤は警報・安全の色として
-   取っておき（公式サイトの配色ルールと同じ）、クラブ名だけをブランドの青で示す。
-   リンク自体は他のフッターリンクと同じ控えめな色で、チップ化しない。 */
-.footer-family-title {
-  margin: 0 0 2px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--brand);
-}
+/* サーフ90の関連サイトのリンク群（ちがビオと同じ構成）。非公式サイトのため、
+   公式に見えないよう関連性の表記は控えめにする（クラブ名の見出しは置かない）。
+   赤は警報・安全の色として取っておき、リンクは他のフッターリンクと同じ色で、チップ化しない。 */
 .footer-family-links {
   display: flex;
   flex-wrap: wrap;
