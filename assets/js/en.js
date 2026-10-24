@@ -196,7 +196,6 @@
     "※ 海のコンディションは急変します。無理な入水は控え、安全にマリンスポーツを楽しみましょう。":
       "* Ocean conditions change quickly. Don't go in if in doubt, and enjoy marine sports safely.",
     サーフ90公式サイト: "Surf90 official website",
-    茅ヶ崎のライフセービング活動紹介: "Chigasaki lifesaving activities",
     "ちがログ・ちがビオは、サーフ90の関連サイト（非公式）です。":
       "ChigaLog and ChigaBio are unofficial sites related to Surf90.",
     "ちがビオ | 茅ヶ崎の生き物情報": "ChigaBio | Chigasaki wildlife",
