@@ -6,8 +6,8 @@
   "start_url": "/chiga-log/?mode=standalone",
   "scope": "/chiga-log/",
   "display": "standalone",
-  "background_color": "#FFFBEB",
-  "theme_color": "#0e7490",
+  "background_color": "#FFFFFF",
+  "theme_color": "#006fc0",
   "lang": "ja",
   "icons": [
     {
