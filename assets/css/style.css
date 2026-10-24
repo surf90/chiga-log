@@ -1,26 +1,26 @@
 :root {
   color-scheme: light dark;
-  --bg-gradient: linear-gradient(160deg, #fffbeb 0%, #eff6ff 100%);
-  --text-main: #222222;
-  --text-sub: #707070;
+  --bg-gradient: linear-gradient(160deg, #ffffff 0%, #eef5fa 100%);
+  --text-main: #142430;
+  --text-sub: #56656f;
   --container-bg: rgba(255, 255, 255, 0.75);
-  --container-shadow: 0 4px 24px rgba(0, 86, 120, 0.1);
+  --container-shadow: 0 4px 24px rgba(0, 85, 154, 0.1);
   --box-bg: #ffffff;
   --box-border: rgba(0, 0, 0, 0.06);
   --warning-bg: #fff5f5;
   --warning-border: #c0392b;
-  --brand: #0e7490;
-  --brand-strong: #0284c7;
-  --brand-soft: rgba(14, 116, 144, 0.08);
-  --hairline: rgba(14, 116, 144, 0.12);
-  --selection-bg: rgba(14, 116, 144, 0.16);
+  --brand: #006fc0;
+  --brand-strong: #00559a;
+  --brand-soft: rgba(0, 111, 192, 0.08);
+  --hairline: rgba(0, 111, 192, 0.12);
+  --selection-bg: rgba(0, 111, 192, 0.16);
   /* 風予報バー: 濃い面が平均、薄い面が最大(ガスト)。行の下端の細い帯に描き、
      文字を載せないぶん濃度を上げて2色の差をはっきりさせる */
-  --wind-bar-avg: rgba(14, 116, 144, 0.55);
-  --wind-bar-gust: rgba(14, 116, 144, 0.18);
+  --wind-bar-avg: rgba(0, 111, 192, 0.55);
+  --wind-bar-gust: rgba(0, 111, 192, 0.18);
   /* 月相の影側。明側は --brand を使う。明側の半円をターミネータの楕円で
      塗り消す描き方のため、半透明だと新月が塗り潰せない＝必ず不透明色にする */
-  --moon-dark: #cfe3ea;
+  --moon-dark: #d5e3ec;
   --divider: #cbd5e1;
   --skeleton-base: #e2e8f0;
   --skeleton-sheen: #f1f5f9;
@@ -39,6 +39,8 @@
   --radius-md: 12px;
   --radius-sm: 10px;
   --radius-xs: 6px;
+  /* ボタン（サーフ90公式サイトのボタン形状に揃える） */
+  --radius-pill: 999px;
   /* 減速カーブ。終端がゆっくり止まるぶん、短い時間でも動きが安っぽくならない */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   /* 影は「接地影（近距離・濃い）＋環境影（遠距離・薄い）」の2枚重ね。
@@ -46,13 +48,13 @@
   --shadow-card:
     0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 24px rgba(15, 23, 42, 0.05);
   --shadow-card-hover:
-    0 2px 4px rgba(15, 23, 42, 0.05), 0 16px 34px rgba(14, 116, 144, 0.1);
+    0 2px 4px rgba(15, 23, 42, 0.05), 0 16px 34px rgba(0, 111, 192, 0.1);
   --shadow-hero:
-    0 1px 2px rgba(2, 132, 199, 0.18), 0 10px 22px rgba(2, 132, 199, 0.18);
+    0 1px 2px rgba(0, 111, 192, 0.18), 0 10px 22px rgba(0, 111, 192, 0.18);
   --shadow-hero-hover:
-    0 2px 6px rgba(2, 132, 199, 0.2), 0 18px 34px rgba(2, 132, 199, 0.26);
+    0 2px 6px rgba(0, 111, 192, 0.2), 0 18px 34px rgba(0, 111, 192, 0.26);
   --focus-ring: 2px solid var(--brand);
-  accent-color: #0e7490;
+  accent-color: #006fc0;
 }
 
 ::selection {
@@ -81,13 +83,13 @@
     --box-border: rgba(255, 255, 255, 0.08);
     --warning-bg: #3f1d1d;
     --warning-border: #ef4444;
-    --brand: #5ebdd8;
-    --brand-strong: #7dd3fc;
-    --brand-soft: rgba(94, 189, 216, 0.12);
-    --hairline: rgba(125, 211, 252, 0.14);
-    --selection-bg: rgba(94, 189, 216, 0.26);
-    --wind-bar-avg: rgba(94, 189, 216, 0.6);
-    --wind-bar-gust: rgba(94, 189, 216, 0.22);
+    --brand: #66b3ee;
+    --brand-strong: #9fd0f6;
+    --brand-soft: rgba(102, 179, 238, 0.12);
+    --hairline: rgba(159, 208, 246, 0.14);
+    --selection-bg: rgba(102, 179, 238, 0.26);
+    --wind-bar-avg: rgba(102, 179, 238, 0.6);
+    --wind-bar-gust: rgba(102, 179, 238, 0.22);
     --moon-dark: #3c4a50;
     --divider: #475569;
     --skeleton-base: #2a2a2a;
@@ -100,7 +102,7 @@
       0 1px 2px rgba(0, 0, 0, 0.34), 0 10px 22px rgba(0, 0, 0, 0.3);
     --shadow-hero-hover:
       0 2px 6px rgba(0, 0, 0, 0.38), 0 18px 34px rgba(0, 0, 0, 0.38);
-    accent-color: #5ebdd8;
+    accent-color: #66b3ee;
   }
 }
 
@@ -148,7 +150,7 @@ body::before {
       rgba(186, 230, 253, 0.48),
       transparent 28%
     ),
-    linear-gradient(180deg, transparent 58%, rgba(14, 116, 144, 0.08) 100%);
+    linear-gradient(180deg, transparent 58%, rgba(0, 111, 192, 0.08) 100%);
   z-index: -1;
 }
 .skip-link {
@@ -184,7 +186,7 @@ body::before {
   backdrop-filter: blur(12px) saturate(150%);
   -webkit-backdrop-filter: blur(12px) saturate(150%);
   border-bottom: 1px solid var(--hairline);
-  box-shadow: 0 4px 16px rgba(14, 116, 144, 0.06);
+  box-shadow: 0 4px 16px rgba(0, 111, 192, 0.06);
   opacity: 0;
   transform: translateY(-100%);
   pointer-events: none;
@@ -259,7 +261,7 @@ header {
   );
   border: 1px solid var(--hairline);
   border-radius: var(--radius-md);
-  box-shadow: 0 8px 24px rgba(14, 116, 144, 0.06);
+  box-shadow: 0 8px 24px rgba(0, 111, 192, 0.06);
   animation: rise-in 0.55s var(--ease-out) both;
 }
 
@@ -267,7 +269,7 @@ header {
 .site-bar-name {
   font-family: "Zen Kaku Gothic New", sans-serif;
   font-weight: 900;
-  background: linear-gradient(135deg, #0e7490 0%, #0284c7 100%);
+  background: linear-gradient(135deg, #006fc0 0%, #00559a 100%);
   -webkit-background-clip: text;
   /* 標準プロパティ。ベンダー接頭辞のみだと将来の接頭辞廃止でロゴが
      -webkit-text-fill-color:transparent のまま塗り無し＝不可視になる。 */
@@ -310,7 +312,7 @@ h1 .title-sub {
       rgba(255, 255, 255, 0.2),
       transparent 58%
     ),
-    linear-gradient(135deg, #0e7490 0%, #0284c7 100%);
+    linear-gradient(135deg, #006fc0 0%, #00559a 100%);
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: var(--radius-md);
   padding: 13px 8px 11px;
@@ -624,13 +626,13 @@ h1 .title-sub {
   background: rgba(255, 255, 255, 0.92);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
-  color: #0e7490;
+  color: #006fc0;
   font-size: 12px;
   padding: 12px 20px;
   min-height: 44px;
   border-radius: 500px;
-  border: 1px solid rgba(14, 116, 144, 0.25);
-  box-shadow: 0 12px 30px rgba(0, 86, 120, 0.16);
+  border: 1px solid rgba(0, 111, 192, 0.25);
+  box-shadow: 0 12px 30px rgba(0, 85, 154, 0.16);
   letter-spacing: -0.28px;
   cursor: pointer;
   z-index: 9999;
@@ -713,7 +715,7 @@ body.has-floating-alert #refresh-toast {
   background: var(--brand-soft);
   border: 1px solid var(--hairline);
   color: var(--brand);
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-pill);
   padding: 10px 18px;
   min-height: 44px;
   font-size: 12px;
@@ -963,9 +965,6 @@ p.note strong a {
     opacity: 0.7;
     text-decoration: underline;
   }
-  .footer .lifesaving-link:hover {
-    opacity: 1;
-  }
 }
 .footer-disclaimer {
   font-size: 11px;
@@ -1013,11 +1012,25 @@ p.note strong a {
   outline: var(--focus-ring);
   outline-offset: 2px;
 }
-/* 警報色と紛れないよう、footer の他リンクより強いが警報より穏やかな赤。
-   !important ではなく .footer a に勝つ詳細度で上書きする。 */
-.footer .lifesaving-link {
-  color: #b4453a;
-  opacity: 0.85;
+/* サーフ90の関連サイトのリンク群（ちがビオと同じ構成）。非公式サイトのため、
+   公式に見えないよう関連性の表記は控えめにする（クラブ名の見出しは置かない）。
+   赤は警報・安全の色として取っておき、リンクは他のフッターリンクと同じ色で、チップ化しない。 */
+.footer-family-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  /* 区切り記号は折り返すと行頭に残るため、余白で区切る */
+  gap: 0 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.footer-family-links a {
+  display: inline-block;
+  padding: 4px 0;
+}
+.footer-family-note {
+  margin: 2px 0 0;
 }
 #weather-content {
   transition: opacity 0.3s ease;
@@ -1346,15 +1359,15 @@ p.note strong a {
     background:
       radial-gradient(
         circle at 22% 8%,
-        rgba(14, 116, 144, 0.18),
+        rgba(0, 111, 192, 0.18),
         transparent 26%
       ),
       radial-gradient(
         circle at 88% 4%,
-        rgba(125, 211, 252, 0.1),
+        rgba(159, 208, 246, 0.1),
         transparent 28%
       ),
-      linear-gradient(180deg, transparent 48%, rgba(14, 116, 144, 0.12) 100%);
+      linear-gradient(180deg, transparent 48%, rgba(0, 111, 192, 0.12) 100%);
   }
   .container {
     border-color: rgba(255, 255, 255, 0.08);
@@ -1382,14 +1395,11 @@ p.note strong a {
     background: rgba(30, 30, 30, 0.88);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   }
-  .footer .lifesaving-link {
-    color: #f0857a;
-  }
   #toast,
   #refresh-toast {
     background: rgba(42, 42, 42, 0.92);
-    color: #5ebdd8;
-    border-color: rgba(94, 189, 216, 0.3);
+    color: #66b3ee;
+    border-color: rgba(102, 179, 238, 0.3);
   }
   /* 固定色の青/赤はダーク背景で沈むため明色に置換（グラフ本体は Chart.js 側の色を維持） */
   .tide-high {
@@ -1482,9 +1492,9 @@ p.note strong a {
   :root {
     --text-sub: #4b5563;
     --box-border: rgba(0, 0, 0, 0.22);
-    --hairline: rgba(14, 116, 144, 0.4);
-    --brand-soft: rgba(14, 116, 144, 0.16);
-    --wind-bar-gust: rgba(14, 116, 144, 0.32);
+    --hairline: rgba(0, 111, 192, 0.4);
+    --brand-soft: rgba(0, 111, 192, 0.16);
+    --wind-bar-gust: rgba(0, 111, 192, 0.32);
   }
   .container {
     border-color: var(--hairline);
@@ -1500,8 +1510,8 @@ p.note strong a {
   :root {
     --text-sub: #cbd5e1;
     --box-border: rgba(255, 255, 255, 0.28);
-    --hairline: rgba(125, 211, 252, 0.42);
-    --brand-soft: rgba(94, 189, 216, 0.22);
-    --wind-bar-gust: rgba(94, 189, 216, 0.36);
+    --hairline: rgba(159, 208, 246, 0.42);
+    --brand-soft: rgba(102, 179, 238, 0.22);
+    --wind-bar-gust: rgba(102, 179, 238, 0.36);
   }
 }

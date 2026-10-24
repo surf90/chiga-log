@@ -65,7 +65,7 @@ lang: ja
     <meta
       name="theme-color"
       media="(prefers-color-scheme: light)"
-      content="#0e7490"
+      content="#006fc0"
     />
     <meta
       name="theme-color"
@@ -225,7 +225,7 @@ lang: ja
          上げたら sw.js の ASSETS と CACHE_NAME も合わせる。 -->
     <link
       rel="stylesheet"
-      href="{{ site.baseurl }}/assets/css/style.min.css?v=3"
+      href="{{ site.baseurl }}/assets/css/style.min.css?v=4"
     />
 
     <!-- グラフ描画ライブラリは async。app.js は whenChartReady() で到着を待って
@@ -811,24 +811,28 @@ lang: ja
           海のコンディションは急変します。無理な入水は控え、安全にマリンスポーツを楽しみましょう。
         </div>
 
-        <div class="footer-info">
-          <span aria-hidden="true">|</span>
-          <a
-            class="lifesaving-link"
-            href="https://www.instagram.com/surf90chigasakilsc/"
-            target="_blank"
-            rel="noopener noreferrer"
-            >茅ヶ崎のライフセービング活動紹介</a
-          >
-          <span aria-hidden="true">|</span>
-          <br />
-          <br />
-          <span aria-hidden="true">|</span>
-          <a href="https://surf90.github.io/chiga-bio/" rel="noopener"
-            >ちがビオ | 茅ヶ崎の生き物情報</a
-          >
-          <span aria-hidden="true">|</span>
-        </div>
+        <!-- サーフ90の関連サイトであることを示すリンク群。ちがビオのフッターと同じ構成・順序にそろえる。
+             公式サイトは HTTPS 化が完了するまで http で張る（完了後に https へ）。 -->
+        <nav class="footer-family" aria-label="関連サイト">
+          <ul class="footer-family-links">
+            <li>
+              <a
+                href="http://surf90.jp/"
+                target="_blank"
+                rel="noopener noreferrer"
+                >サーフ90公式サイト</a
+              >
+            </li>
+            <li>
+              <a href="https://surf90.github.io/chiga-bio/" rel="noopener"
+                >ちがビオ | 茅ヶ崎の生き物情報</a
+              >
+            </li>
+          </ul>
+          <p class="footer-family-note">
+            ちがログ・ちがビオは、サーフ90の関連サイト（非公式）です。
+          </p>
+        </nav>
 
         <!-- 英語表示（補助）。押した時だけ assets/js/en.js を読み込む。 -->
         <button type="button" id="lang-toggle" class="lang-toggle" lang="en">
