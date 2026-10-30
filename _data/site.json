@@ -37,6 +37,6 @@
     "wave_guid_area": "20",
     "wave_guid_link_area": "19",
     "tsunami_area_code": "330",
-    "warning_api_url": "https://chiga-log-warning-api.surf90.workers.dev/warning"
+    "warning_api_url": "https://chiga-log-warning-api.missai.workers.dev/warning"
   }
 }

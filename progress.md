@@ -1,10 +1,18 @@
 ---
-updated: 2026-10-24
+updated: 2026-10-30
 ---
 
 # ちがログ 進捗メモ
 
 > 役割: セッション完了ログ / 簡易 changelog（内部メモ、サイト非公開）。各セッション末に最新の完了項目を追記する（CLAUDE.md「トークン節約」参照）。
+
+## 完了済み（2026-10-30）
+
+### 警報BFFの workers.dev サブドメイン変更（surf90 → missai）への追従
+
+- **経緯**: Cloudflare アカウントの workers.dev サブドメインが `surf90` → `missai` に変更され、旧URL `…surf90.workers.dev` は名前解決できなくなっていた（2026-10-30 確認、ENOTFOUND）。閲覧時の警報ライブ取得は失敗し、`data/warning_chigasaki.json` のスナップショット表示に落ちていた。
+- **新URL**: `https://chiga-log-warning-api.missai.workers.dev/warning`（2026-10-30 に茅ヶ崎市分の JSON が返ることを確認）。
+- **追従**: `_data/site.json` の `jma.warning_api_url` と `README.md` を更新。CSP `connect-src` は `site.json` から生成されるため個別の修正は不要。Worker のソース・設定は未変更で再デプロイも不要。以下の履歴に残る旧URLは当時の記録としてそのまま残す。
 
 ## 完了済み（2026-10-24）
 
