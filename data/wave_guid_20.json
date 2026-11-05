@@ -1,37 +1,7 @@
 {
-  "updated_at": "2026-11-05T15:28:49.358475+09:00",
+  "updated_at": "2026-11-06T04:50:57.378655+09:00",
   "area": 20,
   "data": [
-    {
-      "time": "2026-11-02T03:00:00+09:00",
-      "period": 12.2,
-      "wave_height": 2.6
-    },
-    {
-      "time": "2026-11-02T06:00:00+09:00",
-      "period": 11.2,
-      "wave_height": 2.6
-    },
-    {
-      "time": "2026-11-02T09:00:00+09:00",
-      "period": 11.2,
-      "wave_height": 2.9
-    },
-    {
-      "time": "2026-11-02T12:00:00+09:00",
-      "period": 11.2,
-      "wave_height": 2.8
-    },
-    {
-      "time": "2026-11-02T15:00:00+09:00",
-      "period": 10.3,
-      "wave_height": 2.8
-    },
-    {
-      "time": "2026-11-02T18:00:00+09:00",
-      "period": 6.7,
-      "wave_height": 3.1
-    },
     {
       "time": "2026-11-02T21:00:00+09:00",
       "period": 7.3,
@@ -150,7 +120,7 @@
     {
       "time": "2026-11-05T18:00:00+09:00",
       "period": 10.3,
-      "wave_height": 3.5
+      "wave_height": 3.4
     },
     {
       "time": "2026-11-05T21:00:00+09:00",
@@ -160,52 +130,52 @@
     {
       "time": "2026-11-06T00:00:00+09:00",
       "period": 10.3,
-      "wave_height": 2.9
+      "wave_height": 3.0
     },
     {
       "time": "2026-11-06T03:00:00+09:00",
       "period": 10.3,
-      "wave_height": 2.8
+      "wave_height": 3.6
     },
     {
       "time": "2026-11-06T06:00:00+09:00",
-      "period": 13.3,
-      "wave_height": 3.0
+      "period": 10.3,
+      "wave_height": 3.4
     },
     {
       "time": "2026-11-06T09:00:00+09:00",
-      "period": 11.2,
+      "period": 10.3,
       "wave_height": 3.2
     },
     {
       "time": "2026-11-06T12:00:00+09:00",
       "period": 11.2,
-      "wave_height": 3.1
+      "wave_height": 2.9
     },
     {
       "time": "2026-11-06T15:00:00+09:00",
       "period": 10.3,
-      "wave_height": 3.0
+      "wave_height": 2.8
     },
     {
       "time": "2026-11-06T18:00:00+09:00",
-      "period": 7.9,
-      "wave_height": 3.2
+      "period": 7.3,
+      "wave_height": 3.0
     },
     {
       "time": "2026-11-06T21:00:00+09:00",
       "period": 7.9,
-      "wave_height": 3.2
+      "wave_height": 3.0
     },
     {
       "time": "2026-11-07T00:00:00+09:00",
       "period": 7.9,
-      "wave_height": 3.1
+      "wave_height": 3.0
     },
     {
       "time": "2026-11-07T03:00:00+09:00",
       "period": 7.9,
-      "wave_height": 2.7
+      "wave_height": 2.6
     },
     {
       "time": "2026-11-07T06:00:00+09:00",
@@ -214,38 +184,68 @@
     },
     {
       "time": "2026-11-07T09:00:00+09:00",
-      "period": 9.4,
+      "period": 8.6,
       "wave_height": 2.1
     },
     {
       "time": "2026-11-07T12:00:00+09:00",
-      "period": 7.3,
+      "period": 7.9,
       "wave_height": 1.8
     },
     {
       "time": "2026-11-07T15:00:00+09:00",
-      "period": 10.3,
+      "period": 5.1,
       "wave_height": 1.8
     },
     {
       "time": "2026-11-07T18:00:00+09:00",
-      "period": 11.2,
+      "period": 5.6,
       "wave_height": 1.7
     },
     {
       "time": "2026-11-07T21:00:00+09:00",
-      "period": 11.2,
-      "wave_height": 1.8
+      "period": 5.1,
+      "wave_height": 1.7
     },
     {
       "time": "2026-11-08T00:00:00+09:00",
       "period": 5.6,
-      "wave_height": 1.9
+      "wave_height": 1.8
     },
     {
       "time": "2026-11-08T03:00:00+09:00",
-      "period": 11.2,
+      "period": 6.1,
       "wave_height": 1.8
+    },
+    {
+      "time": "2026-11-08T06:00:00+09:00",
+      "period": 6.1,
+      "wave_height": 1.8
+    },
+    {
+      "time": "2026-11-08T09:00:00+09:00",
+      "period": 6.1,
+      "wave_height": 1.8
+    },
+    {
+      "time": "2026-11-08T12:00:00+09:00",
+      "period": 5.6,
+      "wave_height": 1.5
+    },
+    {
+      "time": "2026-11-08T15:00:00+09:00",
+      "period": 10.3,
+      "wave_height": 1.4
+    },
+    {
+      "time": "2026-11-08T18:00:00+09:00",
+      "period": 10.3,
+      "wave_height": 1.4
+    },
+    {
+      "time": "2026-11-08T21:00:00+09:00",
+      "period": 10.3,
+      "wave_height": 1.5
     }
   ]
 }
