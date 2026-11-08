@@ -1,37 +1,7 @@
 {
-  "updated_at": "2026-11-07T21:51:10.373192+09:00",
+  "updated_at": "2026-11-08T14:50:17.922910+09:00",
   "area": 20,
   "data": [
-    {
-      "time": "2026-11-04T09:00:00+09:00",
-      "period": 7.3,
-      "wave_height": 2.7
-    },
-    {
-      "time": "2026-11-04T12:00:00+09:00",
-      "period": 7.3,
-      "wave_height": 2.9
-    },
-    {
-      "time": "2026-11-04T15:00:00+09:00",
-      "period": 7.9,
-      "wave_height": 3.3
-    },
-    {
-      "time": "2026-11-04T18:00:00+09:00",
-      "period": 8.6,
-      "wave_height": 3.4
-    },
-    {
-      "time": "2026-11-04T21:00:00+09:00",
-      "period": 8.6,
-      "wave_height": 4.0
-    },
-    {
-      "time": "2026-11-05T00:00:00+09:00",
-      "period": 9.4,
-      "wave_height": 4.5
-    },
     {
       "time": "2026-11-05T03:00:00+09:00",
       "period": 9.4,
@@ -155,37 +125,37 @@
     {
       "time": "2026-11-08T03:00:00+09:00",
       "period": 7.3,
-      "wave_height": 1.8
+      "wave_height": 2.1
     },
     {
       "time": "2026-11-08T06:00:00+09:00",
-      "period": 6.1,
-      "wave_height": 1.8
+      "period": 7.3,
+      "wave_height": 2.1
     },
     {
       "time": "2026-11-08T09:00:00+09:00",
-      "period": 6.1,
-      "wave_height": 1.8
+      "period": 6.7,
+      "wave_height": 2.1
     },
     {
       "time": "2026-11-08T12:00:00+09:00",
-      "period": 6.1,
-      "wave_height": 1.5
+      "period": 6.7,
+      "wave_height": 1.9
     },
     {
       "time": "2026-11-08T15:00:00+09:00",
-      "period": 6.1,
-      "wave_height": 1.5
+      "period": 6.7,
+      "wave_height": 1.8
     },
     {
       "time": "2026-11-08T18:00:00+09:00",
-      "period": 10.3,
-      "wave_height": 1.4
+      "period": 6.7,
+      "wave_height": 1.7
     },
     {
       "time": "2026-11-08T21:00:00+09:00",
-      "period": 10.3,
-      "wave_height": 1.5
+      "period": 6.1,
+      "wave_height": 1.8
     },
     {
       "time": "2026-11-09T00:00:00+09:00",
@@ -195,27 +165,27 @@
     {
       "time": "2026-11-09T03:00:00+09:00",
       "period": 10.3,
-      "wave_height": 1.9
+      "wave_height": 1.7
     },
     {
       "time": "2026-11-09T06:00:00+09:00",
-      "period": 6.7,
-      "wave_height": 2.1
+      "period": 10.3,
+      "wave_height": 1.9
     },
     {
       "time": "2026-11-09T09:00:00+09:00",
       "period": 6.7,
-      "wave_height": 2.4
+      "wave_height": 2.2
     },
     {
       "time": "2026-11-09T12:00:00+09:00",
-      "period": 6.7,
-      "wave_height": 2.6
+      "period": 7.3,
+      "wave_height": 2.4
     },
     {
       "time": "2026-11-09T15:00:00+09:00",
       "period": 7.3,
-      "wave_height": 2.6
+      "wave_height": 2.4
     },
     {
       "time": "2026-11-09T18:00:00+09:00",
@@ -224,13 +194,13 @@
     },
     {
       "time": "2026-11-09T21:00:00+09:00",
-      "period": 7.3,
-      "wave_height": 2.8
+      "period": 6.7,
+      "wave_height": 2.7
     },
     {
       "time": "2026-11-10T00:00:00+09:00",
       "period": 7.3,
-      "wave_height": 2.8
+      "wave_height": 2.7
     },
     {
       "time": "2026-11-10T03:00:00+09:00",
@@ -240,12 +210,42 @@
     {
       "time": "2026-11-10T06:00:00+09:00",
       "period": 7.9,
-      "wave_height": 2.9
+      "wave_height": 2.8
     },
     {
       "time": "2026-11-10T09:00:00+09:00",
       "period": 7.9,
-      "wave_height": 3.0
+      "wave_height": 2.9
+    },
+    {
+      "time": "2026-11-10T12:00:00+09:00",
+      "period": 7.9,
+      "wave_height": 2.9
+    },
+    {
+      "time": "2026-11-10T15:00:00+09:00",
+      "period": 7.9,
+      "wave_height": 2.8
+    },
+    {
+      "time": "2026-11-10T18:00:00+09:00",
+      "period": 8.6,
+      "wave_height": 2.7
+    },
+    {
+      "time": "2026-11-10T21:00:00+09:00",
+      "period": 8.6,
+      "wave_height": 2.6
+    },
+    {
+      "time": "2026-11-11T00:00:00+09:00",
+      "period": 7.9,
+      "wave_height": 2.5
+    },
+    {
+      "time": "2026-11-11T03:00:00+09:00",
+      "period": 7.9,
+      "wave_height": 2.3
     }
   ]
 }
