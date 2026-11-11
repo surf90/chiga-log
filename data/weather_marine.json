@@ -1,15 +1,15 @@
 {
-  "updated_at": "2026-11-11T06:23:45.409892+09:00",
+  "updated_at": "2026-11-11T10:23:42.776176+09:00",
   "current_weather": {
-    "time": "2026-11-11T06:15+09:00",
-    "temperature": 8.4,
-    "windspeed": 4.49,
-    "winddirection": 21
+    "time": "2026-11-11T10:15+09:00",
+    "temperature": 12.4,
+    "windspeed": 4.83,
+    "winddirection": 34
   },
   "marine": {
     "latitude": 35.291664,
     "longitude": 139.37502,
-    "generationtime_ms": 0.3428459167480469,
+    "generationtime_ms": 0.13887882232666016,
     "utc_offset_seconds": 32400,
     "timezone": "Asia/Tokyo",
     "timezone_abbreviation": "GMT+9",
@@ -21,10 +21,10 @@
       "sea_surface_temperature": "°C"
     },
     "current": {
-      "time": "2026-11-11T06:15+09:00",
+      "time": "2026-11-11T10:15+09:00",
       "interval": 900,
       "wave_height": 0.58,
-      "sea_surface_temperature": 22.1
+      "sea_surface_temperature": 22.2
     },
     "hourly_units": {
       "time": "iso8601",
@@ -83,6 +83,9 @@
         "2026-11-12T23:00+09:00"
       ],
       "wave_height": [
+        0.72,
+        0.7,
+        0.68,
         0.66,
         0.64,
         0.64,
@@ -91,15 +94,24 @@
         0.6,
         0.58,
         0.58,
+        0.58,
+        0.58,
         0.56,
-        0.56,
-        0.54,
         0.54,
         0.52,
         0.5,
         0.5,
         0.48,
         0.48,
+        0.46,
+        0.46,
+        0.46,
+        0.46,
+        0.46,
+        0.46,
+        0.46,
+        0.46,
+        0.46,
         0.48,
         0.48,
         0.48,
@@ -115,22 +127,10 @@
         0.42,
         0.42,
         0.42,
-        0.42,
-        0.42,
-        0.42,
-        0.4,
-        0.4,
-        0.4,
-        0.4,
-        0.4,
-        0.4,
-        0.4,
-        0.4,
-        0.4,
-        0.42,
-        0.42,
-        0.42,
-        0.42
+        0.44,
+        0.44,
+        0.44,
+        0.44
       ],
       "sea_surface_temperature": [
         22.2,
@@ -185,12 +185,12 @@
     }
   },
   "jma_amedas": {
-    "observed_at": "2026-11-11T06:10:00+09:00",
+    "observed_at": "2026-11-11T10:10:00+09:00",
     "amedas_code": "46141",
-    "temp": 6.5,
-    "wind": 1.9,
-    "windDirection": 16,
-    "humidity": 82,
+    "temp": 13.1,
+    "wind": 3.4,
+    "windDirection": 1,
+    "humidity": 39,
     "precipitation1h": 0.0
   }
 }
