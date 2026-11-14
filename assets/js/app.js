@@ -580,18 +580,54 @@ const stickyYAxisPlugin = {
           ? scroller.scrollLeft - maxScroll
           : scroller.scrollLeft;
       if (dx === 0) return; // 端まで戻っていれば元の位置で既に見えている
+      // 塗る範囲はキャンバス端まで広げる。Chart.js は点の半径ぶん軸の外側に
+      // 余白を取るため、軸の幅だけだと端の点が軸の外へ半分はみ出して見えた。
+      const fillL = scale.position === "right" ? scale.left : 0;
+      const fillR = scale.position === "right" ? chart.width : scale.right;
+      // 軸より先に塗る（後だと軸の最下段の目盛り文字まで欠ける）。
+      hideCutXLabels(chart, fillL + dx, fillR + dx, bg);
       const ctx = chart.ctx;
       ctx.save();
       ctx.translate(dx, 0);
       // データ線とX軸ラベルの断片が目盛りの下に透けないよう、
       // 軸の幅ぶんをキャンバス全高で塗りつぶしてから軸を描く。
       ctx.fillStyle = bg;
-      ctx.fillRect(scale.left, 0, scale.width, chart.height);
+      ctx.fillRect(fillL, 0, fillR - fillL, chart.height);
       scale.draw(chart.chartArea);
       ctx.restore();
     });
   },
 };
+
+/**
+ * 貼り付けたY軸に一部だけ隠れたX軸ラベル（例: 「13:00」が「3:00」に見える）を
+ * X軸ラベルの帯だけ塗りつぶして丸ごと隠す。読み違いを防ぐ（三原則1）。
+ * @param {object} chart Chart.js インスタンス
+ * @param {number} left 貼り付けたY軸の左端（キャンバス座標）
+ * @param {number} right 同右端
+ * @param {string} bg 塗りつぶし色
+ */
+function hideCutXLabels(chart, left, right, bg) {
+  const x = chart.scales.x;
+  if (!x || typeof Chart === "undefined") return;
+  const ctx = chart.ctx;
+  ctx.save();
+  ctx.font = Chart.helpers.toFont(x.options.ticks.font).string;
+  ctx.fillStyle = bg;
+  x.ticks.forEach((tick) => {
+    const label = String(tick.label ?? "");
+    if (!label) return;
+    const cx = x.getPixelForValue(tick.value);
+    const half = ctx.measureText(label).width / 2 + 2;
+    if (cx + half <= left || cx - half >= right) return; // 重なっていない
+    const a = Math.min(cx - half, left);
+    const b = Math.max(cx + half, right);
+    // 軸線（x.top）は残す。目盛り文字だけを消す。
+    const top = x.top + 2;
+    ctx.fillRect(a, top, b - a, chart.height - top);
+  });
+  ctx.restore();
+}
 
 /**
  * ツールチップを横スクロールの表示領域の内側へ向けて出す（Chart.js の xAlign 用）。

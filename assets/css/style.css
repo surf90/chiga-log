@@ -128,6 +128,10 @@ body {
   font-size: 15px;
   line-height: 1.7;
   overflow-wrap: break-word;
+  /* 和文を文節単位で折り返す（Chrome 119+。「ください。」の「い。」だけが
+     次行に落ちる等を防ぐ）。非対応ブラウザ・英語表示では従来どおり。 */
+  word-break: auto-phrase;
+  text-wrap: pretty;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
   -webkit-font-smoothing: antialiased;
@@ -391,6 +395,14 @@ h1 .title-sub {
 }
 #skeleton-loading {
   padding: 4px 0;
+}
+/* 骨組み表示中は下側の更新日時・フッターを不可視にする。骨組みより本体が
+   高いため、画面内にあった両者が本体の描画で押し下げられ CLS になっていた
+   （デスクトップ実測 0.028）。visibility なので場所は保ち、ずれにも数えない。
+   骨組みは JS が style.display="none" で消す（エラー時も同じ）ので、それを鍵にする。 */
+.container:has(#skeleton-loading:not([style*="none"]))
+  :is(.float-alert-wrap, .footer) {
+  visibility: hidden;
 }
 .subtitle {
   font-size: 12px;
@@ -1073,14 +1085,17 @@ p.note strong a {
 /* データ鮮度の警告表示（更新停止・古いデータの明示）。
    hidden 属性でトグルするため display は指定しない。 */
 .stale-note,
+/* 津波取得失敗の注記（直下に SEA/AIR/WIND カード）。以前は同名ルールの
+   重複で下余白が 0 に上書きされ、カードに密着していた。
+   2行目以降はアイコン幅（1em + 5px）だけ字下げして本文の頭にそろえる。 */
 .stale-inline {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
+  padding-left: calc(1em + 5px);
+  text-indent: calc(-1em - 5px);
   color: var(--warning-border);
   font-size: 12px;
   font-weight: 600;
-}
-.stale-inline {
-  margin: 8px 0 0;
+  line-height: 1.5;
 }
 .current-time.is-stale {
   border-bottom-color: var(--warning-border);
