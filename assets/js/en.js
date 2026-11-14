@@ -182,22 +182,23 @@
     "（取得失敗のため前回の観測値を表示中）":
       " (showing the previous observation; the latest fetch failed)",
     // フッター
-    "出典:": "Sources:",
-    気象庁ホームページ: "JMA website",
-    "（天気予報・アメダス・注意報・警報・津波・潮位表・波浪ガイダンス）を加工して作成 /":
-      " (forecast, AMeDAS, advisories/warnings, tsunami, tide tables, wave guidance), processed by this site /",
-    "（熱中症警戒情報） /": " (heatstroke alerts) /",
-    "（月齢） /": " (moon age) /",
-    "（": " (",
-    "、風予報・波高・海水温） /": ", wind forecast, wave height, sea temp) /",
-    "（潮汐の予備）": " (tide backup)",
     "※ 本ツールは参考用です。実際の活動時は、必ず目視や公式発表も併せて確認してください。":
       "* This tool is for reference only. Before going out, always check conditions with your own eyes and official announcements.",
     "※ 海のコンディションは急変します。無理な入水は控え、安全にマリンスポーツを楽しみましょう。":
       "* Ocean conditions change quickly. Don't go in if in doubt, and enjoy marine sports safely.",
+    "データ出典（気象庁・Open-Meteo ほか）・このサイトについて":
+      "Data sources (JMA, Open-Meteo, etc.) & about",
+    気象庁ホームページ: "JMA website",
+    "：天気予報・アメダス・注意報・警報・津波・潮位表・波浪ガイダンス（加工して作成）":
+      ": forecast, AMeDAS, advisories/warnings, tsunami, tide tables, wave guidance (processed by this site)",
+    "：熱中症警戒情報": ": heatstroke alerts",
+    "（": " (",
+    "）：風予報・波高・海水温": "): wind forecast, wave height, sea temp",
+    "：月齢": ": moon age",
+    "：潮汐（予備）": ": tides (backup)",
     サーフ90公式サイト: "Surf90 official website",
-    "ちがログ・ちがビオは、サーフ90の関連サイト（非公式）です。":
-      "ChigaLog and ChigaBio are unofficial sites related to Surf90.",
+    "ちがログは、サーフ90茅ヶ崎の非公式関連サイトです。":
+      "ChigaLog is an unofficial site related to Surf90 Chigasaki.",
     "ちがビオ | 茅ヶ崎の生き物情報": "ChigaBio | Chigasaki wildlife",
   };
 

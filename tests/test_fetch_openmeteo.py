@@ -292,3 +292,41 @@ def test_main_fails_when_no_amedas_value_at_all(tmp_path, monkeypatch):
     failed, out = _run_main(tmp_path, monkeypatch, weather=WEATHER, marine=MARINE, amedas=None, wind=WIND)
     assert failed
     assert out["weather_marine"]["jma_amedas"] is None
+
+
+# ─── forecast（現在値＋風予報）の通信障害 ─────────────────────────
+PREV_CW = {"time": "2026-10-14T17:00+09:00", "temperature": 21.0, "windspeed": 3.0, "winddirection": 10}
+
+
+def test_main_tolerates_single_forecast_network_failure(tmp_path, monkeypatch):
+    # TLS タイムアウト等の単発失敗は前回値を stale 付きで引き継ぎ、失敗通知しない
+    failed, out = _run_main(
+        tmp_path, monkeypatch, weather=None, marine=MARINE, amedas=AMEDAS, wind=None,
+        prev={"current_weather": PREV_CW, "jma_amedas": AMEDAS},
+    )
+    assert not failed
+    assert out["weather_marine"]["current_weather"] == {**PREV_CW, "stale": True}
+    assert out["weather_marine"]["jma_amedas"] == AMEDAS
+
+
+def test_main_fails_on_consecutive_forecast_network_failure(tmp_path, monkeypatch):
+    failed, out = _run_main(
+        tmp_path, monkeypatch, weather=None, marine=MARINE, amedas=AMEDAS, wind=None,
+        prev={"current_weather": {**PREV_CW, "stale": True}},
+    )
+    assert failed
+    assert out["weather_marine"]["current_weather"]["time"] == PREV_CW["time"]
+
+
+def test_main_fails_on_forecast_failure_without_previous(tmp_path, monkeypatch):
+    failed, _ = _run_main(tmp_path, monkeypatch, weather=None, marine=MARINE, amedas=AMEDAS, wind=None)
+    assert failed
+
+
+def test_main_clears_forecast_stale_after_recovery(tmp_path, monkeypatch):
+    failed, out = _run_main(
+        tmp_path, monkeypatch, weather=WEATHER, marine=MARINE, amedas=AMEDAS, wind=WIND,
+        prev={"current_weather": {**PREV_CW, "stale": True}},
+    )
+    assert not failed
+    assert "stale" not in out["weather_marine"]["current_weather"]

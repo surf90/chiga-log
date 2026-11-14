@@ -79,6 +79,7 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
 - 欧文・数字を Inter（Web フォント、可変 1 ファイル）、和文は OS 標準（ヒラギノ／Noto／游ゴシック／メイリオ）にフォールバック。
 - **和文 Web フォントは本文に使わない**。Zen Kaku Gothic New 400/500/700 は unicode-range 分割で本文の漢字ぶん約90ファイル・約800KB を取得しており（2026-10 実測、総転送の約7割、低速回線で内容表示 6.7秒→除去後 2.7秒）、三原則2に反するため。Zen Kaku はロゴ「ちがログ」の 900 のみ `text=` サブセットで読む。
+- `body` に `word-break:auto-phrase`（和文を文節単位で折り返す。Chrome 119+、非対応ブラウザ・英語表示では通常の折り返し）と `text-wrap:pretty`（最終行の1〜2文字の取り残し防止）を指定し、子要素へ継承させる。
 - `body` に `-webkit-font-smoothing:antialiased` / `-moz-osx-font-smoothing:grayscale` を指定し、macOS/iOS での過剰な太りを抑える。
 - フォントは可変フォント＋サブセットで最小化（三原則2）。Web フォント追加は要相談。
 
@@ -104,7 +105,9 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - コンテナ: `max-width:600px` / `padding:34px 24px 28px` / `border-radius:16px` / `background:var(--container-bg)` / `box-shadow:var(--container-shadow)` / 上端に 4px のブランドグラデーションバー。
 - ヘッダー: `--brand-soft` と半透明の白を重ねた軽量なグラデーション面、`1px solid var(--hairline)`、`border-radius:12px`、薄い影でコンテンツから穏やかに分離する。追加の画像や JavaScript は使わない。
 - フッター: カード面（背景・枠・角丸・影）は持たず、上端の `1px solid var(--hairline)` の区切り線のみでコンテンツから分離するテキスト形式。リンクの重要度は低いため、装飾やチップ化はしない。
-- フッターの関連サイト（`.footer-family`）: サーフ90の関連サイトであることを示すリンク群。**ちがビオのフッターと同じ構成・順序**（サーフ90公式サイト・相手のサイト → 「ちがログ・ちがビオは、サーフ90の関連サイト（非公式）です。」）にそろえる。非公式サイトのため、公式に見えないよう関連性の表記は控えめにする（クラブ名の見出しやブランド色の強調は置かない）。リンクは他のフッターリンクと同じ色。区切り記号（`|`）は折り返すと行頭に残るため使わず、`gap:0 16px` で区切る。旧 `.lifesaving-link`（赤い Instagram リンク）は廃止。
+- フッターの構成（上から）: 安全上の注意（`.footer-disclaimer`、2文。**畳まない**）→ 関連サイト（`.footer-family`）→ 折りたたみ（`.footer-more`、`<details>`）→ English ボタンと著作権表記（`.footer-bottom`、横並び・狭幅で折り返し）。要素間は `gap:12px`。
+- 折りたたみ（`.footer-more`）: データ出典の一覧（`.footer-data`、提供元リンク：用途）とサイト説明（`.footer-about`、SEO 用の表記ゆれを含む）を収める。上下に `--hairline` の区切り線、`summary` は中央寄せ・`min-height:44px`・既定の三角を消して CSS 枠線の山形（開くと上向き）。summary に主な提供元（気象庁・Open-Meteo）を出し、閉じた状態でも出典が分かるようにする（気象庁の加工明記・Open-Meteo の CC BY 帰属表示は中身に常に DOM として存在）。開閉は `::details-content` + `interpolate-size` で高さを 0.25s 遷移（Chrome 131+、非対応は即時）。中身は左寄せ。
+- フッターの関連サイト（`.footer-family`）: サーフ90の関連サイトであることを示すリンク群。**ちがビオのフッターと同じ構成・順序**（サーフ90公式サイト・相手のサイト → 「ちがログは、サーフ90茅ヶ崎の非公式関連サイトです。」）にそろえる。非公式サイトのため、公式に見えないよう関連性の表記は控えめにする（クラブ名の見出しやブランド色の強調は置かない）。リンクは他のフッターリンクと同じ色。区切り記号（`|`）は折り返すと行頭に残るため使わず、`gap:0 16px` で区切る。旧 `.lifesaving-link`（赤い Instagram リンク）は廃止。
 
 ### サイトバー（スクロール追従、`#site-bar`）
 
@@ -122,6 +125,7 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - 情報ボックス: `background:var(--box-bg)`・`border:1px solid var(--box-border)`・`border-radius:var(--radius-sm)`・`padding:16px 24px`（`max-width:420px` で `14px 16px`）・`--shadow-card`・左端 3px のブランドグラデーションバー。**hover ではカードを浮かせず**（操作対象ではないため）、影を `--shadow-card-hover`、枠を `--hairline` へ変えるだけにする。警報カード・熱中症カードは色で意味を持つため除外する。
 - 初期表示: ヘッダー、データカード、フッターを `opacity` と `translateY(8px)` のみで短くフェードアップする。カードは上から `0.03s` 刻みで遅らせ、**5枚目以降は `0.12s` で頭打ち**にして待ち時間を作らない。`prefers-reduced-motion: reduce` では既存の全体ルールにより実質無効化する。
 - **ローディングのスケルトンはカード型**（`.skeleton-card`、既定 132px / `.tall` 196px を3枚）にする。実レイアウトはカードの連なりなので、細い線（旧 `.skeleton-line`）を並べると読込完了で高さが急増し、レイアウトシフトになる。ヒーロー3枚ぶん（`.skeleton-hero-card`）は据え置き。
+- スケルトン表示中は更新日時（`.float-alert-wrap`）とフッターを `visibility:hidden` にする（`.container:has(#skeleton-loading:not([style*="none"]))`）。本体はスケルトンより高く、画面内にあった両者が押し下げられて CLS になるため（デスクトップ実測 0.028 → 0）。
 
 ### ボタン
 
@@ -137,7 +141,8 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - **横スクロール**: 2日分（`CHART_DAYS=2` × `PX_PER_HOUR=14` = 672px）を `.chart-scroll` の横スクロールで見せる。潮汐と波のスクロール位置は相互に同期する。
 - **初期位置**: 読み込み時は「今」の少し手前（`now - 80px`）へ寄せ、画面の大半を今後の予測に使う。`display:none` の状態では `scrollLeft` 代入が無効になるため、`#weather-content` を表示した後に `requestAnimationFrame` で寄せ直す。
 - **現在時刻ライン**: `nowLinePlugin` がオレンジ（`#ff6600`, `globalAlpha:0.35`）の縦帯を描く。
-- **Y軸の固定表示**: `stickyYAxisPlugin` が、スクロール量ぶん平行移動した位置に軸幅ぶんの下地（`--box-bg`）をキャンバス全高で塗り、Chart.js の scale を再描画する。左軸（潮位 m・波高 m）は表示領域の左端、右軸（周期 秒）は右端へ貼り付く。スクロール中は `requestAnimationFrame` で1フレーム1回に間引いて再描画する。
+- **Y軸の固定表示**: `stickyYAxisPlugin` が、スクロール量ぶん平行移動した位置に軸幅ぶんの下地（`--box-bg`）をキャンバス全高で塗り、Chart.js の scale を再描画する。左軸（潮位 m・波高 m）は表示領域の左端、右軸（周期 秒）は右端へ貼り付く。スクロール中は `requestAnimationFrame` で1フレーム1回に間引いて再描画する。下地はキャンバス端まで塗る（左軸は 0〜軸右端、右軸は軸左端〜キャンバス右端。Chart.js が点の半径ぶん取る余白から端の点がはみ出して見えるのを防ぐ）。
+- **軸に一部隠れたX軸ラベル**は `hideCutXLabels` がラベル帯（軸線の 2px 下から）だけ塗って丸ごと隠す（「13:00」の頭が欠けて「3:00」と誤読されるのを防ぐ）。軸の描画より先に塗る（後だと軸最下段の目盛り文字が欠ける）。
 - **描画順とツールチップ**: `nowLinePlugin`・`stickyYAxisPlugin` は `afterDatasetsDraw` で描く（`afterDraw` だと組み込みツールチップの後になり、貼り付けた周期軸がツールチップを塗りつぶす）。ツールチップの左右は `tooltipXAlignInView` が表示領域基準で決める（点が表示領域の右半分なら左側へ出す）。
 - **右端フェード**: `.chart-scroll` に `mask-image` を当て、右端20pxを不透明度 `0.45` まで落として「横に続きがある」ことを示す（モバイルはスクロールバーが出ないため）。固定表示の周期軸が重なるので、完全な透明までは落とさない。
 - **キャンバス高**: 潮汐 134px / 波高・周期 140px。`layout.padding` は両グラフとも 0（下パディングを入れるとX軸ラベルの下に空白が残り、直下の注記との間が間延びする）。`responsive:false` のため **CSS（`.tide-chart-area` / `.wave-chart-area`）と JS（`canvas.height`）の両方に同じ値**を持つ。変更時は必ず2箇所を揃える。
@@ -243,7 +248,7 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
 - 目的: 更新停止（Actions 停止・API 障害）や古いデータを閲覧者に明示し、誤読を防ぐ（三原則1）。閾値はデータ種別ごとに個別（`app.js` の `FRESHNESS`）。
 - **警告はカード単位で出し、ページ全体のバナーは使わない**。GitHub Actions のスケジュール遅延・スキップはデータ種別ごとに独立して起きるため、1ソースの遅延で全体バナーを出すと、更新できている他の情報まで古いと誤認させてしまう。旧 `.stale-banner`（`#stale-banner`）は本方針により廃止。
-- `.stale-note`（各セクション見出し直下）/ `.stale-inline`（`#tsunami-error`）: 該当データが閾値超で古い/取得失敗時に小さく赤字（`--warning-border`, 12px）で注記。通常は `hidden`。対象は潮汐・波・警報・天気予報・風（`markStale()`）、現在の気温･風（`#marine-stale`、アメダス観測時刻の鮮度・取得失敗）、水温･波高（`#sea-stale`、表示中の値の時刻）。
+- `.stale-note`（各セクション見出し直下）/ `.stale-inline`（`#tsunami-error`）: 該当データが閾値超で古い/取得失敗時に小さく赤字（`--warning-border`, 12px）で注記。`.stale-inline` は直下のヒーローカードとの間に `margin-bottom:10px`、2行目以降はアイコン幅（`1em + 5px`）のぶら下げ字下げ。通常は `hidden`。対象は潮汐・波・警報・天気予報・風（`markStale()`）、現在の気温･風（`#marine-stale`、アメダス観測時刻の鮮度・取得失敗）、水温･波高（`#sea-stale`、表示中の値の時刻）。
 - **判定軸はデータの性質で分ける**。実測値（アメダス）は観測時刻の年齢で判定し、予報値（風・波高・海水温）は「時系列が現在時刻をカバーしているか」を主判定にする。予報は未来の行を含むため、ファイル生成が数時間前でも表示行は妥当であり、年齢だけで警告すると誤警告になる（`FRESHNESS.wind` / `FRESHNESS.seaState` は更新完全停止の検知用）。系列が現在時刻に届いていない場合は、生成時刻が読めなくても必ず警告する（表示できる予報が無い状態のため）。
 - **警告の閾値（`FRESHNESS.marine` = 2時間）とライブ補完のトリガ（`LIVE_AMEDAS.staleAfterMs` = 45分）は別物**。トリガは「取り直す価値があるか」、警告は「利用者に伝える価値があるほど古いか」で、同じ値にすると、ライブ取得が使えない環境（CORS遮断・オフライン）では通常運用の cron 間隔でも警告が出続けて誤読を招く。
 - `#amedas-observed`（`.note-fine`、NOWカードの注釈内）: アメダスの観測時刻を「（10:20 観測）」の形で常時表示。多少古くても「いつの実測値か」が分かれば閲覧者が自分で判断できる（三原則1）。取得時刻が不明なら `hidden`。

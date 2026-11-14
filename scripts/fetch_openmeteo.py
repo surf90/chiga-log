@@ -30,6 +30,9 @@ _MARINE_BASE = (
     f"?latitude={LAT}&longitude={LON}&current=wave_height,sea_surface_temperature"
     f"&timezone=Asia%2FTokyo"
 )
+# api.open-meteo.com は TLS ハンドシェイクのタイムアウトが数十秒続くことがある
+# （2026-11-14 実測: 2s/4s 間隔の3回が全滅）。待機を長めに取り瞬断を跨ぐ。
+FORECAST_BACKOFF = (5, 15)
 MARINE_URL = _MARINE_BASE + "&hourly=wave_height,sea_surface_temperature&forecast_days=2"
 # hourly 変数が仕様変更で弾かれた場合でも current だけは取得を続ける退避先。
 MARINE_URL_CURRENT_ONLY = _MARINE_BASE
@@ -136,6 +139,18 @@ def _amedas_failed_repeatedly(prev_stale: bool, amedas: dict | None) -> bool:
     return amedas is None or prev_stale
 
 
+def _carry_forward_current_weather(prev_wm) -> dict | None:
+    """forecast 取得失敗時に前回の current_weather を stale 印付きで返す。
+
+    time（実値の時刻）は保持するため、フロントの鮮度判定は誤読しない。
+    前回値が無ければ None。
+    """
+    prev_cw = prev_wm.get("current_weather") if isinstance(prev_wm, dict) else None
+    if not isinstance(prev_cw, dict) or not prev_cw:
+        return None
+    return {**prev_cw, "stale": True}
+
+
 def _build_wind_items(hourly: dict) -> list[dict]:
     """Open-Meteoの時系列配列から風予報の整形済みアイテム配列を生成する。"""
     items = []
@@ -233,14 +248,32 @@ def main() -> None:
     # スキーマ検証: 主要キーが揃っているか確認 (BFFやAPI仕様変更の早期検知)
     # 現在値と風予報は同じ応答に入っている。検証は部分ごとに行い、片方の
     # キーが欠けても、もう片方は保存できるようにする。
-    forecast = http_get_json(FORECAST_URL)
+    forecast = http_get_json(FORECAST_URL, backoff=FORECAST_BACKOFF)
     weather = _validated(forecast, ["current"], "openmeteo.weather")
     marine = _validated(fetch_marine(), ["current"], "openmeteo.marine")
     fresh_amedas = fetch_jma_amedas()
     wind_fc = _validated(forecast, ["hourly"], "openmeteo.wind_forecast")
 
-    failed = [k for k, v in {"weather": weather, "marine": marine, "wind_fc": wind_fc}.items() if v is None]
     prev_wm = load_json("data/weather_marine.json")
+    failed = [k for k, v in {"marine": marine}.items() if v is None]
+    carried_cw = None
+    if forecast is None:
+        # 通信障害（TLS タイムアウト等）は単発なら前回値の引き継ぎで吸収する。
+        # wind_forecast.json は48時間分の時系列を持ち、フロントが現在時刻の行を
+        # 選ぶため据え置きで足りる。前回も失敗（stale）していた＝継続障害、
+        # または引き継げる値が無いときだけ失敗通知する（アメダスと同じ方針）。
+        carried_cw = _carry_forward_current_weather(prev_wm)
+        prev_cw_stale = bool(
+            isinstance(prev_wm, dict) and isinstance(prev_wm.get("current_weather"), dict)
+            and prev_wm["current_weather"].get("stale")
+        )
+        if carried_cw is None or prev_cw_stale:
+            failed.append("forecast")
+        else:
+            print("[warn] Open-Meteo forecast 取得失敗。前回値を引き継ぎます（単発のため失敗通知は保留）。")
+    else:
+        # 応答はあるのにキーが欠ける＝仕様変更の疑い。単発でも通知する。
+        failed += [k for k, v in {"weather": weather, "wind_fc": wind_fc}.items() if v is None]
     prev_amedas_stale = bool(
         isinstance(prev_wm, dict) and isinstance(prev_wm.get("jma_amedas"), dict) and prev_wm["jma_amedas"].get("stale")
     )
@@ -259,7 +292,7 @@ def main() -> None:
             "updated_at": updated_at,
             "current_weather": (
                 _normalize_current_weather(_to_current_weather(weather))
-                if weather is not None else prev.get("current_weather", {})
+                if weather is not None else (carried_cw or prev.get("current_weather", {}))
             ),
             "marine": _normalize_marine(marine) if marine is not None else prev.get("marine", {}),
             "jma_amedas": amedas,

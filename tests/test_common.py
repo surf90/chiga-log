@@ -62,7 +62,7 @@ def test_http_get_text_passes_retry_on_404(monkeypatch):
     """http_get_text が retry_on_404 を http_get_bytes へ透過すること。"""
     captured = {}
 
-    def fake_bytes(url, *, headers=None, timeout=None, retry_on_404=False):
+    def fake_bytes(url, *, headers=None, timeout=None, retry_on_404=False, backoff=None):
         captured["retry_on_404"] = retry_on_404
         return b"ok"
 
@@ -74,7 +74,7 @@ def test_http_get_text_passes_retry_on_404(monkeypatch):
 def test_http_get_text_defaults_retry_on_404_false(monkeypatch):
     captured = {}
 
-    def fake_bytes(url, *, headers=None, timeout=None, retry_on_404=False):
+    def fake_bytes(url, *, headers=None, timeout=None, retry_on_404=False, backoff=None):
         captured["retry_on_404"] = retry_on_404
         return b"ok"
 
@@ -87,10 +87,23 @@ def test_http_get_json_passes_retry_on_404(monkeypatch):
     """http_get_json が retry_on_404 を http_get_text 経由で透過すること。"""
     captured = {}
 
-    def fake_text(url, *, encoding="utf-8", headers=None, timeout=None, retry_on_404=False):
+    def fake_text(url, *, encoding="utf-8", headers=None, timeout=None, retry_on_404=False, backoff=None):
         captured["retry_on_404"] = retry_on_404
         return '{"a": 1}'
 
     monkeypatch.setattr(_common, "http_get_text", fake_text)
     assert http_get_json("http://x", retry_on_404=True) == {"a": 1}
     assert captured["retry_on_404"] is True
+
+
+def test_http_get_json_passes_backoff(monkeypatch):
+    """http_get_json の backoff が http_get_bytes まで透過すること。"""
+    captured = {}
+
+    def fake_bytes(url, *, headers=None, timeout=None, retry_on_404=False, backoff=None):
+        captured["backoff"] = backoff
+        return b"{}"
+
+    monkeypatch.setattr(_common, "http_get_bytes", fake_bytes)
+    assert http_get_json("http://x", backoff=(5, 15)) == {}
+    assert captured["backoff"] == (5, 15)

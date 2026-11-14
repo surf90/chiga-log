@@ -1,10 +1,10 @@
-const CACHE_NAME = "chigalog-v23";
+const CACHE_NAME = "chigalog-v24";
 const BASE = self.location.pathname.replace(/sw\.js$/, "");
 const ASSETS = [
   BASE,
   BASE + "index.html",
   // index.html と同じ ?v= 付き URL で持つ（caches.match はクエリも照合する）
-  BASE + "assets/css/style.min.css?v=4",
+  BASE + "assets/css/style.min.css?v=5",
   BASE + "assets/js/app.min.js?v=3",
   BASE + "assets/vendor/chart.umd.min.js",
 ];
@@ -116,13 +116,19 @@ self.addEventListener("fetch", (e) => {
         .then((res) => {
           if (res && res.status === 200 && res.type === "basic") {
             const copy = res.clone();
-            caches.open(CACHE_NAME).then((c) => c.put(e.request, copy));
+            e.waitUntil(
+              caches.open(CACHE_NAME).then((c) => c.put(e.request, copy)),
+            );
           }
           return res;
         })
         .catch(
           () => hit || new Response("", { status: 504, statusText: "offline" }),
         );
+      // キャッシュ命中時は応答後も裏で再取得・保存が続く。waitUntil で
+      // 延命しないと SW が先に停止し、更新版がキャッシュに入らないことがある
+      // （延命中なので上の then 内の waitUntil も呼べる）。
+      if (hit) e.waitUntil(network);
       return hit || network;
     }),
   );

@@ -4,15 +4,15 @@ on:
   push:
     branches: [main]
     paths:
-      - 'scripts/**'
-      - 'tests/**'
-      - '_data/**'
-      - '.github/workflows/test.yml'
+      - "scripts/**"
+      - "tests/**"
+      - "_data/**"
+      - ".github/workflows/test.yml"
   pull_request:
     paths:
-      - 'scripts/**'
-      - 'tests/**'
-      - '_data/**'
+      - "scripts/**"
+      - "tests/**"
+      - "_data/**"
   workflow_dispatch:
 
 env:
@@ -32,7 +32,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: Install test dependencies
         run: pip install -r scripts/requirements.txt
       - name: Run pytest

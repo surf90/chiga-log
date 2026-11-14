@@ -3,7 +3,7 @@ name: Fetch JMA Forecast
 on:
   schedule:
     # JST 5:05, 11:05, 17:05 -> UTC 20:05, 2:05, 8:05
-    - cron: '5 20,2,8 * * *'
+    - cron: "5 20,2,8 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -28,7 +28,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: Run fetch script
         run: python scripts/fetch_forecast.py
       - name: Commit and push if changed

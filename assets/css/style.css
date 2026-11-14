@@ -128,6 +128,10 @@ body {
   font-size: 15px;
   line-height: 1.7;
   overflow-wrap: break-word;
+  /* 和文を文節単位で折り返す（Chrome 119+。「ください。」の「い。」だけが
+     次行に落ちる等を防ぐ）。非対応ブラウザ・英語表示では従来どおり。 */
+  word-break: auto-phrase;
+  text-wrap: pretty;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
   -webkit-font-smoothing: antialiased;
@@ -391,6 +395,14 @@ h1 .title-sub {
 }
 #skeleton-loading {
   padding: 4px 0;
+}
+/* 骨組み表示中は下側の更新日時・フッターを不可視にする。骨組みより本体が
+   高いため、画面内にあった両者が本体の描画で押し下げられ CLS になっていた
+   （デスクトップ実測 0.028）。visibility なので場所は保ち、ずれにも数えない。
+   骨組みは JS が style.display="none" で消す（エラー時も同じ）ので、それを鍵にする。 */
+.container:has(#skeleton-loading:not([style*="none"]))
+  :is(.float-alert-wrap, .footer) {
+  visibility: hidden;
 }
 .subtitle {
   font-size: 12px;
@@ -951,7 +963,7 @@ p.note strong a {
   padding: 20px 12px 4px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   border-top: 1px solid var(--hairline);
   animation: rise-in 0.55s 0.08s var(--ease-out) both;
 }
@@ -973,14 +985,89 @@ p.note strong a {
   line-height: 1.5;
   text-wrap: pretty;
 }
+.footer-disclaimer {
+  margin: 0;
+}
+/* 出典・サイト説明の折りたたみ。安全上の注意は畳まずに上へ出している。 */
+.footer-more {
+  border-block: 1px solid var(--hairline);
+}
+.footer-more > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.footer-more > summary::-webkit-details-marker {
+  display: none;
+}
+/* 開閉の向きを示す山形（文字に依存しない CSS の枠線で描く） */
+.footer-more > summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.2s var(--ease-out);
+}
+.footer-more[open] > summary::after {
+  transform: translateY(1px) rotate(-135deg);
+}
+@media (hover: hover) {
+  .footer-more > summary:hover {
+    color: var(--text-main);
+  }
+}
+.footer-more > summary:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+/* 開閉を高さのアニメーションで滑らかにする（Chrome 131+ の
+   ::details-content / interpolate-size。非対応ブラウザは即時開閉）。 */
+@supports (interpolate-size: allow-keywords) {
+  .footer-more {
+    interpolate-size: allow-keywords;
+  }
+  .footer-more::details-content {
+    block-size: 0;
+    overflow: hidden;
+    transition:
+      block-size 0.25s var(--ease-out),
+      content-visibility 0.25s allow-discrete;
+  }
+  .footer-more[open]::details-content {
+    block-size: auto;
+  }
+}
+.footer-data {
+  margin: 0;
+  padding: 0 0 4px;
+  list-style: none;
+  text-align: left;
+}
+.footer-data li {
+  padding: 2px 0;
+}
 .footer-about {
-  margin: 0 0 8px;
+  margin: 8px 0 12px;
+  text-align: left;
+}
+.footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 16px;
 }
 .footer-copyright {
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
   font-size: 12px;
   letter-spacing: -0.28px;
-  margin-top: 8px;
 }
 /* 英語表示の切替（補助機能）。フッターのリンクと同じ控えめな色で目立たせない。 */
 .lang-toggle {
@@ -1073,14 +1160,17 @@ p.note strong a {
 /* データ鮮度の警告表示（更新停止・古いデータの明示）。
    hidden 属性でトグルするため display は指定しない。 */
 .stale-note,
+/* 津波取得失敗の注記（直下に SEA/AIR/WIND カード）。以前は同名ルールの
+   重複で下余白が 0 に上書きされ、カードに密着していた。
+   2行目以降はアイコン幅（1em + 5px）だけ字下げして本文の頭にそろえる。 */
 .stale-inline {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
+  padding-left: calc(1em + 5px);
+  text-indent: calc(-1em - 5px);
   color: var(--warning-border);
   font-size: 12px;
   font-weight: 600;
-}
-.stale-inline {
-  margin: 8px 0 0;
+  line-height: 1.5;
 }
 .current-time.is-stale {
   border-bottom-color: var(--warning-border);
