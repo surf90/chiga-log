@@ -3,7 +3,9 @@ layout: null
 lang: ja
 ---
 
-<!-- タイトル・説明・地名・各種コードは _data/site.json で一元管理（フォーク時はそこを編集）。 -->
+{% comment %} タイトル・説明・地名・各種コードは _data/site.json
+で一元管理（フォーク時はそこを編集）。 HTML コメントにすると doctype
+宣言より前に出力されるため Liquid コメントにしている。 {% endcomment %}
 
 <!doctype html>
 <html lang="{{ page.lang }}">

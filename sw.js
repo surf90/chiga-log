@@ -116,13 +116,19 @@ self.addEventListener("fetch", (e) => {
         .then((res) => {
           if (res && res.status === 200 && res.type === "basic") {
             const copy = res.clone();
-            caches.open(CACHE_NAME).then((c) => c.put(e.request, copy));
+            e.waitUntil(
+              caches.open(CACHE_NAME).then((c) => c.put(e.request, copy)),
+            );
           }
           return res;
         })
         .catch(
           () => hit || new Response("", { status: 504, statusText: "offline" }),
         );
+      // キャッシュ命中時は応答後も裏で再取得・保存が続く。waitUntil で
+      // 延命しないと SW が先に停止し、更新版がキャッシュに入らないことがある
+      // （延命中なので上の then 内の waitUntil も呼べる）。
+      if (hit) e.waitUntil(network);
       return hit || network;
     }),
   );

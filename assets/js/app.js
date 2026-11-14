@@ -78,7 +78,10 @@ async function fetchCached(
   if (!force && cached) {
     try {
       const { data, ts } = JSON.parse(cached);
-      if (Date.now() - ts < ttlMs) return data;
+      // 端末時計が戻された等で ts が未来だと差が負になり、永久に期限切れに
+      // ならない。負の経過時間は無効として再取得する。
+      const age = Date.now() - ts;
+      if (age >= 0 && age < ttlMs) return data;
     } catch {
       try {
         storage.removeItem(key);

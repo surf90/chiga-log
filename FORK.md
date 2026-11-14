@@ -6,29 +6,29 @@ JS・Python・HTML（Jekyll）の3者がここを参照するため、基本は 
 
 ## 1. `_data/site.json` を編集
 
-| キー | 意味 | 例（茅ヶ崎） | 調べ方 |
-|---|---|---|---|
-| `name` / `short_name` | サイト名・ロゴ文字 | ちがログ | 任意 |
-| `title` / `description` | `<title>`・meta・OGP・JSON-LD | — | 任意（SEO文言） |
-| `tagline` / `area_label` | 見出し下のキャッチ・サブ見出し | 茅ヶ崎の海のログが… | 任意 |
-| `location.display_name` | 地点名（風予報注記・JSON-LD・出力JSON） | 茅ヶ崎ヘッドランド | 任意 |
-| `location.lat` / `lon` | 表示・Open-Meteo 用座標 | 35.3175 / 139.4151 | 地図アプリ |
-| `location.tide_lat` / `tide_lon` | 潮汐(Stormglass)用座標（別値可） | 35.318 / 139.41 | 地図アプリ |
-| `location.tide_table_label` | 潮位表リンクの表示名 | 湘南港 | 最寄りの潮位観測所名 |
-| `jma.forecast_code` | 天気予報JSON（県）コード | 140000 | 下記「JMAコードの調べ方」 |
-| `jma.forecast_area_code` | 予報区（東部等）・警報リンクの `code` | 140010 | 同上 |
-| `jma.forecast_temp_code` | 気温 timeSeries の代表地点コード | 46106（横浜） | 予報JSONの3番目の `timeSeries` を確認 |
-| `jma.pref_code` | アメダスリンクの `area_code` | 140000 | 同上 |
-| `jma.city_warning_code` | 市区町村の警報コード（`selected_code`） | 1420700 | 同上 |
-| `jma.city_warning_name` | 警報JSON出力の地域名 | 茅ヶ崎市 | 任意 |
-| `jma.warning_office` | VPWS50 県官署署名 | JPTF | 下記 |
-| `jma.amedas_code` | アメダス官署コード（観測値取得） | 46141（辻堂） | アメダス地点表 |
-| `jma.amedas_link_no` | アメダス画面リンクの `amdno` | 46141 | アメダスURL |
-| `jma.tide_station` | 気象庁潮汐テキストの観測点コード | D8 | 下記 |
-| `jma.wave_guid_area` | 波浪ガイダンスのエリア番号 | 20 | 下記 |
-| `jma.wave_guid_link_area` | 波浪ガイダンスHTMLリンクの `area` | 19 | 気象庁サイト |
-| `jma.tsunami_area_code` | 津波予報区コード | 330 | 下記 |
-| `jma.warning_api_url` | 警報BFF（Cloudflare Worker）のURL | `https://…workers.dev/warning` | 自分でデプロイした Worker のURL。空文字ならライブ取得を行わず `data/warning_chigasaki.json` のみ使用 |
+| キー                             | 意味                                    | 例（茅ヶ崎）                   | 調べ方                                                                                               |
+| -------------------------------- | --------------------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `name` / `short_name`            | サイト名・ロゴ文字                      | ちがログ                       | 任意                                                                                                 |
+| `title` / `description`          | `<title>`・meta・OGP・JSON-LD           | —                              | 任意（SEO文言）                                                                                      |
+| `tagline` / `area_label`         | 見出し下のキャッチ・サブ見出し          | 茅ヶ崎の海のログが…            | 任意                                                                                                 |
+| `location.display_name`          | 地点名（風予報注記・JSON-LD・出力JSON） | 茅ヶ崎ヘッドランド             | 任意                                                                                                 |
+| `location.lat` / `lon`           | 表示・Open-Meteo 用座標                 | 35.3175 / 139.4151             | 地図アプリ                                                                                           |
+| `location.tide_lat` / `tide_lon` | 潮汐(Stormglass)用座標（別値可）        | 35.318 / 139.41                | 地図アプリ                                                                                           |
+| `location.tide_table_label`      | 潮位表リンクの表示名                    | 湘南港                         | 最寄りの潮位観測所名                                                                                 |
+| `jma.forecast_code`              | 天気予報JSON（県）コード                | 140000                         | 下記「JMAコードの調べ方」                                                                            |
+| `jma.forecast_area_code`         | 予報区（東部等）・警報リンクの `code`   | 140010                         | 同上                                                                                                 |
+| `jma.forecast_temp_code`         | 気温 timeSeries の代表地点コード        | 46106（横浜）                  | 予報JSONの3番目の `timeSeries` を確認                                                                |
+| `jma.pref_code`                  | アメダスリンクの `area_code`            | 140000                         | 同上                                                                                                 |
+| `jma.city_warning_code`          | 市区町村の警報コード（`selected_code`） | 1420700                        | 同上                                                                                                 |
+| `jma.city_warning_name`          | 警報JSON出力の地域名                    | 茅ヶ崎市                       | 任意                                                                                                 |
+| `jma.warning_office`             | VPWS50 県官署署名                       | JPTF                           | 下記                                                                                                 |
+| `jma.amedas_code`                | アメダス官署コード（観測値取得）        | 46141（辻堂）                  | アメダス地点表                                                                                       |
+| `jma.amedas_link_no`             | アメダス画面リンクの `amdno`            | 46141                          | アメダスURL                                                                                          |
+| `jma.tide_station`               | 気象庁潮汐テキストの観測点コード        | D8                             | 下記                                                                                                 |
+| `jma.wave_guid_area`             | 波浪ガイダンスのエリア番号              | 20                             | 下記                                                                                                 |
+| `jma.wave_guid_link_area`        | 波浪ガイダンスHTMLリンクの `area`       | 19                             | 気象庁サイト                                                                                         |
+| `jma.tsunami_area_code`          | 津波予報区コード                        | 330                            | 下記                                                                                                 |
+| `jma.warning_api_url`            | 警報BFF（Cloudflare Worker）のURL       | `https://…workers.dev/warning` | 自分でデプロイした Worker のURL。空文字ならライブ取得を行わず `data/warning_chigasaki.json` のみ使用 |
 
 > `warning_api_url` のオリジンは `index.html` の CSP `connect-src` に Liquid で
 > 自動展開されます。URL を変えても CSP の手動編集は不要です。
