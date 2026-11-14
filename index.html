@@ -227,7 +227,7 @@ lang: ja
          上げたら sw.js の ASSETS と CACHE_NAME も合わせる。 -->
     <link
       rel="stylesheet"
-      href="{{ site.baseurl }}/assets/css/style.min.css?v=4"
+      href="{{ site.baseurl }}/assets/css/style.min.css?v=5"
     />
 
     <!-- グラフ描画ライブラリは async。app.js は whenChartReady() で到着を待って
@@ -757,61 +757,12 @@ lang: ja
       </main>
 
       <footer class="footer">
-        <!-- 出典は各提供元の利用条件に沿って表記する。気象庁ホームページ利用規約は
-             加工した場合にその旨の明記を求め、Open-Meteo は CC BY 4.0 の帰属表示
-             （提供元リンク＋ライセンス）を求める。 -->
-        <div class="footer-data">
-          出典:
-          <a
-            href="https://www.jma.go.jp/bosai/forecast/"
-            target="_blank"
-            rel="noopener noreferrer"
-            >気象庁ホームページ</a
-          >（天気予報・アメダス・注意報・警報・津波・潮位表・波浪ガイダンス）を加工して作成
-          /
-          <a
-            href="https://www.wbgt.env.go.jp/alert.php"
-            target="_blank"
-            rel="noopener noreferrer"
-            >環境省 熱中症予防情報サイト</a
-          >（熱中症警戒情報） /
-          <a
-            href="https://svs.gsfc.nasa.gov/gallery/moonphase/"
-            target="_blank"
-            rel="noopener noreferrer"
-            >NASA SVS</a
-          >（月齢） /
-          <a
-            href="https://open-meteo.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Open-Meteo</a
-          >（<a
-            href="https://creativecommons.org/licenses/by/4.0/"
-            target="_blank"
-            rel="noopener noreferrer license"
-            >CC BY 4.0</a
-          >、風予報・波高・海水温） /
-          <a
-            href="https://stormglass.io/"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Stormglass</a
-          >（潮汐の予備）
-        </div>
-
-        <!-- サイト名の表記ゆれ（ちがろぐ／チガログ）でも検索に掛かるよう、
-             説明文を本文として1回だけ載せる（JSON-LD の alternateName と対応）。 -->
-        <p class="footer-disclaimer footer-about">
-          {{ site.data.site.description }}
+        <!-- 安全に関わる注意だけは常に見せる。長文の出典・サイト説明は下の
+             <details> に畳む（フッターがスマホで1画面近くを占めていたため）。 -->
+        <p class="footer-disclaimer">
+          ※
+          参考情報です。海の状況は急変するため、入水前に必ず現地の様子と公式発表を確認してください。
         </p>
-
-        <div class="footer-disclaimer">
-          ※
-          本ツールは参考用です。実際の活動時は、必ず目視や公式発表も併せて確認してください。<br />
-          ※
-          海のコンディションは急変します。無理な入水は控え、安全にマリンスポーツを楽しみましょう。
-        </div>
 
         <!-- サーフ90の関連サイトであることを示すリンク群。ちがビオのフッターと同じ構成・順序にそろえる。
              公式サイトは HTTPS 化が完了するまで http で張る（完了後に https へ）。 -->
@@ -836,25 +787,88 @@ lang: ja
           </p>
         </nav>
 
-        <!-- 英語表示（補助）。押した時だけ assets/js/en.js を読み込む。 -->
-        <button type="button" id="lang-toggle" class="lang-toggle" lang="en">
-          English
-        </button>
+        <!-- 出典は各提供元の利用条件に沿って表記する。気象庁ホームページ利用規約は
+             加工した場合にその旨の明記を求め、Open-Meteo は CC BY 4.0 の帰属表示
+             （提供元リンク＋ライセンス）を求める。畳んでも DOM 上に常にあり、
+             主な提供元は summary に出して閉じた状態でも分かるようにする。 -->
+        <details class="footer-more">
+          <summary>
+            データ出典（気象庁・Open-Meteo ほか）・このサイトについて
+          </summary>
+          <ul class="footer-data">
+            <li>
+              <a
+                href="https://www.jma.go.jp/bosai/forecast/"
+                target="_blank"
+                rel="noopener noreferrer"
+                >気象庁ホームページ</a
+              >：天気予報・アメダス・注意報・警報・津波・潮位表・波浪ガイダンス（加工して作成）
+            </li>
+            <li>
+              <a
+                href="https://www.wbgt.env.go.jp/alert.php"
+                target="_blank"
+                rel="noopener noreferrer"
+                >環境省 熱中症予防情報サイト</a
+              >：熱中症警戒情報
+            </li>
+            <li>
+              <a
+                href="https://open-meteo.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Open-Meteo</a
+              >（<a
+                href="https://creativecommons.org/licenses/by/4.0/"
+                target="_blank"
+                rel="noopener noreferrer license"
+                >CC BY 4.0</a
+              >）：風予報・波高・海水温
+            </li>
+            <li>
+              <a
+                href="https://svs.gsfc.nasa.gov/gallery/moonphase/"
+                target="_blank"
+                rel="noopener noreferrer"
+                >NASA SVS</a
+              >：月齢
+            </li>
+            <li>
+              <a
+                href="https://stormglass.io/"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Stormglass</a
+              >：潮汐（予備）
+            </li>
+          </ul>
+          <!-- サイト名の表記ゆれ（ちがろぐ／チガログ）でも検索に掛かるよう、
+               説明文を本文として1回だけ載せる（JSON-LD の alternateName と対応）。
+               details の中身も検索エンジンはインデックスする。 -->
+          <p class="footer-about">{{ site.data.site.description }}</p>
+        </details>
 
-        <div class="footer-copyright">
-          <a
-            href="https://github.com/surf90/chiga-log/blob/main/README.md"
-            target="_blank"
-            rel="noopener noreferrer"
-            >&copy;</a
-          >
-          2026 ISHIKAWA, Natsuki |
-          <a
-            href="https://github.com/surf90/chiga-log/blob/main/LICENSE"
-            target="_blank"
-            rel="noopener noreferrer"
-            >MIT License</a
-          >
+        <div class="footer-bottom">
+          <!-- 英語表示（補助）。押した時だけ assets/js/en.js を読み込む。 -->
+          <button type="button" id="lang-toggle" class="lang-toggle" lang="en">
+            English
+          </button>
+
+          <div class="footer-copyright">
+            <a
+              href="https://github.com/surf90/chiga-log/blob/main/README.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              >&copy;</a
+            >
+            2026 ISHIKAWA, Natsuki |
+            <a
+              href="https://github.com/surf90/chiga-log/blob/main/LICENSE"
+              target="_blank"
+              rel="noopener noreferrer"
+              >MIT License</a
+            >
+          </div>
         </div>
       </footer>
     </div>

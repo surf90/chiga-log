@@ -105,7 +105,9 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 - コンテナ: `max-width:600px` / `padding:34px 24px 28px` / `border-radius:16px` / `background:var(--container-bg)` / `box-shadow:var(--container-shadow)` / 上端に 4px のブランドグラデーションバー。
 - ヘッダー: `--brand-soft` と半透明の白を重ねた軽量なグラデーション面、`1px solid var(--hairline)`、`border-radius:12px`、薄い影でコンテンツから穏やかに分離する。追加の画像や JavaScript は使わない。
 - フッター: カード面（背景・枠・角丸・影）は持たず、上端の `1px solid var(--hairline)` の区切り線のみでコンテンツから分離するテキスト形式。リンクの重要度は低いため、装飾やチップ化はしない。
-- フッターの関連サイト（`.footer-family`）: サーフ90の関連サイトであることを示すリンク群。**ちがビオのフッターと同じ構成・順序**（サーフ90公式サイト・相手のサイト → 「ちがログ・ちがビオは、サーフ90の関連サイト（非公式）です。」）にそろえる。非公式サイトのため、公式に見えないよう関連性の表記は控えめにする（クラブ名の見出しやブランド色の強調は置かない）。リンクは他のフッターリンクと同じ色。区切り記号（`|`）は折り返すと行頭に残るため使わず、`gap:0 16px` で区切る。旧 `.lifesaving-link`（赤い Instagram リンク）は廃止。
+- フッターの構成（上から）: 安全上の注意（`.footer-disclaimer`、1文。**畳まない**）→ 関連サイト（`.footer-family`）→ 折りたたみ（`.footer-more`、`<details>`）→ English ボタンと著作権表記（`.footer-bottom`、横並び・狭幅で折り返し）。要素間は `gap:12px`。
+- 折りたたみ（`.footer-more`）: データ出典の一覧（`.footer-data`、提供元リンク：用途）とサイト説明（`.footer-about`、SEO 用の表記ゆれを含む）を収める。上下に `--hairline` の区切り線、`summary` は中央寄せ・`min-height:44px`・既定の三角を消して CSS 枠線の山形（開くと上向き）。summary に主な提供元（気象庁・Open-Meteo）を出し、閉じた状態でも出典が分かるようにする（気象庁の加工明記・Open-Meteo の CC BY 帰属表示は中身に常に DOM として存在）。開閉は `::details-content` + `interpolate-size` で高さを 0.25s 遷移（Chrome 131+、非対応は即時）。中身は左寄せ。
+- フッターの関連サイト（`.footer-family`）: サーフ90の関連サイトであることを示すリンク群。**ちがビオのフッターと同じ構成・順序**（サーフ90公式サイト・相手のサイト → 「ちがログは、サーフ90茅ヶ崎の非公式関連サイトです。」）にそろえる。非公式サイトのため、公式に見えないよう関連性の表記は控えめにする（クラブ名の見出しやブランド色の強調は置かない）。リンクは他のフッターリンクと同じ色。区切り記号（`|`）は折り返すと行頭に残るため使わず、`gap:0 16px` で区切る。旧 `.lifesaving-link`（赤い Instagram リンク）は廃止。
 
 ### サイトバー（スクロール追従、`#site-bar`）
 
