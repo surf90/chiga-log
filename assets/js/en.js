@@ -182,8 +182,10 @@
     "（取得失敗のため前回の観測値を表示中）":
       " (showing the previous observation; the latest fetch failed)",
     // フッター
-    "※ 参考情報です。海の状況は急変するため、入水前に必ず現地の様子と公式発表を確認してください。":
-      "* For reference only. Ocean conditions change quickly: always check on site and official announcements before going in.",
+    "※ 本ツールは参考用です。実際の活動時は、必ず目視や公式発表も併せて確認してください。":
+      "* This tool is for reference only. Before going out, always check conditions with your own eyes and official announcements.",
+    "※ 海のコンディションは急変します。無理な入水は控え、安全にマリンスポーツを楽しみましょう。":
+      "* Ocean conditions change quickly. Don't go in if in doubt, and enjoy marine sports safely.",
     "データ出典（気象庁・Open-Meteo ほか）・このサイトについて":
       "Data sources (JMA, Open-Meteo, etc.) & about",
     気象庁ホームページ: "JMA website",
