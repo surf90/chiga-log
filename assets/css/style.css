@@ -303,8 +303,8 @@ h1 .title-sub {
 
 .hero-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
   margin-bottom: 18px;
 }
 .hero-card {
@@ -423,21 +423,41 @@ h1 .title-sub {
   }
 }
 
-#weather-content > .weather-box {
+.board-col > .weather-box {
   animation: rise-in 0.42s var(--ease-out) both;
 }
-/* 上から順にごく短く遅らせる。5枚目で頭打ちにして待ち時間を作らない */
-#weather-content > .weather-box:nth-child(2) {
-  animation-delay: 0.03s;
+/* 列内で上から順にごく短く遅らせる。4枚目で頭打ちにして待ち時間を作らない */
+.board-col > .weather-box:nth-child(2) {
+  animation-delay: 0.04s;
 }
-#weather-content > .weather-box:nth-child(3) {
-  animation-delay: 0.06s;
+.board-col > .weather-box:nth-child(3) {
+  animation-delay: 0.08s;
 }
-#weather-content > .weather-box:nth-child(4) {
-  animation-delay: 0.09s;
-}
-#weather-content > .weather-box:nth-child(n + 5) {
+.board-col > .weather-box:nth-child(n + 4) {
   animation-delay: 0.12s;
+}
+/* 広い画面（PC・横向きタブレット）では2列に並べる。1列のままだと
+   600px の帯の左右が空き、潮・波と天気を見比べるのに縦スクロールが要る。 */
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1080px;
+  }
+  .board {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0 16px;
+    align-items: start;
+  }
+  .hero-cards {
+    gap: 14px;
+  }
+}
+/* 天気予報「明日」行の補足（波・降水・気温）。天気文の下に小さく添える */
+.forecast-sub {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-sub);
 }
 .weather-box {
   scroll-margin-top: 56px;
@@ -589,8 +609,12 @@ h1 .title-sub {
 }
 /* 天気は「くもり 夜 雨 所により…」と長く折り返すため、
    右寄せだと行頭が揃わず読みにくい。値だけ左揃えにする。 */
-#jma-weather {
+#jma-weather,
+#jma-tomorrow {
   text-align: left;
+}
+.data-row[hidden] {
+  display: none;
 }
 .error {
   color: var(--warning-border);
@@ -1536,13 +1560,21 @@ p.note strong a {
     white-space: nowrap;
   }
   .hero-cards {
-    gap: 8px;
+    gap: 6px;
   }
   .hero-card {
-    padding: 11px 5px 9px;
+    padding: 10px 2px 8px;
+  }
+  .hero-card-label {
+    font-size: 11px;
+    gap: 3px;
   }
   .hero-card-value {
-    font-size: 1.42rem;
+    font-size: 1.3rem;
+  }
+  .hero-card-unit {
+    font-size: 10px;
+    margin-left: 1px;
   }
   .weather-box {
     padding: 14px 16px;

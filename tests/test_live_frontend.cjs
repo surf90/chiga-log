@@ -1081,3 +1081,135 @@ test("warning report time is shown as month/day and time", () => {
     "unknown",
   );
 });
+
+// ─── 天気予報: 気象庁の「海上の波」と明日の予報 ─────────────────
+test("forecast shows JMA sea waves and a tomorrow summary", async () => {
+  const payload = forecastPayload(
+    [
+      "2026-08-29T05:00:00+09:00",
+      "2026-08-30T00:00:00+09:00",
+      "2026-08-31T00:00:00+09:00",
+    ],
+    [
+      "2026-08-29T06:00:00+09:00",
+      "2026-08-29T12:00:00+09:00",
+      "2026-08-30T00:00:00+09:00",
+      "2026-08-30T06:00:00+09:00",
+      "2026-08-30T12:00:00+09:00",
+    ],
+  );
+  const area = payload.forecast[0].timeSeries[0].areas[0];
+  area.weathers = ["晴れ", "くもり　時々　雨", "晴れ"];
+  area.waves = [
+    "１．５メートル　後　２メートル　うねり　を　伴う",
+    "１メートル",
+    "",
+  ];
+  payload.forecast[0].timeSeries[1].areas[0].pops = [
+    "0",
+    "10",
+    "20",
+    "50",
+    "30",
+  ];
+  payload.forecast[0].timeSeries[2] = {
+    timeDefines: ["2026-08-30T00:00:00+09:00", "2026-08-30T09:00:00+09:00"],
+    areas: [{ area: { code: "46106" }, temps: ["23", "30"] }],
+  };
+  const { context, getElementById } = buildContext({
+    fetchImpl: async () => jsonResponse(payload),
+  });
+  await vm.runInContext("fetchJmaForecast()", context);
+  assert.equal(getElementById("jma-wave-row").hidden, false);
+  assert.equal(
+    getElementById("jma-wave").textContent,
+    "1.5m 後 2m うねりを 伴う",
+  );
+  const tomorrow = getElementById("jma-tomorrow");
+  assert.equal(tomorrow.textContent, "くもり 時々 雨");
+  assert.equal(
+    tomorrow.children.at(-1).textContent,
+    "波 1m・降水 最大50%・30℃ / 23℃",
+  );
+});
+
+test("the sea-wave row stays hidden when JMA sends no wave text", async () => {
+  const { context, getElementById } = buildContext({
+    fetchImpl: async () =>
+      jsonResponse(
+        forecastPayload(
+          ["2026-08-28T17:00:00+09:00", "2026-08-29T00:00:00+09:00"],
+          ["2026-08-29T06:00:00+09:00"],
+        ),
+      ),
+  });
+  await vm.runInContext("fetchJmaForecast()", context);
+  assert.equal(getElementById("jma-wave-row").hidden, true);
+  // 明日の要素が無ければ空欄にせず "--"
+  assert.equal(getElementById("jma-tomorrow").textContent, "--");
+});
+
+// ─── 潮汐: 日次ジョブが日付を跨いで遅れても前日の極値を出さない ────
+test("tide list uses today's forecast entry, not yesterday's 'today'", async () => {
+  const widget = {
+    updated_at: "2026-08-28T00:10:00+09:00",
+    today: [{ time: "2026-08-28T05:00:00+09:00", type: "high", height: 1.1 }],
+    forecast: {
+      "2026-08-28": [
+        { time: "2026-08-28T05:00:00+09:00", type: "high", height: 1.1 },
+      ],
+      "2026-08-29": [
+        { time: "2026-08-29T06:12:00+09:00", type: "high", height: 1.3 },
+        { time: "2026-08-29T12:40:00+09:00", type: "low", height: 0.2 },
+      ],
+    },
+  };
+  const { context, getElementById } = buildContext({
+    fetchImpl: async () => jsonResponse(widget),
+  });
+  await vm.runInContext("fetchTideExtremes()", context);
+  const rows = getElementById("tide-extremes-container").children;
+  const chipText = (row) =>
+    row.children
+      .at(-1)
+      .children.map((c) => c.children[0].textContent)
+      .join(",");
+  assert.equal(rows.length, 2);
+  assert.equal(chipText(rows[0]), "06:12");
+  assert.equal(chipText(rows[1]), "12:40");
+});
+
+test("an old 'today' list without a forecast entry is not shown as today", async () => {
+  const widget = {
+    updated_at: "2026-08-28T00:10:00+09:00",
+    today: [{ time: "2026-08-28T05:00:00+09:00", type: "high", height: 1.1 }],
+    forecast: {
+      "2026-08-28": [
+        { time: "2026-08-28T05:00:00+09:00", type: "high", height: 1.1 },
+      ],
+    },
+  };
+  const { context, getElementById } = buildContext({
+    fetchImpl: async () => jsonResponse(widget),
+  });
+  await vm.runInContext("fetchTideExtremes()", context);
+  const rows = getElementById("tide-extremes-container").children;
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].children.at(-1).textContent, "データなし");
+});
+
+test("the hero wave card shows the sea state rounded to 0.1 m", () => {
+  const { context, getElementById } = buildContext();
+  context.__wm = {
+    marine: {
+      current: {
+        time: "2026-08-29T10:30",
+        wave_height: 1.24,
+        sea_surface_temperature: 26.1,
+      },
+    },
+  };
+  vm.runInContext("renderWeatherCards(__wm)", context);
+  assert.equal(getElementById("hero-wave").textContent, "1.2");
+  assert.equal(getElementById("hero-sea-temp").textContent, 26.1);
+});
