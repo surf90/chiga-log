@@ -17,6 +17,9 @@ updated: 2026-11-18
 - **UI**: ヒーローに WAVE（Open-Meteo 波高）を追加し4枚1行（320px でもはみ出しなし）。PC（1024px 以上）は最大幅 1080px の2列（左: 潮汐・波・水温、右: 警報・天気・風・実況）。狭い画面の並び順は不変。
 - `?v=`（CSS 6・JS 4）、`sw.js` の `CACHE_NAME`（chigalog-v25）を更新。`DESIGN.md`・`README.md` 追従。
 - 検証: Node 65件（新規5）、Python 97件（新規3・更新5）、ESLint、Prettier、Playwright で 320/360/390/1024px・ライト/ダークの横はみ出しなしを確認。外部 API へはサンドボックスから到達できないため、配信元形式はコミット済みスナップショットで確認。
+- PR #230（ドラフト）。CI: test・ESLint + Prettier・pa11y (WCAG2AA) すべて成功。
+- **マージ後の確認（未実施）**: `minify.yml` による `style.min.css`/`app.min.js` 再生成、本番で WAVE ヒーロー・「海上の波」「明日」行・PC 2列表示、再訪時に SW 更新（chigalog-v25）で新 JS が効くこと。
+- **残課題**: `mooninfo_2027.json` の配置（12月中旬に NASA SVS で公開後。未配置でも天文計算で継続するが、公式値に揃えるため）。
 
 ## 完了済み（2026-10-30）
 
