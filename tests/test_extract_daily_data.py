@@ -60,6 +60,14 @@ class TestExtractMoonToday(unittest.TestCase):
         ) as saver:
             return extract_moon_today(), saver
 
+    def _assert_calc_fallback(self, result, saver):
+        """不正なNASA値は採用せず、天文計算の月齢で保存されることを確かめる。"""
+        expected = extract_daily_data._calc_moon_for_date(extract_daily_data.now_jst())
+        self.assertEqual(result["source"], "calc")
+        self.assertEqual(result["age"], expected["age"])
+        self.assertEqual(result["lunar_day"], expected["lunar_day"])
+        saver.assert_called_once()
+
     def test_valid_entry(self):
         """正常なエントリは丸めて返され、保存される。"""
         result, saver = self._run({
@@ -69,6 +77,7 @@ class TestExtractMoonToday(unittest.TestCase):
         })
         self.assertEqual(result["age"], 14.568)
         self.assertEqual(result["phase"], 99.4)
+        self.assertEqual(result["source"], "NASA")
         saver.assert_called_once()
 
     def test_tide_type_uses_lunar_day_not_rounded_moon_age(self):
@@ -93,35 +102,31 @@ class TestExtractMoonToday(unittest.TestCase):
         self.assertEqual(result["lunar_day"], 12)
         self.assertEqual(result["tide_type"], "中潮")
 
-    def test_mismatched_nasa_timestamp_returns_none(self):
+    def test_mismatched_nasa_timestamp_falls_back_to_calc(self):
         """配列位置とNASAの時刻が不一致なら誤った日付として採用しない。"""
         result, saver = self._run({"time": "01 Jan 2000 00:00 UT", "age": 1.0, "phase": 2.0})
-        self.assertIsNone(result)
-        saver.assert_not_called()
+        self._assert_calc_fallback(result, saver)
 
-    def test_missing_age_returns_none(self):
+    def test_missing_age_falls_back_to_calc(self):
         """ageキー欠落でも例外を投げずNoneを返す（潮汐生成を巻き添えにしない）。"""
         result, saver = self._run({"phase": 50.0})
-        self.assertIsNone(result)
-        saver.assert_not_called()
+        self._assert_calc_fallback(result, saver)
 
-    def test_non_numeric_age_returns_none(self):
+    def test_non_numeric_age_falls_back_to_calc(self):
         """ageが非数値でも例外を投げずNoneを返す。"""
         result, saver = self._run({"age": "N/A", "phase": 50.0})
-        self.assertIsNone(result)
-        saver.assert_not_called()
+        self._assert_calc_fallback(result, saver)
 
-    def test_non_finite_age_returns_none(self):
+    def test_non_finite_age_falls_back_to_calc(self):
         """NaN月齢を受理して日付計算で例外にしない。"""
         result, saver = self._run({
             "time": extract_daily_data.now_jst().strftime("%d %b %Y 03:00 UT"),
             "age": float("nan"),
             "phase": 50.0,
         })
-        self.assertIsNone(result)
-        saver.assert_not_called()
+        self._assert_calc_fallback(result, saver)
 
-    def test_non_list_moon_data_returns_none(self):
+    def test_non_list_moon_data_falls_back_to_calc(self):
         """NASA元データが配列でなければ例外を投げず失敗扱いにする。"""
         n = extract_daily_data.now_jst()
         target = extract_daily_data.datetime(n.year, n.month, n.day, 3, tzinfo=extract_daily_data.timezone.utc)
@@ -133,8 +138,7 @@ class TestExtractMoonToday(unittest.TestCase):
             extract_daily_data, "save_json"
         ) as saver:
             result = extract_moon_today()
-        self.assertIsNone(result)
-        saver.assert_not_called()
+        self._assert_calc_fallback(result, saver)
 
     def test_writes_tide_calendar_for_stale_data_fallback(self):
         """日次更新が遅れても翌日の潮回りをNASA値から参照できるようにする。"""
@@ -338,3 +342,49 @@ class TestWarnIfNextYearMoonMissing(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestCalcMoonFallback(unittest.TestCase):
+    """mooninfo_YYYY.json 未配置時の天文計算（Meeus）を NASA 値と突き合わせる。"""
+
+    NASA_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "mooninfo_2026.json")
+
+    @unittest.skipUnless(os.path.exists(NASA_PATH), "mooninfo_2026.json がありません")
+    def test_matches_nasa_for_every_day_of_2026(self):
+        """2026年の毎日で、月齢・輝面比・陰暦日が NASA 由来の値とほぼ一致する。"""
+        import json
+        from datetime import timedelta
+
+        with open(self.NASA_PATH, encoding="utf-8") as f:
+            nasa = json.load(f)
+        day = datetime(2026, 1, 1, tzinfo=extract_daily_data.JST)
+        checked = 0
+        while day.year == 2026:
+            ref = extract_daily_data._extract_moon_for_date(nasa, day, log_errors=False)
+            calc = extract_daily_data._calc_moon_for_date(day)
+            if ref:
+                checked += 1
+                self.assertAlmostEqual(calc["age"], ref["age"], delta=0.01, msg=ref["date"])
+                self.assertAlmostEqual(calc["phase"], ref["phase"], delta=1.0, msg=ref["date"])
+                self.assertEqual(calc["lunar_day"], ref["lunar_day"], msg=ref["date"])
+            day += timedelta(days=1)
+        self.assertGreater(checked, 360)
+
+    def test_known_new_moon_2027(self):
+        """2027-01-08 の朔（JST 05:24 頃）を陰暦1日として扱う。"""
+        day = datetime(2027, 1, 8, tzinfo=extract_daily_data.JST)
+        result = extract_daily_data._calc_moon_for_date(day)
+        self.assertEqual(result["lunar_day"], 1)
+        self.assertEqual(result["tide_type"], "大潮")
+        # 正午時点で朔から約6.6時間
+        self.assertAlmostEqual(result["age"], 0.27, delta=0.05)
+
+    def test_missing_year_file_still_writes_moon(self):
+        """年間ファイルが無くても moon_daily.json を書き、潮回りを止めない。"""
+        with mock.patch.object(extract_daily_data, "load_json", return_value=None), mock.patch.object(
+            extract_daily_data, "save_json"
+        ) as saver:
+            result = extract_moon_today()
+        self.assertEqual(result["source"], "calc")
+        self.assertEqual(len(result["tide_calendar"]), extract_daily_data.MOON_CALENDAR_DAYS)
+        saver.assert_called_once()

@@ -1,11 +1,11 @@
-const CACHE_NAME = "chigalog-v24";
+const CACHE_NAME = "chigalog-v25";
 const BASE = self.location.pathname.replace(/sw\.js$/, "");
 const ASSETS = [
   BASE,
   BASE + "index.html",
   // index.html と同じ ?v= 付き URL で持つ（caches.match はクエリも照合する）
-  BASE + "assets/css/style.min.css?v=5",
-  BASE + "assets/js/app.min.js?v=3",
+  BASE + "assets/css/style.min.css?v=6",
+  BASE + "assets/js/app.min.js?v=4",
   BASE + "assets/vendor/chart.umd.min.js",
 ];
 

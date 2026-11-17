@@ -128,6 +128,135 @@ def _extract_moon_for_date(
     }
 
 
+# ─── 天文計算フォールバック（Meeus『Astronomical Algorithms』49章・48章） ───
+# NASA SVS の年間ファイル（mooninfo_YYYY.json）は手動配置のため、置き忘れると
+# 年明けから月齢・潮回りが止まる。朔の時刻を計算式で求めて代替する。
+# 2026年の NASA 値と比べ、月齢の差は 0.01 日未満・照度の差は 1 ポイント未満
+# （tests/test_extract_daily_data.py で検証）。
+_SYNODIC_MONTH = 29.530588861
+
+
+def _jd_from_datetime(dt: datetime) -> float:
+    """UTC の datetime をユリウス日へ変換する。"""
+    return dt.astimezone(timezone.utc).timestamp() / 86400.0 + 2440587.5
+
+
+def _datetime_from_jd(jd: float) -> datetime:
+    """ユリウス日を UTC の datetime へ変換する。"""
+    return datetime.fromtimestamp((jd - 2440587.5) * 86400.0, tz=timezone.utc)
+
+
+def _true_new_moon_jde(k: int) -> float:
+    """整数 k（2000年1月6日の朔を0とする朔の通し番号）の朔の時刻(JDE)を返す。"""
+    t = k / 1236.85
+    jde = (
+        2451550.09766
+        + _SYNODIC_MONTH * k
+        + 0.00015437 * t**2
+        - 0.000000150 * t**3
+        + 0.00000000073 * t**4
+    )
+    e = 1 - 0.002516 * t - 0.0000074 * t**2
+    rad = math.radians
+    m = rad(2.5534 + 29.10535670 * k - 0.0000014 * t**2 - 0.00000011 * t**3)
+    mp = rad(
+        201.5643
+        + 385.81693528 * k
+        + 0.0107582 * t**2
+        + 0.00001238 * t**3
+        - 0.000000058 * t**4
+    )
+    f = rad(
+        160.7108
+        + 390.67050284 * k
+        - 0.0016118 * t**2
+        - 0.00000227 * t**3
+        + 0.000000011 * t**4
+    )
+    om = rad(124.7746 - 1.56375588 * k + 0.0020672 * t**2 + 0.00000215 * t**3)
+    sin = math.sin
+    jde += (
+        -0.40720 * sin(mp)
+        + 0.17241 * e * sin(m)
+        + 0.01608 * sin(2 * mp)
+        + 0.01039 * sin(2 * f)
+        + 0.00739 * e * sin(mp - m)
+        - 0.00514 * e * sin(mp + m)
+        + 0.00208 * e * e * sin(2 * m)
+        - 0.00111 * sin(mp - 2 * f)
+        - 0.00057 * sin(mp + 2 * f)
+        + 0.00056 * e * sin(2 * mp + m)
+        - 0.00042 * sin(3 * mp)
+        + 0.00042 * e * sin(m + 2 * f)
+        + 0.00038 * e * sin(m - 2 * f)
+        - 0.00024 * e * sin(2 * mp - m)
+        - 0.00017 * sin(om)
+        - 0.00007 * sin(mp + 2 * m)
+        + 0.00004 * sin(2 * mp - 2 * f)
+        + 0.00004 * sin(3 * m)
+        + 0.00003 * sin(mp + m - 2 * f)
+        + 0.00003 * sin(2 * mp + 2 * f)
+        - 0.00003 * sin(mp + m + 2 * f)
+        + 0.00003 * sin(mp - m + 2 * f)
+        - 0.00002 * sin(mp - m - 2 * f)
+        - 0.00002 * sin(3 * mp + m)
+        + 0.00002 * sin(4 * mp)
+    )
+    return jde
+
+
+def _last_new_moon_jd(jd: float) -> float:
+    """指定ユリウス日以前で直近の朔の時刻を返す（TT と UT の差 約70秒は無視）。"""
+    k = math.floor((jd - 2451550.09766) / _SYNODIC_MONTH)
+    while _true_new_moon_jde(k) > jd:
+        k -= 1
+    while _true_new_moon_jde(k + 1) <= jd:
+        k += 1
+    return _true_new_moon_jde(k)
+
+
+def _illuminated_percent(jd: float) -> float:
+    """月の輝面比(%)を返す（Meeus 48.4 の位相角近似）。"""
+    t = (jd - 2451545.0) / 36525
+    d = math.radians(297.8501921 + 445267.1114034 * t - 0.0018819 * t**2)
+    m = math.radians(357.5291092 + 35999.0502909 * t - 0.0001536 * t**2)
+    mp = math.radians(134.9633964 + 477198.8675055 * t + 0.0087414 * t**2)
+    i = math.radians(
+        180
+        - math.degrees(d)
+        - 6.289 * math.sin(mp)
+        + 2.100 * math.sin(m)
+        - 1.274 * math.sin(2 * d - mp)
+        - 0.658 * math.sin(2 * d)
+        - 0.214 * math.sin(2 * mp)
+        - 0.110 * math.sin(d)
+    )
+    return (1 + math.cos(i)) / 2 * 100
+
+
+def _calc_moon_for_date(n: datetime) -> dict:
+    """天文計算で指定JST日の月齢（正午）・輝面比・陰暦日を求める。
+
+    NASA 版（``_extract_moon_for_date``）と同じ形の辞書を返す。陰暦日は
+    その日の終わりまでに起きた直近の朔の JST 日付を1日とする。
+    """
+    target_utc = datetime(n.year, n.month, n.day, 3, 0, 0, tzinfo=timezone.utc)
+    jd = _jd_from_datetime(target_utc)
+    age = jd - _last_new_moon_jd(jd)
+    day_end = datetime(n.year, n.month, n.day, tzinfo=JST) + timedelta(days=1)
+    nm_jst = _datetime_from_jd(
+        _last_new_moon_jd(_jd_from_datetime(day_end) - 1e-6)
+    ).astimezone(JST)
+    lunar_day = (n.date() - nm_jst.date()).days + 1
+    return {
+        "date": n.strftime("%Y-%m-%d"),
+        "age": round(age, 3),
+        "phase": round(_illuminated_percent(jd), 1),
+        "lunar_day": lunar_day,
+        "tide_type": tide_type_for_lunar_day(lunar_day),
+    }
+
+
 def warn_if_next_year_moon_missing() -> bool:
     """12月に入っても翌年の月齢元データが未配置なら警告を出す。
 
@@ -163,17 +292,26 @@ def extract_moon_today() -> dict | None:
         return data_by_year[year]
 
     result = _extract_moon_for_date(moon_data_for_year(n.year), n)
+    source = "NASA"
     if result is None:
-        return None
+        # 年間ファイルの置き忘れ・破損時も月齢と潮回りを止めない。
+        print(
+            f"::warning::data/mooninfo_{n.year}.json を使えないため、"
+            "月齢を天文計算で代替します。README の手順で配置してください。"
+        )
+        result = _calc_moon_for_date(n)
+        source = "calc"
+    result["source"] = source
 
     # 日次Actionsの遅延・一時停止中も潮回りだけはNASA由来で保てるよう、
     # 当日から1朔望月を超える日数を小さな日付辞書として同梱する。
     tide_calendar = {}
     for delta in range(MOON_CALENDAR_DAYS):
         day = n + timedelta(days=delta)
+        # 年末は翌年ファイルが未配置のことがあるため、日単位で計算へ落とす。
         day_result = _extract_moon_for_date(
             moon_data_for_year(day.year), day, log_errors=False
-        )
+        ) or _calc_moon_for_date(day)
         if day_result:
             tide_calendar[day_result["date"]] = {
                 "lunar_day": day_result["lunar_day"],
@@ -181,7 +319,10 @@ def extract_moon_today() -> dict | None:
             }
     result["tide_calendar"] = tide_calendar
     save_json("data/moon_daily.json", result)
-    print(f"[moon] {result['date']} age={result['age']} phase={result['phase']}")
+    print(
+        f"[moon] {result['date']} age={result['age']} "
+        f"phase={result['phase']} source={source}"
+    )
     return result
 
 

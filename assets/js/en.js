@@ -435,6 +435,8 @@
     const byId = (id) => document.getElementById(id);
     [
       byId("jma-weather")?.closest(".data-row"),
+      byId("jma-wave-row"),
+      byId("jma-tomorrow-row"),
       byId("jma-overview-toggle"),
       byId("jma-overview-text"),
       document.querySelector(".footer-about"),

@@ -830,9 +830,19 @@ async function calculateTide(force = false) {
       // 潮回り(大潮/中潮)判定まで連動して誤る（三原則1: 誤読を誘発しない）。
       const isToday = moonToday?.date === dayKey;
       // NaN や範囲外は採用せず計算値のまま（"月齢: NaN" 表示を防ぐ）
-      if (isToday && Number.isFinite(nasaAge) && nasaAge >= 0 && nasaAge < 30) {
+      const ageValid = Number.isFinite(nasaAge) && nasaAge >= 0 && nasaAge < 30;
+      if (isToday && ageValid) {
         age = nasaAge;
         ageSource = "NASA";
+      } else if (ageValid) {
+        // 日次ジョブの遅れで数日前の値しか無い場合は、平均朔望月の式より
+        // 正確な「直近のNASA月齢＋経過日数」で推す（表示は計算値のまま）。
+        // 朔を跨いだ可能性がある（29日を超える）なら推さずに式へ任せる。
+        const baseMs = Date.parse(`${moonToday?.date}T12:00:00+09:00`);
+        const days = Math.round((targetDate.getTime() - baseMs) / 864e5);
+        if (days >= 1 && days <= 3 && nasaAge + days < 29) {
+          age = nasaAge + days;
+        }
       }
       const nasaPhase = moonToday?.phase;
       if (
@@ -942,8 +952,16 @@ async function fetchTideExtremes(force = false) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
-    const todayTides = data.today || [];
-    const allTides = Object.values(data.forecast || {}).flat();
+    // 「今日」の極値は forecast の当日キーから引く。data.today は日次ジョブが
+    // 走った日の値で、日付が変わってからジョブが走るまで（cron 遅延で
+    // 半日に及ぶことがある）は前日の満潮・干潮を今日として出してしまう。
+    const forecastDays = data.forecast || {};
+    const todayTides = Array.isArray(forecastDays[dayKey])
+      ? forecastDays[dayKey]
+      : (data.today || []).filter(
+          (t) => toJstDateStr(new Date(t?.time)) === dayKey,
+        );
+    const allTides = Object.values(forecastDays).flat();
 
     if (allTides.length > 0) {
       displayTideData(todayTides, allTides);
@@ -1908,7 +1926,7 @@ function forecastPopIndex(timeDefines, nowMs) {
 }
 
 // 天気・風の文で前の語に付ける助詞（単独の語として区切られて届く）。
-const JMA_TEXT_PARTICLES = new Set(["では", "で", "は"]);
+const JMA_TEXT_PARTICLES = new Set(["では", "で", "は", "を"]);
 
 /**
  * 気象庁の天気・風の文（語句ごとに全角スペース区切り）を表示用に整える。
@@ -1927,6 +1945,54 @@ function formatJmaText(text) {
     else out.push(w);
   }
   return out.join(" ");
+}
+
+/**
+ * 気象庁の波の予報文（"１．５メートル　後　２メートル"）を表示用に整える。
+ * 全角の数字・小数点を半角にし、「メートル」を "m" に縮める。
+ * @param {string} text
+ * @returns {string}
+ */
+function formatJmaWave(text) {
+  return formatJmaText(text)
+    .replace(/[０-９．]/g, (c) =>
+      c === "．" ? "." : String.fromCharCode(c.charCodeAt(0) - 0xfee0),
+    )
+    .replace(/メートル/g, "m");
+}
+
+/**
+ * 明日の天気（天気文・海上の波・降水確率の最大・最高/最低）を1行にまとめる。
+ * 短期予報（3日分）だけを使う。無い項目は省き、天気文が無ければ "--"。
+ * @returns {{weather: string, detail: string}}
+ */
+function buildTomorrowForecast({
+  timeSeries0,
+  timeSeries1,
+  areaWeather,
+  areaPop,
+  tomorrowJst,
+  findTemp,
+}) {
+  const idx = forecastDayIndex(timeSeries0.timeDefines, tomorrowJst);
+  const weather = idx >= 0 ? areaWeather.weathers?.[idx] : null;
+  const wave = idx >= 0 ? areaWeather.waves?.[idx] : null;
+  const pops = (timeSeries1.timeDefines || [])
+    .map((t, i) => (String(t).slice(0, 10) === tomorrowJst ? i : -1))
+    .filter((i) => i >= 0)
+    .map((i) => Number.parseInt(areaPop.pops?.[i], 10))
+    .filter(Number.isFinite);
+  const max = findTemp(tomorrowJst, "09");
+  const min = findTemp(tomorrowJst, "00");
+  const parts = [];
+  if (wave) parts.push(`波 ${formatJmaWave(wave)}`);
+  if (pops.length > 0) parts.push(`降水 最大${Math.max(...pops)}%`);
+  if (max != null || min != null)
+    parts.push(`${max ?? "--"}℃ / ${min ?? "--"}℃`);
+  return {
+    weather: weather ? formatJmaText(weather) : "--",
+    detail: parts.join("・"),
+  };
 }
 
 async function fetchJmaForecast(force = false) {
@@ -2007,6 +2073,34 @@ async function fetchJmaForecast(force = false) {
     document.getElementById("jma-wind").textContent = formatJmaText(
       (dayIdx >= 0 && areaWeather.winds?.[dayIdx]) || "--",
     );
+
+    // 海上の波（気象庁の短期予報。県東部の海上が対象）。一次ソースの波予報なので
+    // 数値モデル（Open-Meteo・波浪ガイダンス）と並べて確認できるようにする。
+    const waveText = dayIdx >= 0 ? areaWeather.waves?.[dayIdx] : null;
+    const waveRow = document.getElementById("jma-wave-row");
+    if (waveRow) waveRow.hidden = !waveText;
+    if (waveText) {
+      document.getElementById("jma-wave").textContent = formatJmaWave(waveText);
+    }
+
+    const tomorrow = buildTomorrowForecast({
+      timeSeries0,
+      timeSeries1,
+      areaWeather,
+      areaPop,
+      tomorrowJst: tomorrowJstDate,
+      findTemp,
+    });
+    const tomorrowEl = document.getElementById("jma-tomorrow");
+    if (tomorrowEl) {
+      tomorrowEl.textContent = tomorrow.weather;
+      if (tomorrow.detail) {
+        const sub = document.createElement("span");
+        sub.className = "forecast-sub";
+        sub.textContent = tomorrow.detail;
+        tomorrowEl.appendChild(sub);
+      }
+    }
     const overviewText = data?.overview?.text ?? "";
     document.getElementById("jma-overview-body").textContent = overviewText;
     const hasTyphoon = overviewText.includes("台風");
@@ -2438,6 +2532,10 @@ function renderWeatherCards(wmData) {
   setText(
     "wave-height",
     sea.wave_height != null ? `${sea.wave_height} m` : "データなし",
+  );
+  setText(
+    "hero-wave",
+    sea.wave_height != null ? Number(sea.wave_height).toFixed(1) : "--",
   );
   if (sea.sea_surface_temperature != null) {
     setText("sea-temp", `${sea.sea_surface_temperature}℃`);

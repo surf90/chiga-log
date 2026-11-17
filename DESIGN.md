@@ -9,7 +9,7 @@
 ## 1. Visual Theme & Atmosphere
 
 - **デザイン方針**: 屋外（海辺）でスマホから一目で読める、明るく軽量な情報ダッシュボード。
-- **密度**: モバイルファースト・単一カラム。最大幅 `600px` のセンタリングコンテナ。
+- **密度**: モバイルファースト・単一カラム。最大幅 `600px` のセンタリングコンテナ。`min-width:1024px` では最大幅 `1080px` の2列（`.board`）。
 - **キーワード**: 海・空（暖色→青のグラデ）、ガラス調カード（半透明＋影）、可読性優先、ダークモード対応。
 - **関連サイトとの統一（2026-10-24）**: 非公式だがサーフ90の関連サイトのため、ブランドの青・文字色・地の色をサーフ90公式サイト（`surf90/website` の `docs/design-direction.md`）にそろえる（青 `#006FC0`／濃いめ `#00559A`、墨 `#142430`、補足 `#56656F`、白地＋淡い水色 `#EEF5FA`、クリーム色は使わない）。そろえるのは CSS 変数の値とボタンの形（ピル型）だけで、公式サイトの Web フォント（Yomogi・Caveat・Outfit）やスクロール連動の動きは**持ち込まない**（三原則2: 高速表示を優先）。
 
@@ -102,7 +102,7 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 ### 背景 / コンテナ
 
 - `body::before` で白〜水色の控えめなラジアル光と下部の海色フェードを重ねる。ダークモードでは低彩度の青い光に置換する。装飾は固定背景で、コンテンツを遮らない（`pointer-events:none`, `z-index:-1`）。
-- コンテナ: `max-width:600px` / `padding:34px 24px 28px` / `border-radius:16px` / `background:var(--container-bg)` / `box-shadow:var(--container-shadow)` / 上端に 4px のブランドグラデーションバー。
+- コンテナ: `max-width:600px`（`min-width:1024px` で `1080px`）/ `padding:34px 24px 28px` / `border-radius:16px` / `background:var(--container-bg)` / `box-shadow:var(--container-shadow)` / 上端に 4px のブランドグラデーションバー。
 - ヘッダー: `--brand-soft` と半透明の白を重ねた軽量なグラデーション面、`1px solid var(--hairline)`、`border-radius:12px`、薄い影でコンテンツから穏やかに分離する。追加の画像や JavaScript は使わない。
 - フッター: カード面（背景・枠・角丸・影）は持たず、上端の `1px solid var(--hairline)` の区切り線のみでコンテンツから分離するテキスト形式。リンクの重要度は低いため、装飾やチップ化はしない。
 - フッターの構成（上から）: 安全上の注意（`.footer-disclaimer`、2文。**畳まない**）→ 関連サイト（`.footer-family`）→ 折りたたみ（`.footer-more`、`<details>`）→ English ボタンと著作権表記（`.footer-bottom`、横並び・狭幅で折り返し）。要素間は `gap:12px`。
@@ -121,10 +121,10 @@ font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
 ### カード / ボックス
 
-- ヒーローカード: ブランドグラデ背景の上に**上辺へ寄せたラジアルのハイライト**（`radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,0.2), transparent 58%)`）を重ね、画像もJSも使わずに面のわずかな湾曲を出す。文字 `#fff`・`border-radius:var(--radius-md)`・`padding:13px 8px 11px`（`max-width:420px` で `11px 5px 9px`）・薄い白境界・`--shadow-hero`。hover は `translateY(-2px)` と `--shadow-hero-hover`。`:active` は `scale(0.98)` ＋ `--shadow-card`（影を `none` にすると「沈む」ではなく「消える」印象になる）。**ハイライトは強めすぎない**（白文字ラベルのコントラストが落ちる。pa11y WCAG2AA を必ず通すこと）。
+- ヒーローカード: ブランドグラデ背景の上に**上辺へ寄せたラジアルのハイライト**（`radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,0.2), transparent 58%)`）を重ね、画像もJSも使わずに面のわずかな湾曲を出す。文字 `#fff`・`border-radius:var(--radius-md)`・`padding:13px 8px 11px`（`max-width:420px` で `10px 2px 8px`、ラベル 11px・数値 1.3rem・単位 10px）・WAVE / SEA / AIR / WIND の**4枚を1行**（`repeat(4,1fr)`・gap 10px、`max-width:420px` で 6px）。WAVE は MARINE カードと同じ Open-Meteo 波高を 0.1m 単位で出す（サイトの主目的「波」を最上段に置く）。薄い白境界・`--shadow-hero`。hover は `translateY(-2px)` と `--shadow-hero-hover`。`:active` は `scale(0.98)` ＋ `--shadow-card`（影を `none` にすると「沈む」ではなく「消える」印象になる）。**ハイライトは強めすぎない**（白文字ラベルのコントラストが落ちる。pa11y WCAG2AA を必ず通すこと）。
 - 情報ボックス: `background:var(--box-bg)`・`border:1px solid var(--box-border)`・`border-radius:var(--radius-sm)`・`padding:16px 24px`（`max-width:420px` で `14px 16px`）・`--shadow-card`・左端 3px のブランドグラデーションバー。**hover ではカードを浮かせず**（操作対象ではないため）、影を `--shadow-card-hover`、枠を `--hairline` へ変えるだけにする。警報カード・熱中症カードは色で意味を持つため除外する。
 - 初期表示: ヘッダー、データカード、フッターを `opacity` と `translateY(8px)` のみで短くフェードアップする。カードは上から `0.03s` 刻みで遅らせ、**5枚目以降は `0.12s` で頭打ち**にして待ち時間を作らない。`prefers-reduced-motion: reduce` では既存の全体ルールにより実質無効化する。
-- **ローディングのスケルトンはカード型**（`.skeleton-card`、既定 132px / `.tall` 196px を3枚）にする。実レイアウトはカードの連なりなので、細い線（旧 `.skeleton-line`）を並べると読込完了で高さが急増し、レイアウトシフトになる。ヒーロー3枚ぶん（`.skeleton-hero-card`）は据え置き。
+- **ローディングのスケルトンはカード型**（`.skeleton-card`、既定 132px / `.tall` 196px を3枚）にする。実レイアウトはカードの連なりなので、細い線（旧 `.skeleton-line`）を並べると読込完了で高さが急増し、レイアウトシフトになる。ヒーロー4枚ぶん（`.skeleton-hero-card`）を並べる。
 - スケルトン表示中は更新日時（`.float-alert-wrap`）とフッターを `visibility:hidden` にする（`.container:has(#skeleton-loading:not([style*="none"]))`）。本体はスケルトンより高く、画面内にあった両者が押し下げられて CLS になるため（デスクトップ実測 0.028 → 0）。
 
 ### ボタン
@@ -298,7 +298,7 @@ CSS 変数として定義し、各コンポーネントは変数を参照する�
 
 ## 5. Layout & Responsive
 
-- **レイアウト**: 単一カラム、中央寄せ（`max-width:600px`）。PC でも 600px 固定。`max-width:420px` で小型端末向けに余白・ロゴ・カード数値を縮小し、タイトルの地域ラベルと情報源ラベルを折り返す。
+- **レイアウト**: 単一カラム、中央寄せ（`max-width:600px`）。`min-width:1024px` では `.container` を `1080px` に広げ、`.board` を2列グリッド（`minmax(0,1fr)` ×2・列間 16px・`align-items:start`）にする。左列 `.board-col` = 潮汐・波高周期・水温波高（系列もの）、右列 = 注意報警報・熱中症・天気予報・風予報・現在の気温風。HTML 上は左列→右列の順なので、狭い画面の1列表示の並びは従来と同じ。カードの登場アニメーションの遅延は列内の順番（`.board-col > .weather-box:nth-child`）で付ける。`max-width:420px` で小型端末向けに余白・ロゴ・カード数値を縮小し、タイトルの地域ラベルと情報源ラベルを折り返す。
 - **余白/gap**: カード間は `.weather-box` の `margin-bottom:12px`（`max-width:420px` で `10px`）、要素内 `gap:4〜7px`、body `padding:24px 16px`。
 - **タッチターゲット**: 屋外・指操作前提で十分な高さを確保（最小 44px 目安）。
 - **`max-width:360px`（320px 級端末）**: `.weather-box h2` を `flex-wrap:wrap` にし、情報源ラベル
